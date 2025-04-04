@@ -1,18 +1,18 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// 定義分析結果類型
-interface AnalysisResult {
+// 類型定義
+type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
+
+// 分析結果類型
+type AnalysisResult = {
   type: 'cucumber' | 'banana' | 'other_rod';
   length: number;
   thickness: number;
   freshness: number;
   score: number;
   comment: string;
-}
-
-// 類型定義
-type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
+};
 
 // Random data generation for development
 function getRandomData(type: 'cucumber' | 'banana' | 'other_rod') {
@@ -462,10 +462,10 @@ export async function POST(req: NextRequest) {
 
     // 返回最終分析結果
     return NextResponse.json(data, { status: 200, headers });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Analysis error:', error);
     return NextResponse.json(
-      { error: { code: 'GENERAL_ERROR', message: '分析過程中發生錯誤: ' + (error.message || '未知錯誤') } },
+      { error: { code: 'GENERAL_ERROR', message: '分析過程中發生錯誤: ' + ((error instanceof Error) ? error.message : '未知錯誤') } },
       { status: 500, headers }
     );
   }
