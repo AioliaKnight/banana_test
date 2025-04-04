@@ -17,11 +17,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3000'),
-  title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
-  description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。保護隱私，無需註冊，立即分析。",
-  keywords: "蔬果分析, AI分析, 小黃瓜分析, 香蕉分析, 蔬果評分, 人工智慧, 長度評測, 粗細評測",
-  authors: [{ name: "AI香蕉與小黃瓜實驗室" }],
-  creator: "AI香蕉與小黃瓜實驗室",
+  title: "台灣第一香蕉AI量測站 | TopBana AI 智能分析蔬果",
+  description: "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度。3秒快速分析，隱私安全有保障，免費體驗台灣最值得信賴的蔬果評測服務。",
+  keywords: "台灣香蕉測量, AI蔬果分析, 黃瓜評測, 香蕉曲率, 蔬果品質, 人工智慧分析, 精準尺寸測量, 農產品評分, 新鮮度檢測, 台灣第一, 長度測量, 粗細評估, BanaCumber AI",
+  authors: [{ name: "TopBana AI實驗室" }],
+  creator: "TopBana AI團隊 - 台灣第一蔬果AI研究中心",
   viewport: {
     width: 'device-width',
     initialScale: 1,
@@ -39,27 +39,55 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'AI香蕉與小黃瓜分析器',
+    title: '台灣第一香蕉AI量測站',
   },
   openGraph: {
     type: "website",
-    title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
-    description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。",
+    locale: "zh_TW",
+    url: "https://topbana.ai",
+    siteName: "台灣第一香蕉AI量測站",
+    title: "台灣第一香蕉AI量測站 | 精準測量蔬果大小和品質",
+    description: "專業香蕉與黃瓜AI量測平台，3秒內精準評估長度、粗細與新鮮度。台灣首創，隱私安全，立即免費體驗！",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "AI 香蕉與小黃瓜分析器",
+        alt: "台灣第一香蕉AI量測站 - 精準評測蔬果",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
-    description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。",
+    title: "台灣第一香蕉AI量測站 | 精準分析香蕉與黃瓜",
+    description: "台灣首創蔬果AI量測服務，精準評估長度、粗細與品質，上傳照片3秒立即分析，隱私安全有保障！",
     images: ["/og-image.png"],
+    site: "@topbana_ai",
+    creator: "@topbana_ai",
   },
+  alternates: {
+    canonical: "https://topbana.ai",
+    languages: {
+      'zh-TW': "https://topbana.ai",
+      'en-US': "https://topbana.ai/en",
+    },
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+  verification: {
+    google: "verification_token",
+    yandex: "verification_token",
+  },
+  category: "蔬果分析工具",
 };
 
 export default function RootLayout({

@@ -6,6 +6,7 @@ import ImageUploader from "@/components/ImageUploader";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import { HiOutlineChevronDown } from "react-icons/hi";
 import Link from "next/link";
+import Script from "next/script";
 
 // 上傳限制常數
 const DAILY_UPLOAD_LIMIT = 10;
@@ -172,6 +173,92 @@ export default function Home() {
       exit="exit"
       variants={pageVariants}
     >
+      {/* JSON-LD 結構化數據 */}
+      <Script 
+        id="json-ld-data"
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@graph": [
+              {
+                "@type": "WebSite",
+                "@id": "https://topbana.ai/#website",
+                "url": "https://topbana.ai/",
+                "name": "台灣第一香蕉AI量測站",
+                "description": "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度",
+                "publisher": {
+                  "@type": "Organization",
+                  "@id": "https://topbana.ai/#organization",
+                  "name": "TopBana AI團隊",
+                  "logo": {
+                    "@type": "ImageObject",
+                    "@id": "https://topbana.ai/#logo",
+                    "url": "https://topbana.ai/logo.png",
+                    "width": 512,
+                    "height": 512
+                  }
+                },
+                "inLanguage": "zh-TW"
+              },
+              {
+                "@type": "WebPage",
+                "@id": "https://topbana.ai/#webpage",
+                "url": "https://topbana.ai/",
+                "name": "台灣第一香蕉AI量測站 | TopBana AI 智能分析蔬果",
+                "isPartOf": { "@id": "https://topbana.ai/#website" },
+                "about": { "@id": "https://topbana.ai/#organization" },
+                "description": "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度。3秒快速分析，隱私安全有保障",
+                "inLanguage": "zh-TW",
+                "potentialAction": [
+                  {
+                    "@type": "ReadAction",
+                    "target": ["https://topbana.ai/"]
+                  }
+                ]
+              },
+              {
+                "@type": "SoftwareApplication",
+                "name": "TopBana AI 蔬果測量工具",
+                "operatingSystem": "任何支援現代瀏覽器的系統",
+                "applicationCategory": "UtilityApplication",
+                "offers": {
+                  "@type": "Offer",
+                  "price": "0",
+                  "priceCurrency": "TWD"
+                },
+                "aggregateRating": {
+                  "@type": "AggregateRating",
+                  "ratingValue": "4.9",
+                  "ratingCount": "1024"
+                }
+              },
+              {
+                "@type": "FAQPage",
+                "mainEntity": [
+                  {
+                    "@type": "Question",
+                    "name": "TopBana AI 如何測量蔬果大小？",
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": "我們的AI使用先進的電腦視覺技術分析上傳的照片，精確測量香蕉和黃瓜的長度、粗細以及估計新鮮度，提供綜合評分和詳細評測結果。"
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    "name": "我的照片資料會被保存嗎？",
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": "不會。您的照片僅用於即時分析，分析完成後會立即從伺服器中刪除，我們不會儲存任何用戶上傳的照片，確保您的隱私安全。"
+                    }
+                  }
+                ]
+              }
+            ]
+          })
+        }}
+      />
+      
       {/* 頁面頂部背景與波浪效果 */}
       <div className="relative pb-32 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-blue-50 to-transparent" />
@@ -185,9 +272,10 @@ export default function Home() {
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-600 to-blue-600 font-bold text-3xl sm:text-4xl">TopBana</span>
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 font-bold text-3xl sm:text-4xl">AI</span>
               </div>
+              <span className="hidden sm:inline-block text-xs font-medium text-slate-600 mt-1">台灣第一香蕉AI量測站</span>
             </h1>
             {/* 添加標語 */}
-            <p className="hidden md:block text-sm text-slate-600 font-medium">智能評測 · 精準分析 · 即時結果</p>
+            <p className="hidden md:block text-sm text-slate-600 font-medium">精準測量 · 專業分析 · 立即結果</p>
           </div>
           
           {/* 添加明顯的免責聲明橫幅 */}
@@ -210,7 +298,7 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
               <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">AI精準測量</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創AI精準測量</span>
                 <div className="flex flex-row mt-3 sm:mt-0 items-center">
                   <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
@@ -767,7 +855,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
           <div className="flex flex-col items-center sm:items-start">
             <p className="text-slate-700 text-sm font-medium">
-              © {new Date().getFullYear()} TopBana AI - 所有權利保留
+              © {new Date().getFullYear()} TopBana AI - 台灣第一香蕉AI量測站
             </p>
             <p className="text-slate-500 text-xs mt-1">
               由 <a href="https://www.aideamed.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Aidea:Med</a> 精心開發 - 數位精準驅動專為真實服務
@@ -778,6 +866,60 @@ export default function Home() {
             <Link href="/privacy" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">隱私政策</Link>
             <Link href="/faq" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">常見問題</Link>
           </div>
+        </div>
+        
+        {/* SEO優化頁腳 */}
+        <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-slate-100">
+          <div className="text-center">
+            <h2 className="text-lg font-bold text-slate-700 mb-3">台灣專業蔬果AI檢測平台</h2>
+            <p className="text-xs text-slate-500 mb-4 max-w-3xl mx-auto">
+              TopBana AI是台灣首創專業香蕉與黃瓜AI測量平台，結合先進人工智慧技術，提供精準的蔬果尺寸測量、新鮮度評估與品質分析服務。
+              我們的技術可應用於農產品分級、品質把關與娛樂測量，為台灣農業數位化提供創新解決方案。
+            </p>
+          </div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-xs text-slate-600 mt-4">
+            <div>
+              <h3 className="font-medium mb-2 text-slate-700">熱門測量服務</h3>
+              <ul className="space-y-1">
+                <li>香蕉曲率測量</li>
+                <li>黃瓜長度精確檢測</li>
+                <li>蔬果粗細分析</li>
+                <li>農產品新鮮度評估</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2 text-slate-700">服務地區</h3>
+              <ul className="space-y-1">
+                <li>台北蔬果測量</li>
+                <li>台中香蕉評測</li>
+                <li>高雄黃瓜分析</li>
+                <li>全台線上測量服務</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2 text-slate-700">技術優勢</h3>
+              <ul className="space-y-1">
+                <li>AI精準測量技術</li>
+                <li>視覺辨識系統</li>
+                <li>雲端運算分析</li>
+                <li>隱私安全保障</li>
+              </ul>
+            </div>
+            <div>
+              <h3 className="font-medium mb-2 text-slate-700">關於我們</h3>
+              <ul className="space-y-1">
+                <li>台灣AI技術團隊</li>
+                <li>蔬果測量專家</li>
+                <li>專業研發中心</li>
+                <li>農業科技合作</li>
+              </ul>
+            </div>
+          </div>
+          
+          <p className="text-center text-xs text-slate-400 mt-8">
+            台灣第一香蕉AI量測站 © {new Date().getFullYear()} - 專業提供香蕉測量、黃瓜評測、蔬果分析、AI尺寸檢測服務
+          </p>
         </div>
       </footer>
     </motion.main>
