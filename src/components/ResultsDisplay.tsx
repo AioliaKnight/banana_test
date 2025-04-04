@@ -262,7 +262,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const maxLines = 2; 
       const displayLines = commentLines.slice(0, maxLines);
 
-      displayLines.forEach((line, index) => {
+      displayLines.forEach((line) => {
         ctx.fillText(
           line.text, 
           line.x, 
