@@ -170,6 +170,13 @@ export default function Home() {
             )}
           </motion.div>
 
+          {/* 結果僅供參考聲明 */}
+          <div className="max-w-3xl mx-auto text-center">
+            <p className="text-sm text-slate-500 italic mb-6">
+              * 本工具提供的所有分析結果僅供參考，實際數據可能因拍攝角度、光線條件及其他因素而有所差異。
+            </p>
+          </div>
+
           {/* 捲動指示 */}
           <div className="absolute left-0 right-0 bottom-[-60px] flex flex-col items-center justify-center pb-2">
             <div className="animate-bounce flex flex-col items-center">
