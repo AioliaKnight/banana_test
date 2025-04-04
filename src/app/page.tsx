@@ -103,27 +103,18 @@ export default function Home() {
         <div className="absolute bottom-0 left-0 right-0 h-20 bg-wave-pattern opacity-10" />
         
         {/* 頂部導航和 GitHub 連結 */}
-        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
+        <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 relative z-20">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl sm:text-3xl font-bold group">
-              <div className="flex items-center space-x-1">
-                <span className="text-slate-900 bg-slate-100 px-3 py-1 rounded-md">AI</span>
-                <div className="flex flex-row">
-                  <span className="bg-yellow-400 text-white px-3 py-1 rounded-l-md">香蕉</span>
-                  <span className="bg-green-500 text-white px-3 py-1 rounded-r-md">小黃瓜</span>
+            <h1 className="text-2xl sm:text-3xl font-bold">
+              <div className="flex items-center space-x-2">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 px-3 py-1 font-bold text-3xl sm:text-4xl">AI</span>
+                <div className="flex flex-row shadow-sm">
+                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-l-md font-bold">香蕉</span>
+                  <span className="bg-green-600 text-white px-3 py-1 rounded-r-md font-bold">小黃瓜</span>
                 </div>
-                <span className="text-slate-800 border-b-2 border-slate-800">分析器</span>
+                <span className="text-slate-800 font-bold">分析器</span>
               </div>
             </h1>
-            <a 
-              href="https://github.com/yourusername/cucumber-banana-analyzer" 
-              target="_blank" 
-              rel="noopener noreferrer"
-              className="flex items-center gap-2 text-slate-600 hover:text-slate-900 transition-colors"
-            >
-              <FiGithub className="h-5 w-5" />
-              <span className="hidden sm:inline">GitHub</span>
-            </a>
           </div>
         </div>
 
@@ -137,7 +128,10 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
               <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
-                <span className="bg-slate-100 px-4 py-2 rounded-md text-slate-900">AI測量評分</span>
+                <span className="bg-slate-100 px-4 py-2 rounded-md">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 font-bold">AI</span>
+                  <span className="text-slate-900">測量評分</span>
+                </span>
                 <div className="flex flex-row mt-3 sm:mt-0">
                   <span className="bg-green-500 text-white px-4 py-2 rounded-l-md">小黃瓜</span>
                   <span className="bg-yellow-400 text-white px-4 py-2 rounded-r-md">香蕉</span>
@@ -145,7 +139,7 @@ export default function Home() {
               </div>
             </h2>
             <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
-              上傳照片，由AI進行專業評測。無須註冊，保護您的隱私，立即獲得評分結果。
+              上傳照片，立即獲取專業分析評測。先進AI技術精準測量長度與粗細，保護隱私無需註冊，享受快速準確的評分體驗。
             </p>
           </motion.div>
 
@@ -201,34 +195,34 @@ export default function Home() {
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <div className="card card-hover">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">我們怎麼運作?</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">精準技術分析</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                我們使用先進的AI視覺辨識技術，分析您上傳的小黃瓜或香蕉照片。系統會自動辨識蔬果類型，
-                並評估其長度、粗細和新鮮度，提供詳細的專業評分。
+                採用先進的AI視覺辨識技術，我們能快速分析您上傳的小黃瓜或香蕉照片。系統自動辨識類型，
+                精準評估長度、粗細和新鮮度，提供可靠的專業評分和詳細分析。
               </p>
             </div>
             
             <div className="card card-hover">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">注重隱私</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">安心隱私保障</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                您的圖片資料僅用於即時分析，我們不會儲存您上傳的照片。分析完成後，圖片數據會立即從伺服器移除，
-                確保您的隱私安全。
+                您的圖片僅用於即時分析，絕不儲存上傳的照片。分析完成後，所有圖片數據立即從伺服器移除，
+                確保您的隱私安全，讓您無顧慮地使用我們的服務。
               </p>
             </div>
             
             <div className="card card-hover">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">為何選擇我們?</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">便捷使用體驗</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                我們的AI模型經過數千張蔬果照片訓練，能夠準確辨識和評分。無需註冊，
-                操作簡易快速，且完全免費使用。
+                無需註冊，無需繁瑣步驟，直接上傳圖片即可獲得專業分析。我們的AI模型經過數千張樣本訓練，
+                提供精準評分與專業評語，讓您享受簡單快速的使用體驗。
               </p>
             </div>
             
             <div className="card card-hover">
-              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">使用技術</h3>
+              <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">前沿技術支持</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                本服務使用 Google Cloud Vision API 結合 Vertex AI 與 Gemini 模型，
-                以最先進的技術分析您的蔬果照片。
+                本服務結合 Google Cloud Vision API、Vertex AI 與 Gemini 模型，
+                運用最先進的AI技術提供準確分析。支持多種圖片格式，確保各種拍攝條件下的最佳效果。
               </p>
             </div>
           </div>
@@ -238,9 +232,14 @@ export default function Home() {
       {/* 頁腳 */}
       <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-slate-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
-          <p className="text-slate-700 text-sm font-medium">
-            © {new Date().getFullYear()} AI香蕉與小黃瓜分析器 - 所有權利保留
-          </p>
+          <div className="flex flex-col items-center sm:items-start">
+            <p className="text-slate-700 text-sm font-medium">
+              © {new Date().getFullYear()} AI香蕉與小黃瓜分析器 - 所有權利保留
+            </p>
+            <p className="text-slate-500 text-xs mt-1">
+              由 <a href="https://www.aideamed.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Aidea:Med</a> 精心開發 - 數位精準驅動專為真實服務
+            </p>
+          </div>
           <div className="flex items-center gap-4 sm:gap-6 mt-4 sm:mt-0">
             <a href="#" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">使用條款</a>
             <a href="#" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">隱私政策</a>
