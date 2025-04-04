@@ -41,7 +41,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     setIsClient(true);
   }, []);
   
-  const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
   const shareTitle = `我的${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}獲得了 ${result.score.toFixed(1)}/10 的評分！`;
   const shareDescription = `長度: ${result.length}cm, 粗細: ${result.thickness}cm, 新鮮度: ${result.freshness}/10\n${result.comment}`;
   const hashtag = "#AI蔬果分析";
@@ -280,7 +279,8 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             sy = (img.height - sHeight) / 2;
           }
           
-          ctx.drawImage(img, 0, 0, img.width, img.height, imgX, imgY, imgWidth, imgHeight);
+          // 使用計算的 sx, sy, sWidth, sHeight 來繪製裁剪後的圖片
+          ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
           ctx.restore();
         } catch (imgError) {
           console.error('載入圖片失敗:', imgError);
@@ -434,7 +434,8 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             sy = (img.height - sHeight) / 2;
           }
           
-          ctx.drawImage(img, 0, 0, img.width, img.height, imgX, imgY, imgWidth, imgHeight);
+          // 使用計算的 sx, sy, sWidth, sHeight 來繪製裁剪後的圖片
+          ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
           ctx.restore();
         } catch (imgError) {
           console.error('載入圖片失敗:', imgError);
