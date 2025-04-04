@@ -313,15 +313,15 @@ export default function Home() {
         <div className="max-w-4xl mx-auto relative">
           <div className="text-center mb-8">
             <span className="inline-block px-4 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full animate-pulse">
-              黃金廣告位招商中
+              勇敢露出黃金廣告位
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold mt-4 mb-2">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500">
-                誠徵泌尿科診所及成人用品業者合作
+                徵求泌尿科和成人用品界金主爸爸
               </span>
             </h2>
             <p className="text-slate-600 max-w-xl mx-auto">
-              我們的網站每天都有大量用戶關注「尺寸測量」，您的目標客群就在這裡！
+              我們每天幫用戶量「尺寸」，但自己卻連伺服器費都付不出...
             </p>
           </div>
           
@@ -335,10 +335,11 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    絕佳廣告版位 - 精準受眾觸及
+                    「大」老闆專屬投資計畫
                   </h3>
                   <p className="text-slate-600 mb-4">
-                    本站擁有超高曝光度，每日大量用戶專注於「尺寸測量」，這對於您的產品或服務是無與倫比的精準行銷機會。投放廣告能獲得以下效益：
+                    幫助我們養活伺服器，讓「尺寸測量」服務繼續運作。您的廣告將被放在全站最搶眼位置，
+                    每天有大量用戶<span className="line-through">觀摩</span>欣賞！每月只要一包衛生紙的價格，就能獲得以下專屬福利：
                   </p>
                   
                   <ul className="space-y-2 mb-6">
@@ -346,34 +347,35 @@ export default function Home() {
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">精準目標用戶（關注尺寸、長度與健康的人群）</span>
+                      <span className="text-slate-700">精準「對位」行銷（您的產品和我們的用戶簡直天作之合）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">高度相關的情境式廣告（尺寸測量工具旁的優質版位）</span>
+                      <span className="text-slate-700">獨家「尺寸加成」功能，讓您的<span className="line-through">產品尺寸虛高</span>品牌曝光最大化</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">獨家合作夥伴權益（限定行業獨家投放）</span>
+                      <span className="text-slate-700">廣告版位優先曝光（放在比香蕉還搶眼的位置）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">創意整合行銷機會（可與測量工具完美結合的推廣方案）</span>
+                      <span className="text-slate-700">我們工程師感激涕零的眼神（每天對著您的Logo三拜九叩）</span>
                     </li>
                   </ul>
                   
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
                     <p className="text-amber-800 text-sm">
-                      <span className="font-medium">目前招商狀態：</span> 開放中！目前僅限於泌尿科診所、男性保健及成人用品廠商，先搶先贏！
+                      <span className="font-medium">目前招商進度：</span> 0/100萬台幣目標（伺服器費用已拖欠3個月，
+                      我們只能躲在<span className="line-through">星巴克</span> 7-11蹭網路，專盯泌尿科與成人用品客人）
                     </p>
                     <div className="h-2 bg-amber-100 rounded-full mt-2 overflow-hidden">
-                      <div className="w-[30%] h-full bg-amber-500"></div>
+                      <div className="w-[3%] h-full bg-amber-500"></div>
                     </div>
                   </div>
                 </div>
@@ -381,10 +383,10 @@ export default function Home() {
               
               <div className="mt-6 text-center sm:text-right">
                 <a href="mailto:contact@aideamed.com" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-block">
-                  立即聯繫洽談廣告合作
+                  成為「尺寸界」天使投資人
                 </a>
                 <p className="text-xs text-slate-500 mt-2 italic">
-                  * 請於郵件主旨註明「廣告合作」，我們將於1-2個工作日內回覆 *
+                  * 點擊後會發送郵件，因為我們連像樣的客服系統都付不起 *
                 </p>
               </div>
             </div>
