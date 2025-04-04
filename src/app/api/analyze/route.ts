@@ -152,7 +152,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
    - 評語內容應詳盡豐富，包含物體的外觀、品質、形狀、尺寸等多方面分析。
    - 如果是標準水果（香蕉或小黃瓜），評論其尺寸、形狀、品質等方面，並添加更多生動細節和比喻。
    - **特別重要**：如果是"other_rod"，請寫一段更加詳細且有趣的評語，若圖片明確與男性特徵相關,加入女性對男性視角的對話式評論，可以使用「親愛的」等稱呼,不可以一昧吹捧，也要有趣的嘲諷批評。
-   - 如果是疑似男性特徵，可參考台灣男性平均長度12.5cm作為評論基準，超過或低於平均值過多都可以適當評論
+   - 如果是疑似男性特徵，可參考台灣男性平均長度12.5cm作為評論基準，超過或低於平均值過多都可以適當評論，女性多數較喜歡15cm以上的
    - 對於"other_rod"的評語應該富有個性，加點吐槽，可以調皮幽默，可以針對任何給予女性價值觀的中肯建議。
    - 評語保持在150-250字之間，確保內容豐富有趣，能夠吸引讀者。
    - 評語應該反映評分結果，不要出現評分低但評語過於正面的矛盾情況。
@@ -350,12 +350,12 @@ export async function POST(req: NextRequest) {
     }
 
     // 開發環境下的模擬數據生成
-    let data;
+    let data: AnalysisResult;
     let useRandomData = false;
 
     if (process.env.NODE_ENV === 'development' && process.env.USE_RANDOM_DATA === 'true') {
       useRandomData = true;
-      data = getRandomData(analysisResult.objectType);
+      data = { ...getRandomData(analysisResult.objectType), comment: "" };
     } else {
       // 使用真實AI分析數據，但是確保分數在合理範圍內
       // 限制分數在0.0-9.5之間
