@@ -152,7 +152,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         console.log("紋理繪製失敗，略過", e);
       }
       
-      // --- 重新設計的佈局：移除左側圖片，專注於結果展示 ---
+      // --- 重新設計的佈局 ---
       
       // 添加標題和logo
       ctx.fillStyle = '#1e293b';
@@ -264,59 +264,102 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       ctx.lineTo(canvasWidth - 120, statY + 70);
       ctx.stroke();
       
-      // 評語區域背景與標題
-      const commentX = 120;
-      const commentY = 340;
-      const commentWidth = canvasWidth - 240;
-      const lineHeight = 24;
+      // ===== 優化評語區域 =====
       
-      // 準備評語文字並計算行數
-      ctx.font = '18px sans-serif';
-      const comment = result.comment;
+      // 預先計算評語文字適合的大小和行高
+      const commentX = 120;
+      const commentY = 345;
+      const commentWidth = canvasWidth - 240;
+      const lineHeight = 22; // 稍微調小行高，避免超出區域
+      const commentFontSize = 16; // 設置字體大小
+      
+      // 設置評語區域字體
+      ctx.font = `${commentFontSize}px sans-serif`;
+      
+      // 對較長的評語進行截斷
+      let comment = result.comment;
+      // 如果評語超過300個字元，進行截斷
+      if (comment.length > 300) {
+        comment = comment.substring(0, 300) + '...';
+      }
+      
+      // 使用優化的文字換行函數計算行數
       const commentLines = wrapTextChinese(ctx, comment, commentX, commentY, commentWidth, lineHeight);
       
-      // 增加評語背景區域使文字更易讀 - 擴大區域且使用更淺色背景
+      // 嚴格限制顯示區域的高度
+      const maxCommentHeight = 180;
+      const maxLines = Math.floor(maxCommentHeight / lineHeight);
+      const displayLines = commentLines.slice(0, maxLines);
+      
+      // 實際評語區域尺寸計算
+      const commentBoxHeight = Math.min(lineHeight * displayLines.length + 50, maxCommentHeight);
+      
+      // 繪製評語區域背景
       ctx.fillStyle = '#f8fafc';
       ctx.beginPath();
-      ctx.roundRect(commentX - 15, commentY - 35, commentWidth + 30, 
-                  Math.min(lineHeight * (commentLines.length + 1) + 30, 180), 10);
+      ctx.roundRect(
+        commentX - 20, 
+        commentY - 40, 
+        commentWidth + 40, 
+        commentBoxHeight, 
+        10
+      );
       ctx.fill();
       ctx.strokeStyle = '#e2e8f0';
       ctx.lineWidth = 1;
       ctx.stroke();
       
-      // 添加評語圖標
+      // 添加評語標題區域和標題文字
+      ctx.fillStyle = '#f1f5f9'; // 更淺的背景色
+      ctx.beginPath();
+      // 使用單一半徑繪製標題區域
+      ctx.roundRect(
+        commentX - 20, 
+        commentY - 40, 
+        commentWidth + 40, 
+        30,
+        [10]
+      );
+      ctx.fill();
+      
+      // 標題左側的驚嘆號圖標
       ctx.fillStyle = '#f59e0b';
       ctx.beginPath();
-      ctx.arc(commentX + 8, commentY - 15, 10, 0, Math.PI * 2);
+      ctx.arc(commentX, commentY - 25, 8, 0, Math.PI * 2);
       ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 14px sans-serif';
+      ctx.font = 'bold 12px sans-serif';
       ctx.textAlign = 'center';
-      ctx.fillText('!', commentX + 8, commentY - 10);
+      ctx.fillText('!', commentX, commentY - 21);
       ctx.textAlign = 'start';
       
-      // 繪製評語標題
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 20px sans-serif';
-      ctx.fillText('專業評語：', commentX + 28, commentY - 10);
+      // 評語標題文字
+      ctx.fillStyle = '#334155';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('專業評語', commentX + 16, commentY - 20);
       
-      // 評語文字容器的最大高度
-      const maxCommentHeight = 150;
+      // 繪製評語內容，確保在指定區域內
+      ctx.fillStyle = '#475569';
+      ctx.font = `${commentFontSize}px sans-serif`;
       
-      // 限制評語行數，確保不超出容器
-      const maxLines = Math.floor(maxCommentHeight / lineHeight);
-      const displayLines = commentLines.slice(0, maxLines);
+      // 添加一些額外的內容邊距
+      const contentPaddingTop = 6;
       
-      // 繪製評語
-      ctx.font = '18px sans-serif';
-      displayLines.forEach(line => {
-        ctx.fillText(line.text, line.x, line.y);
+      // 繪製每一行文字
+      displayLines.forEach((line, index) => {
+        // 只繪製最大行數內的內容
+        if (index < maxLines) {
+          ctx.fillText(
+            line.text, 
+            line.x, 
+            commentY + contentPaddingTop + (index * lineHeight)
+          );
+        }
       });
       
       // 如果有被截斷的文字，添加省略號提示
       if (commentLines.length > maxLines) {
-        ctx.fillText('...', commentX, commentY + lineHeight * maxLines);
+        ctx.fillText('...', commentX, commentY + contentPaddingTop + (maxLines * lineHeight));
       }
       
       // 添加網站連結 (統一放置在底部)
