@@ -305,7 +305,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       // 添加分析數據
       const statX = 550;
       const statY = 200;
-      const statGap = 90;
       
       // 長度
       ctx.fillStyle = '#1e293b';
