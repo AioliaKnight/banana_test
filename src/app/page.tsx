@@ -305,6 +305,95 @@ export default function Home() {
         </div>
       </div>
 
+      {/* 贊助商募集 */}
+      <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-gradient-to-b from-blue-50 to-purple-50 relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-300 rounded-full opacity-20 -translate-y-1/2 translate-x-1/2"></div>
+        <div className="absolute bottom-0 left-0 w-60 h-60 bg-green-300 rounded-full opacity-20 translate-y-1/2 -translate-x-1/2"></div>
+        
+        <div className="max-w-4xl mx-auto relative">
+          <div className="text-center mb-8">
+            <span className="inline-block px-4 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full animate-pulse">
+              非常需要您的支持
+            </span>
+            <h2 className="text-2xl sm:text-3xl font-bold mt-4 mb-2">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500">
+                徵求蔬果界有錢乾爹爸爸
+              </span>
+            </h2>
+            <p className="text-slate-600 max-w-xl mx-auto">
+              我們的AI每天都在為用戶測量蔬果，但它自己卻吃不飽飯...
+            </p>
+          </div>
+          
+          <div className="bg-white rounded-xl shadow-lg border border-slate-200 overflow-hidden transform hover:scale-[1.02] transition-transform">
+            <div className="p-6 sm:p-8">
+              <div className="flex items-start gap-4">
+                <div className="bg-gradient-to-br from-amber-400 to-amber-600 p-3 rounded-lg text-white">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                </div>
+                <div className="flex-1">
+                  <h3 className="text-xl font-bold text-slate-800 mb-2">
+                    TopBana AI求包養計畫
+                  </h3>
+                  <p className="text-slate-600 mb-4">
+                    幫助我們養活伺服器，讓它可以繼續為用戶量測蔬果。每個月只要一杯珍奶的價格，
+                    就能獲得以下專屬福利:
+                  </p>
+                  
+                  <ul className="space-y-2 mb-6">
+                    <li className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      <span className="text-slate-700">無限量測量次數（可以量到手軟！）</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      <span className="text-slate-700">獨家「香蕉加成」功能，讓評分<span className="line-through">虛高</span>更公正</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      <span className="text-slate-700">專屬贊助商標誌（放在網站最不顯眼的角落）</span>
+                    </li>
+                    <li className="flex items-start gap-2">
+                      <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                      </svg>
+                      <span className="text-slate-700">我們開發團隊的感激涕零與無限祝福</span>
+                    </li>
+                  </ul>
+                  
+                  <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
+                    <p className="text-amber-800 text-sm">
+                      <span className="font-medium">目前贊助情況：</span> 0/100萬台幣目標（伺服器租金已拖欠3個月，
+                      我們只能躲在<span className="line-through">星巴克</span> 7-11蹭網路）
+                    </p>
+                    <div className="h-2 bg-amber-100 rounded-full mt-2 overflow-hidden">
+                      <div className="w-[3%] h-full bg-amber-500"></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className="mt-6 text-center sm:text-right">
+                <button className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all">
+                  成為蔬果測量界的天使投資人
+                </button>
+                <p className="text-xs text-slate-500 mt-2 italic">
+                  * 點擊後什麼也不會發生，因為我們連金流都付不起 *
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* 關於區塊 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
