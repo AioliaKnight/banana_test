@@ -313,15 +313,15 @@ export default function Home() {
         <div className="max-w-4xl mx-auto relative">
           <div className="text-center mb-8">
             <span className="inline-block px-4 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full animate-pulse">
-              非常需要您的支持
+              黃金廣告位招商中
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold mt-4 mb-2">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500">
-                徵求蔬果界有錢乾爹爸爸
+                誠徵泌尿科診所及成人用品業者合作
               </span>
             </h2>
             <p className="text-slate-600 max-w-xl mx-auto">
-              我們的AI每天都在為用戶測量蔬果，但它自己卻吃不飽飯...
+              我們的網站每天都有大量用戶關注「尺寸測量」，您的目標客群就在這裡！
             </p>
           </div>
           
@@ -335,58 +335,56 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    TopBana AI求包養計畫
+                    絕佳廣告版位 - 精準受眾觸及
                   </h3>
                   <p className="text-slate-600 mb-4">
-                    幫助我們養活伺服器，讓它可以繼續為用戶量測蔬果。每個月只要一杯珍奶的價格，
-                    就能獲得以下專屬福利:
+                    本站擁有超高曝光度，每日大量用戶專注於「尺寸測量」，這對於您的產品或服務是無與倫比的精準行銷機會。投放廣告能獲得以下效益：
                   </p>
                   
                   <ul className="space-y-2 mb-6">
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">無限量測量次數（可以量到手軟！）</span>
+                      <span className="text-slate-700">精準目標用戶（關注尺寸、長度與健康的人群）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">獨家「香蕉加成」功能，讓評分<span className="line-through">虛高</span>更公正</span>
+                      <span className="text-slate-700">高度相關的情境式廣告（尺寸測量工具旁的優質版位）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">專屬贊助商標誌（放在網站最不顯眼的角落）</span>
+                      <span className="text-slate-700">獨家合作夥伴權益（限定行業獨家投放）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
+                        <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">我們開發團隊的感激涕零與無限祝福</span>
+                      <span className="text-slate-700">創意整合行銷機會（可與測量工具完美結合的推廣方案）</span>
                     </li>
                   </ul>
                   
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
                     <p className="text-amber-800 text-sm">
-                      <span className="font-medium">目前贊助情況：</span> 0/100萬台幣目標（伺服器租金已拖欠3個月，
-                      我們只能躲在<span className="line-through">星巴克</span> 7-11蹭網路）
+                      <span className="font-medium">目前招商狀態：</span> 開放中！目前僅限於泌尿科診所、男性保健及成人用品廠商，先搶先贏！
                     </p>
                     <div className="h-2 bg-amber-100 rounded-full mt-2 overflow-hidden">
-                      <div className="w-[3%] h-full bg-amber-500"></div>
+                      <div className="w-[30%] h-full bg-amber-500"></div>
                     </div>
                   </div>
                 </div>
               </div>
               
               <div className="mt-6 text-center sm:text-right">
-                <button className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all">
-                  成為蔬果測量界的天使投資人
-                </button>
+                <a href="mailto:contact@aideamed.com" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-block">
+                  立即聯繫洽談廣告合作
+                </a>
                 <p className="text-xs text-slate-500 mt-2 italic">
-                  * 點擊後什麼也不會發生，因為我們連金流都付不起 *
+                  * 請於郵件主旨註明「廣告合作」，我們將於1-2個工作日內回覆 *
                 </p>
               </div>
             </div>
