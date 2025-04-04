@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI, GenerationConfig } from '@google/generative-ai';
+import { GoogleGenerativeAI } from '@google/generative-ai';
 
-// 定義分析結果和錯誤類型
+// 定義分析結果類型
 interface AnalysisResult {
   type: 'cucumber' | 'banana' | 'other_rod';
   length: number;
@@ -11,10 +11,8 @@ interface AnalysisResult {
   comment: string;
 }
 
-interface AnalysisError {
-  code: 'INVALID_OBJECT' | 'MULTIPLE_OBJECTS' | 'LOW_QUALITY' | 'API_ERROR' | 'GENERAL_ERROR';
-  message: string;
-}
+// 類型定義
+type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
 
 // Random data generation for development
 function getRandomData(type: 'cucumber' | 'banana' | 'other_rod') {
@@ -42,7 +40,7 @@ function getRandomData(type: 'cucumber' | 'banana' | 'other_rod') {
 }
 
 // Generate fallback comment
-function generateComment(data: any): string {
+function generateComment(data: Record<string, unknown>): string {
   if (data.type === 'other_rod') {
     const comments = [
       `這個物體看起來不是小黃瓜或香蕉，但它是條狀物，長度約${data.length}cm，粗細約${data.thickness}cm。我們已嘗試分析其基本參數。`,
@@ -63,7 +61,7 @@ function generateComment(data: any): string {
 
 // 利用Gemini圖片分析能力直接檢測圖片內容
 async function analyzeImageWithGemini(imageBase64: string): Promise<{
-  objectType: 'cucumber' | 'banana' | 'other_rod' | null;
+  objectType: ObjectType;
   multipleObjects: boolean;
   lowQuality: boolean;
   lengthEstimate: number;
@@ -181,8 +179,8 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
         console.error('Error parsing Gemini response:', parseError);
         console.log('Raw response:', responseText);
         // 嘗試手動提取部分信息
-        let extractedInfo = {
-          objectType: null as ('cucumber' | 'banana' | 'other_rod' | null),
+        const extractedInfo = {
+          objectType: null as ObjectType,
           multipleObjects: false,
           lowQuality: false,
           lengthEstimate: 0,
@@ -203,7 +201,6 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
         
         // 嘗試提取評語
         if (responseText.length > 30) {
-          const possibleComment = responseText.substring(0, 100);
           extractedInfo.commentText = "AI評語解析錯誤，無法提供完整分析。";
         }
         

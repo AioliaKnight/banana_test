@@ -12,11 +12,20 @@ interface ApiError {
   message: string;
 }
 
+interface AnalysisResult {
+  type: 'cucumber' | 'banana' | 'other_rod';
+  length: number;
+  thickness: number;
+  freshness: number;
+  score: number;
+  comment: string;
+}
+
 export default function Home() {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [analysisResult, setAnalysisResult] = useState<any>(null);
+  const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const handleImageUpload = (file: File) => {
@@ -57,9 +66,9 @@ export default function Home() {
 
       const data = await response.json();
       setAnalysisResult(data);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error("Analysis error:", err);
-      setError(err.message || "分析時發生未知錯誤");
+      setError(err instanceof Error ? err.message : "分析時發生未知錯誤");
       setAnalysisResult(null);
     } finally {
       setLoading(false);

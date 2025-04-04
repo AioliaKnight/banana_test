@@ -282,7 +282,7 @@ export class CanvasImageGenerator {
     // 為中文處理優化換行
     const chars = text.split('');
     let line = '';
-    let lineArray = [];
+    const lineArray = [];
     
     for(let i = 0; i < chars.length; i++) {
       const testLine = line + chars[i];
