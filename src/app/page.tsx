@@ -181,12 +181,8 @@ export default function Home() {
           <div className="flex justify-between items-center">
             <h1 className="text-2xl sm:text-3xl font-bold">
               <div className="flex items-center space-x-2">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 px-3 py-1 font-bold text-3xl sm:text-4xl">AI</span>
-                <div className="flex flex-row shadow-sm">
-                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-l-md font-bold">香蕉</span>
-                  <span className="bg-green-600 text-white px-3 py-1 rounded-r-md font-bold">小黃瓜</span>
-                </div>
-                <span className="text-slate-800 font-bold">分析器</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-600 to-blue-600 font-bold text-3xl sm:text-4xl">TopBana</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 font-bold text-3xl sm:text-4xl">AI</span>
               </div>
             </h1>
           </div>
@@ -202,13 +198,11 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
               <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
-                <span className="bg-slate-100 px-4 py-2 rounded-md">
-                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 via-indigo-500 to-purple-600 font-bold">AI</span>
-                  <span className="text-slate-900">測量評分</span>
-                </span>
-                <div className="flex flex-row mt-3 sm:mt-0">
-                  <span className="bg-green-500 text-white px-4 py-2 rounded-l-md">小黃瓜</span>
-                  <span className="bg-yellow-400 text-white px-4 py-2 rounded-r-md">香蕉</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">智能測量</span>
+                <div className="flex flex-row mt-3 sm:mt-0 items-center">
+                  <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
+                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
+                  <span className="ml-2 text-slate-700 font-bold">分析</span>
                 </div>
               </div>
             </h2>
@@ -217,8 +211,8 @@ export default function Home() {
             </p>
             
             {/* 顯示剩餘分析次數 */}
-            <div className="mt-3 bg-blue-50 rounded-full px-4 py-1 inline-flex items-center">
-              <span className="text-sm text-blue-700">
+            <div className="mt-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-4 py-1 inline-flex items-center">
+              <span className="text-sm text-indigo-700">
                 今日剩餘分析次數: <strong>{remainingUploads}</strong>/10
               </span>
             </div>
@@ -273,11 +267,9 @@ export default function Home() {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
           <h2 className="text-2xl sm:text-3xl font-bold mb-8">
-            <span className="bg-slate-100 px-4 py-2 rounded-md text-slate-900 inline-block">
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600">
               關於 
-              <span className="text-yellow-500 mx-1">香蕉</span>
-              <span className="text-green-600 mx-1">小黃瓜</span>
-              分析器
+              <span className="font-bold mx-1">TopBana AI</span>
             </span>
           </h2>
           
@@ -285,7 +277,7 @@ export default function Home() {
             <div className="card card-hover">
               <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">精準技術分析</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                採用先進的AI視覺辨識技術，我們能快速分析您上傳的小黃瓜或香蕉照片。系統自動辨識類型，
+                採用先進的AI視覺辨識技術，我們能快速分析您上傳的黃瓜或香蕉照片。系統自動辨識類型，
                 精準評估長度、粗細和新鮮度，提供可靠的專業評分和詳細分析。
               </p>
             </div>
@@ -309,7 +301,7 @@ export default function Home() {
             <div className="card card-hover">
               <h3 className="text-lg sm:text-xl font-bold mb-3 text-slate-800">前沿技術支持</h3>
               <p className="text-sm sm:text-base text-slate-600">
-                本服務結合 Google Cloud Vision API、Vertex AI 與 Gemini 模型，
+                TopBana AI 結合 Google Cloud Vision API、Vertex AI 與 Gemini 模型，
                 運用最先進的AI技術提供準確分析。支持多種圖片格式，確保各種拍攝條件下的最佳效果。
               </p>
             </div>
@@ -322,7 +314,7 @@ export default function Home() {
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
           <div className="flex flex-col items-center sm:items-start">
             <p className="text-slate-700 text-sm font-medium">
-              © {new Date().getFullYear()} AI香蕉與小黃瓜分析器 - 所有權利保留
+              © {new Date().getFullYear()} TopBana AI - 所有權利保留
             </p>
             <p className="text-slate-500 text-xs mt-1">
               由 <a href="https://www.aideamed.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline">Aidea:Med</a> 精心開發 - 數位精準驅動專為真實服務
