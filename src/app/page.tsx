@@ -313,15 +313,15 @@ export default function Home() {
         <div className="max-w-4xl mx-auto relative">
           <div className="text-center mb-8">
             <span className="inline-block px-4 py-1 bg-amber-100 text-amber-800 text-xs font-medium rounded-full animate-pulse">
-              勇敢露出黃金廣告位
+              蔬果界熱門廣告位招租中
             </span>
             <h2 className="text-2xl sm:text-3xl font-bold mt-4 mb-2">
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-purple-600 via-pink-500 to-amber-500">
-                徵求泌尿科和成人用品界金主爸爸
+                各界金主速來贊助蔬果測量事業
               </span>
             </h2>
             <p className="text-slate-600 max-w-xl mx-auto">
-              我們每天幫用戶量「尺寸」，但自己卻連伺服器費都付不出...
+              我們每天幫人測量「長短粗細」，卻沒錢付伺服器的電費...
             </p>
           </div>
           
@@ -335,11 +335,11 @@ export default function Home() {
                 </div>
                 <div className="flex-1">
                   <h3 className="text-xl font-bold text-slate-800 mb-2">
-                    「大」老闆專屬投資計畫
+                    蔬果尺寸鑑賞家廣告計畫
                   </h3>
                   <p className="text-slate-600 mb-4">
-                    幫助我們養活伺服器，讓「尺寸測量」服務繼續運作。您的廣告將被放在全站最搶眼位置，
-                    每天有大量用戶<span className="line-through">觀摩</span>欣賞！每月只要一包衛生紙的價格，就能獲得以下專屬福利：
+                    幫助我們養活可憐的伺服器，讓我們繼續為全台灣的香蕉和黃瓜提供專業測量服務。您的廣告位將被放在最吸睛的位置，
+                    每天有大量對「尺寸」充滿好奇的用戶<span className="line-through">盯著</span>欣賞！每月只要一箱水果的價格，就能獲得以下專屬福利：
                   </p>
                   
                   <ul className="space-y-2 mb-6">
@@ -347,32 +347,32 @@ export default function Home() {
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">精準「對位」行銷（您的產品和我們的用戶簡直天作之合）</span>
+                      <span className="text-slate-700">超級精準客群（每天都有人來研究「長度與粗細」，您說這流量香不香）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">獨家「尺寸加成」功能，讓您的<span className="line-through">產品尺寸虛高</span>品牌曝光最大化</span>
+                      <span className="text-slate-700">本站獨家「香蕉係數加成」，讓您的廣告效益<span className="line-through">虛高</span>翻倍成長</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">廣告版位優先曝光（放在比香蕉還搶眼的位置）</span>
+                      <span className="text-slate-700">黃金曝光位置（放在用戶最愛偷看的尺寸評測旁邊）</span>
                     </li>
                     <li className="flex items-start gap-2">
                       <svg className="h-5 w-5 text-green-500 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                         <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 100 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                       </svg>
-                      <span className="text-slate-700">我們工程師感激涕零的眼神（每天對著您的Logo三拜九叩）</span>
+                      <span className="text-slate-700">全體工程師對您的感激涕零（我們會把您的Logo貼在每根香蕉上拜）</span>
                     </li>
                   </ul>
                   
                   <div className="bg-amber-50 p-4 rounded-lg border border-amber-100">
                     <p className="text-amber-800 text-sm">
                       <span className="font-medium">目前招商進度：</span> 0/100萬台幣目標（伺服器費用已拖欠3個月，
-                      我們只能躲在<span className="line-through">星巴克</span> 7-11蹭網路，專盯泌尿科與成人用品客人）
+                      我們只能躲在<span className="line-through">星巴克</span> 7-11蹭網路，靠量香蕉度日）
                     </p>
                     <div className="h-2 bg-amber-100 rounded-full mt-2 overflow-hidden">
                       <div className="w-[3%] h-full bg-amber-500"></div>
@@ -382,11 +382,11 @@ export default function Home() {
               </div>
               
               <div className="mt-6 text-center sm:text-right">
-                <a href="mailto:contact@aideamed.com" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-block">
-                  成為「尺寸界」天使投資人
+                <a href="mailto:ad@aideamed.com" className="bg-gradient-to-r from-amber-500 to-amber-600 text-white px-6 py-2 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-block">
+                  贊助一根香蕉的未來
                 </a>
                 <p className="text-xs text-slate-500 mt-2 italic">
-                  * 點擊後會發送郵件，因為我們連像樣的客服系統都付不起 *
+                  * 點擊後會發送郵件，因為我們連像樣的聯繫表單都付不起 *
                 </p>
               </div>
             </div>
