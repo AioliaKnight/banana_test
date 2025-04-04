@@ -41,10 +41,7 @@ export default function ImageUploader({
 
   // 處理相機拍照按鈕點擊
   const handleCameraClick = (e: React.MouseEvent) => {
-    // 阻止事件冒泡到外層拖放區域
-    e.stopPropagation();
     e.preventDefault();
-    
     if (cameraInputRef.current) {
       cameraInputRef.current.click();
     }
@@ -60,6 +57,32 @@ export default function ImageUploader({
 
   return (
     <div className="w-full">
+      {!preview && (
+        <>
+          {/* 移動設備專用的相機按鈕 - 現在位於dropzone之外 */}
+          <div className="sm:hidden mb-4">
+            <button 
+              type="button"
+              onClick={handleCameraClick}
+              className="w-full flex items-center justify-center bg-blue-50 hover:bg-blue-100 rounded-lg p-3 transition-colors"
+            >
+              <FiCamera className="w-5 h-5 text-blue-500 mr-2" />
+              <span className="text-sm text-blue-600">用手機相機拍照</span>
+            </button>
+            
+            {/* 隱藏的相機input元素 */}
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              onChange={handleCameraCapture}
+              className="hidden"
+            />
+          </div>
+        </>
+      )}
+      
       <div
         {...getRootProps()}
         className={`relative border-2 border-dashed rounded-xl overflow-hidden transition-all ${
@@ -97,26 +120,6 @@ export default function ImageUploader({
               <p className="text-sm text-slate-500 mb-4">
                 <span className="hidden sm:inline">拖放照片至此處，或</span>點擊選擇檔案
               </p>
-              
-              {/* 手機版專用拍照按鈕 */}
-              <button 
-                type="button"
-                onClick={handleCameraClick}
-                className="sm:hidden flex items-center justify-center bg-blue-50 hover:bg-blue-100 rounded-lg p-3 mb-4 w-full max-w-[240px] transition-colors"
-              >
-                <FiCamera className="w-5 h-5 text-blue-500 mr-2" />
-                <span className="text-sm text-blue-600">或直接用手機拍照</span>
-              </button>
-              
-              {/* 隱藏的相機input元素 */}
-              <input
-                ref={cameraInputRef}
-                type="file"
-                accept="image/*"
-                capture="environment"
-                onChange={handleCameraCapture}
-                className="hidden"
-              />
               
               <p className="text-xs text-slate-400">
                 支援 JPG, PNG, WEBP (最大 10MB)
