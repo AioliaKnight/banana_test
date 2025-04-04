@@ -12,6 +12,7 @@ import {
   FaLine,
   FaShareAlt
 } from 'react-icons/fa';
+import Image from 'next/image';
 
 export interface AnalysisResult {
   type: 'cucumber' | 'banana' | 'other_rod';
@@ -166,12 +167,12 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       
       try {
         // 載入預覽圖片
-        const img = new Image();
+        const img = new (window.Image)();
         img.crossOrigin = 'anonymous';
         
         await new Promise((resolve, reject) => {
           img.onload = resolve;
-          img.onerror = (e) => {
+          img.onerror = (e: Event | string) => {
             console.error('圖片載入失敗:', e);
             reject(new Error('圖片載入失敗'));
           };
@@ -451,7 +452,14 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               </button>
             </div>
             <div className="overflow-auto flex-1 mb-3 sm:mb-4">
-              <img src={shareImageUrl} alt="分享預覽" className="w-full h-auto object-contain rounded-lg" />
+              <Image 
+                src={shareImageUrl} 
+                alt="分享預覽" 
+                className="w-full h-auto object-contain rounded-lg" 
+                width={800}
+                height={420}
+                style={{width: '100%', height: 'auto'}}
+              />
             </div>
             <div className="flex flex-wrap gap-3 justify-end">
               <button 
@@ -489,10 +497,13 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             animate={{ opacity: 1, scale: 1 }}
             className="rounded-lg overflow-hidden shadow-md aspect-square"
           >
-            <img 
+            <Image 
               src={preview} 
               alt={`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析圖`}
               className="w-full h-full object-cover"
+              width={400}
+              height={400}
+              style={{width: '100%', height: '100%'}}
             />
           </motion.div>
         </div>

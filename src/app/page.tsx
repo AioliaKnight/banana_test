@@ -4,7 +4,6 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import ImageUploader from "@/components/ImageUploader";
 import ResultsDisplay from "@/components/ResultsDisplay";
-import { FiGithub } from "react-icons/fi";
 import { HiOutlineChevronDown } from "react-icons/hi";
 
 interface ApiError {
