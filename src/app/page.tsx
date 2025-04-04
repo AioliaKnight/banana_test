@@ -307,9 +307,9 @@ export default function Home() {
             className="max-w-4xl mx-auto text-center mb-8 sm:mb-12"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
-              <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創香蕉AI量測系統</span>
-                <div className="flex flex-row mt-3 sm:mt-0 items-center">
+              <div className="flex flex-col items-center justify-center gap-2">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創TopBana AI量測系統</span>
+                <div className="flex items-center justify-center mt-2">
                   <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
                   <span className="ml-2 text-slate-700 font-bold">專業量測</span>
@@ -320,16 +320,6 @@ export default function Home() {
               只需上傳照片，<span className="font-semibold">3秒內</span>獲取專業香蕉AI量測結果。先進演算法精準分析長度、粗細、曲率與新鮮度，
               提供客觀評分和建議。無需註冊，<span className="font-semibold">隱私安全有保障</span>。
             </p>
-            
-            <div className="mt-6">
-              <a href="#upload" className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center gap-2">
-                立即體驗香蕉AI量測
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
-                </svg>
-              </a>
-              <p className="text-xs text-slate-500 mt-2">每日免費提供10次量測服務</p>
-            </div>
             
             {/* 顯示剩餘分析次數 */}
             <div className="mt-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-4 py-1 inline-flex items-center">
