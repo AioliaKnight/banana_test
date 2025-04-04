@@ -40,7 +40,11 @@ export default function ImageUploader({
   const cameraInputRef = useRef<HTMLInputElement>(null);
 
   // 處理相機拍照按鈕點擊
-  const handleCameraClick = () => {
+  const handleCameraClick = (e: React.MouseEvent) => {
+    // 阻止事件冒泡到外層拖放區域
+    e.stopPropagation();
+    e.preventDefault();
+    
     if (cameraInputRef.current) {
       cameraInputRef.current.click();
     }
