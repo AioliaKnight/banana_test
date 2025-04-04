@@ -121,12 +121,9 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const ctx = canvas.getContext('2d');
       if (!ctx) throw new Error('無法獲取畫布上下文');
       
-      // 判斷裝置類型，為手機設置更合適的尺寸
-      const isMobile = window.innerWidth < 768;
-      
-      // 根據裝置調整畫布尺寸和布局
-      const canvasWidth = isMobile ? 800 : 1200;
-      const canvasHeight = isMobile ? 1200 : 630;
+      // 固定畫布尺寸為桌面版佈局大小
+      const canvasWidth = 1200;
+      const canvasHeight = 630;
       
       // 設置畫布尺寸
       canvas.width = canvasWidth;
@@ -154,305 +151,43 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         console.log("紋理繪製失敗，略過", e);
       }
       
-      if (isMobile) {
-        // 手機版垂直布局
-        // 添加標題
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 40px sans-serif';
-        ctx.fillText('AI蔬果分析器', 50, 60);
+      // --- 使用統一的桌面版佈局 --- 
+      // 添加標題和logo
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText('AI蔬果分析器', 50, 80);
+      
+      // 添加漸變標題底線
+      const lineGradient = ctx.createLinearGradient(50, 90, 250, 90);
+      lineGradient.addColorStop(0, '#3b82f6');
+      lineGradient.addColorStop(1, '#8b5cf6');
+      ctx.fillStyle = lineGradient;
+      ctx.fillRect(50, 90, 180, 3);
+      
+      try {
+        // 載入預覽圖片
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
         
-        // 添加漸變標題底線
-        const lineGradient = ctx.createLinearGradient(50, 70, 300, 70);
-        lineGradient.addColorStop(0, '#3b82f6');
-        lineGradient.addColorStop(1, '#8b5cf6');
-        ctx.fillStyle = lineGradient;
-        ctx.fillRect(50, 70, 200, 4);
-        
-        // 添加分數
-        const scoreColorValue = result.score >= 8 
-          ? '#10b981' // 綠色
-          : result.score >= 6 
-            ? '#3b82f6' // 藍色
-            : '#f59e0b'; // 琥珀色
-        
-        // 繪製分數背景
-        const scoreSize = 120;
-        const scoreX = (canvasWidth - scoreSize) / 2;
-        const scoreY = 100;
-        
-        // 繪製光暈效果
-        const scoreGlow = ctx.createRadialGradient(
-          scoreX + scoreSize/2, 
-          scoreY + scoreSize/2, 
-          scoreSize/4,
-          scoreX + scoreSize/2, 
-          scoreY + scoreSize/2, 
-          scoreSize
-        );
-        scoreGlow.addColorStop(0, scoreColorValue + '40'); // 40% 透明度
-        scoreGlow.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = scoreGlow;
-        ctx.fillRect(scoreX - 20, scoreY - 20, scoreSize + 40, scoreSize + 40);
-        
-        // 繪製分數背景
-        ctx.fillStyle = scoreColorValue;
-        ctx.beginPath();
-        ctx.roundRect(scoreX, scoreY, scoreSize, scoreSize, 20);
-        ctx.fill();
-        
-        // 繪製分數文字
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 64px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(result.score.toFixed(1), scoreX + scoreSize/2, scoreY + scoreSize/2 + 20);
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText('評分', scoreX + scoreSize/2, scoreY + scoreSize - 15);
-        ctx.textAlign = 'start';
-        
-        // 添加蔬果類型
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, canvasWidth/2, 260);
-        ctx.textAlign = 'start';
-        
-        try {
-          // 載入預覽圖片
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = (e) => {
-              console.error('圖片載入失敗:', e);
-              reject(new Error('圖片載入失敗'));
-            };
-            img.src = preview;
-          });
-          
-          // 繪製預覽圖片（置中）
-          const imgWidth = canvasWidth - 100;
-          const imgHeight = 320;
-          const imgX = 50;
-          const imgY = 290;
-          
-          // 繪製圖片框
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
-          ctx.fill();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-          ctx.shadowBlur = 15;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 5;
-          ctx.strokeStyle = '#e2e8f0';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          
-          // 清除陰影，避免影響後續繪製
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          
-          // 繪製圖片
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
-          ctx.clip();
-          
-          // 計算要繪製的圖片大小（保持比例）
-          const aspectRatio = img.width / img.height;
-          let sWidth, sHeight, sx, sy;
-          
-          if(aspectRatio > imgWidth / imgHeight) {
-            // 圖片較寬
-            sHeight = img.height;
-            sWidth = imgHeight * aspectRatio;
-            sx = (img.width - sWidth) / 2;
-            sy = 0;
-          } else {
-            // 圖片較高
-            sWidth = img.width;
-            sHeight = img.width / aspectRatio;
-            sx = 0;
-            sy = (img.height - sHeight) / 2;
-          }
-          
-          // 使用計算的 sx, sy, sWidth, sHeight 來繪製裁剪後的圖片
-          ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
-          ctx.restore();
-        } catch (imgError) {
-          console.error('載入圖片失敗:', imgError);
-          // 如果圖片載入失敗，繪製一個替代區塊
-          ctx.fillStyle = '#f1f5f9';
-          ctx.fillRect(50, 290, canvasWidth - 100, 320);
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '24px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('圖片載入失敗', canvasWidth / 2, 290 + 160);
-          ctx.textAlign = 'start';
-        }
-        
-        // 添加分析數據
-        const statY = 650;
-        const statGap = 110;
-        
-        // 長度
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 64px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText(result.length.toString(), canvasWidth / 4, statY);
-        ctx.font = '18px sans-serif';
-        ctx.fillText('厘米', canvasWidth / 4, statY + 30);
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('長度', canvasWidth / 4, statY + 60);
-        
-        // 粗細
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 64px sans-serif';
-        ctx.fillText(result.thickness.toString(), canvasWidth * 3 / 4, statY);
-        ctx.font = '18px sans-serif';
-        ctx.fillText('厘米', canvasWidth * 3 / 4, statY + 30);
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('粗細', canvasWidth * 3 / 4, statY + 60);
-        
-        // 新鮮度
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 64px sans-serif';
-        ctx.fillText(result.freshness.toString(), canvasWidth / 4, statY + statGap);
-        ctx.font = '18px sans-serif';
-        ctx.fillText('/ 10', canvasWidth / 4, statY + statGap + 30);
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('新鮮度', canvasWidth / 4, statY + statGap + 60);
-        
-        // 總評分
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 64px sans-serif';
-        ctx.fillText(result.score.toFixed(1), canvasWidth * 3 / 4, statY + statGap);
-        ctx.font = '18px sans-serif';
-        ctx.fillText('/ 10', canvasWidth * 3 / 4, statY + statGap + 30);
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('總評分', canvasWidth * 3 / 4, statY + statGap + 60);
-        
-        // 添加評語
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 20px sans-serif';
-        ctx.textAlign = 'left';
-        ctx.fillText('專業評語：', 50, statY + statGap * 2);
-        
-        // 換行處理評語文字
-        ctx.font = '18px sans-serif';
-        const comment = result.comment;
-        const commentWidth = canvasWidth - 100;
-        const commentLines = wrapTextChinese(ctx, comment, 50, statY + statGap * 2 + 35, commentWidth, 28);
-        
-        // 繪製評語
-        commentLines.forEach(line => {
-          ctx.fillText(line.text, line.x, line.y);
+        await new Promise((resolve, reject) => {
+          img.onload = resolve;
+          img.onerror = (e) => {
+            console.error('圖片載入失敗:', e);
+            reject(new Error('圖片載入失敗'));
+          };
+          img.src = preview;
         });
         
-        // 添加網站連結
-        ctx.fillStyle = '#64748b';
-        ctx.font = '16px sans-serif';
-        ctx.textAlign = 'center';
-        ctx.fillText('AI蔬果分析器 - aifruit.example.com', canvasWidth / 2, canvasHeight - 40);
-      } else {
-        // 桌面版水平布局
-        // 添加標題和logo
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText('AI蔬果分析器', 50, 80);
+        // 繪製預覽圖片
+        const imgWidth = 500;
+        const imgHeight = 400;
+        const imgX = 50;
+        const imgY = 130;
         
-        // 添加漸變標題底線
-        const lineGradient = ctx.createLinearGradient(50, 90, 250, 90);
-        lineGradient.addColorStop(0, '#3b82f6');
-        lineGradient.addColorStop(1, '#8b5cf6');
-        ctx.fillStyle = lineGradient;
-        ctx.fillRect(50, 90, 180, 3);
-        
-        try {
-          // 載入預覽圖片
-          const img = new Image();
-          img.crossOrigin = 'anonymous';
-          
-          await new Promise((resolve, reject) => {
-            img.onload = resolve;
-            img.onerror = (e) => {
-              console.error('圖片載入失敗:', e);
-              reject(new Error('圖片載入失敗'));
-            };
-            img.src = preview;
-          });
-          
-          // 繪製預覽圖片
-          const imgWidth = 500;
-          const imgHeight = 400;
-          const imgX = 50;
-          const imgY = 130;
-          
-          // 繪製圖片框
-          ctx.fillStyle = '#ffffff';
-          ctx.beginPath();
-          ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
-          ctx.fill();
-          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-          ctx.shadowBlur = 15;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 5;
-          ctx.strokeStyle = '#e2e8f0';
-          ctx.lineWidth = 1;
-          ctx.stroke();
-          
-          // 清除陰影
-          ctx.shadowColor = 'transparent';
-          ctx.shadowBlur = 0;
-          ctx.shadowOffsetX = 0;
-          ctx.shadowOffsetY = 0;
-          
-          // 繪製圖片
-          ctx.save();
-          ctx.beginPath();
-          ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
-          ctx.clip();
-          
-          // 計算繪製區域（保持圖片比例）
-          const aspectRatio = img.width / img.height;
-          let sWidth, sHeight, sx, sy;
-          
-          if(aspectRatio > imgWidth / imgHeight) {
-            // 圖片較寬
-            sHeight = img.height;
-            sWidth = imgHeight * aspectRatio;
-            sx = (img.width - sWidth) / 2;
-            sy = 0;
-          } else {
-            // 圖片較高
-            sWidth = img.width;
-            sHeight = img.width / aspectRatio;
-            sx = 0;
-            sy = (img.height - sHeight) / 2;
-          }
-          
-          // 使用計算的 sx, sy, sWidth, sHeight 來繪製裁剪後的圖片
-          ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
-          ctx.restore();
-        } catch (imgError) {
-          console.error('載入圖片失敗:', imgError);
-          // 如果圖片載入失敗，繪製替代區塊
-          ctx.fillStyle = '#f1f5f9';
-          ctx.fillRect(50, 130, 500, 400);
-          ctx.fillStyle = '#94a3b8';
-          ctx.font = '24px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText('圖片載入失敗', 50 + 250, 130 + 200);
-          ctx.textAlign = 'start';
-        }
-        
-        // 添加分析結果區域
+        // 繪製圖片框
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.roundRect(600, 130, 550, 400, 15);
+        ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
         ctx.fill();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
         ctx.shadowBlur = 15;
@@ -468,94 +203,157 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         
-        // 添加蔬果類型標題
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 630, 170);
-        
-        // 添加分數
-        const scoreColorValue = result.score >= 8 
-          ? '#10b981' // 綠色
-          : result.score >= 6 
-            ? '#3b82f6' // 藍色
-            : '#f59e0b'; // 琥珀色
-        
-        // 繪製分數背景
-        const scoreSize = 100;
-        const scoreX = 1050;
-        const scoreY = 135;
-        
-        // 繪製光暈效果
-        const scoreGlow = ctx.createRadialGradient(
-          scoreX, scoreY, scoreSize/4,
-          scoreX, scoreY, scoreSize
-        );
-        scoreGlow.addColorStop(0, scoreColorValue + '40'); // 40% 透明度
-        scoreGlow.addColorStop(1, 'rgba(255,255,255,0)');
-        ctx.fillStyle = scoreGlow;
-        ctx.fillRect(scoreX - 20, scoreY - 20, scoreSize + 40, scoreSize + 40);
-        
-        // 繪製分數背景
-        ctx.fillStyle = scoreColorValue;
+        // 繪製圖片
+        ctx.save();
         ctx.beginPath();
-        ctx.arc(scoreX, scoreY, scoreSize/2, 0, Math.PI * 2);
-        ctx.fill();
+        ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
+        ctx.clip();
         
-        // 繪製分數文字
-        ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 38px sans-serif';
+        // 計算繪製區域（保持圖片比例）
+        const aspectRatio = img.width / img.height;
+        let sWidth, sHeight, sx, sy;
+        
+        if(aspectRatio > imgWidth / imgHeight) {
+          // 圖片較寬
+          sHeight = img.height;
+          sWidth = imgHeight * aspectRatio;
+          sx = (img.width - sWidth) / 2;
+          sy = 0;
+        } else {
+          // 圖片較高
+          sWidth = img.width;
+          sHeight = img.width / aspectRatio;
+          sx = 0;
+          sy = (img.height - sHeight) / 2;
+        }
+        
+        // 使用計算的 sx, sy, sWidth, sHeight 來繪製裁剪後的圖片
+        ctx.drawImage(img, sx, sy, sWidth, sHeight, imgX, imgY, imgWidth, imgHeight);
+        ctx.restore();
+      } catch (imgError) {
+        console.error('載入圖片失敗:', imgError);
+        // 如果圖片載入失敗，繪製替代區塊
+        ctx.fillStyle = '#f1f5f9';
+        ctx.fillRect(50, 130, 500, 400);
+        ctx.fillStyle = '#94a3b8';
+        ctx.font = '24px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(result.score.toFixed(1), scoreX, scoreY + 12);
+        ctx.fillText('圖片載入失敗', 50 + 250, 130 + 200);
         ctx.textAlign = 'start';
-        
-        // 添加分析數據
-        const statX = 630;
-        const statY = 220;
-        const statGap = 100;
-        
-        // 長度
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('長度', statX, statY);
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText(result.length.toString(), statX, statY + 40);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('厘米', statX + 60, statY + 40);
-        
-        // 粗細
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('粗細', statX + 200, statY);
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText(result.thickness.toString(), statX + 200, statY + 40);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('厘米', statX + 260, statY + 40);
-        
-        // 新鮮度
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 16px sans-serif';
-        ctx.fillText('新鮮度', statX, statY + statGap);
-        ctx.font = 'bold 36px sans-serif';
-        ctx.fillText(result.freshness.toString(), statX, statY + statGap + 40);
-        ctx.font = '16px sans-serif';
-        ctx.fillText('/ 10', statX + 60, statY + statGap + 40);
-        
-        // 添加評語
-        ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 18px sans-serif';
-        ctx.fillText('專業評語：', statX, statY + statGap * 2);
-        
-        // 換行處理評語文字
-        ctx.font = '16px sans-serif';
-        const comment = result.comment;
-        const commentWidth = 500;
-        const commentLines = wrapTextChinese(ctx, comment, statX, statY + statGap * 2 + 30, commentWidth, 24);
-        
-        // 繪製評語
-        commentLines.forEach(line => {
-          ctx.fillText(line.text, line.x, line.y);
-        });
       }
+      
+      // 添加分析結果區域
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(600, 130, 550, 400, 15);
+      ctx.fill();
+      ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+      ctx.shadowBlur = 15;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 5;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // 清除陰影
+      ctx.shadowColor = 'transparent';
+      ctx.shadowBlur = 0;
+      ctx.shadowOffsetX = 0;
+      ctx.shadowOffsetY = 0;
+      
+      // 添加蔬果類型標題
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 28px sans-serif';
+      ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 630, 170);
+      
+      // 添加分數
+      const scoreColorValue = result.score >= 8 
+        ? '#10b981' // 綠色
+        : result.score >= 6 
+          ? '#3b82f6' // 藍色
+          : '#f59e0b'; // 琥珀色
+      
+      // 繪製分數背景
+      const scoreSize = 100;
+      const scoreX = 1050;
+      const scoreY = 135;
+      
+      // 繪製光暈效果
+      const scoreGlow = ctx.createRadialGradient(
+        scoreX, scoreY, scoreSize/4,
+        scoreX, scoreY, scoreSize
+      );
+      scoreGlow.addColorStop(0, scoreColorValue + '40'); // 40% 透明度
+      scoreGlow.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = scoreGlow;
+      ctx.fillRect(scoreX - 20, scoreY - 20, scoreSize + 40, scoreSize + 40);
+      
+      // 繪製分數背景
+      ctx.fillStyle = scoreColorValue;
+      ctx.beginPath();
+      ctx.arc(scoreX, scoreY, scoreSize/2, 0, Math.PI * 2);
+      ctx.fill();
+      
+      // 繪製分數文字
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 38px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText(result.score.toFixed(1), scoreX, scoreY + 12);
+      ctx.textAlign = 'start';
+      
+      // 添加分析數據
+      const statX = 630;
+      const statY = 220;
+      const statGap = 100;
+      
+      // 長度
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('長度', statX, statY);
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(result.length.toString(), statX, statY + 40);
+      ctx.font = '16px sans-serif';
+      ctx.fillText('厘米', statX + 60, statY + 40);
+      
+      // 粗細
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('粗細', statX + 200, statY);
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(result.thickness.toString(), statX + 200, statY + 40);
+      ctx.font = '16px sans-serif';
+      ctx.fillText('厘米', statX + 260, statY + 40);
+      
+      // 新鮮度
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 16px sans-serif';
+      ctx.fillText('新鮮度', statX, statY + statGap);
+      ctx.font = 'bold 36px sans-serif';
+      ctx.fillText(result.freshness.toString(), statX, statY + statGap + 40);
+      ctx.font = '16px sans-serif';
+      ctx.fillText('/ 10', statX + 60, statY + statGap + 40);
+      
+      // 添加評語
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('專業評語：', statX, statY + statGap * 2);
+      
+      // 換行處理評語文字
+      ctx.font = '16px sans-serif';
+      const comment = result.comment;
+      const commentWidth = 500;
+      const commentLines = wrapTextChinese(ctx, comment, statX, statY + statGap * 2 + 30, commentWidth, 24);
+      
+      // 繪製評語
+      commentLines.forEach(line => {
+        ctx.fillText(line.text, line.x, line.y);
+      });
+      
+      // 添加網站連結 (統一放置在底部)
+      ctx.fillStyle = '#64748b';
+      ctx.font = '16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('AI蔬果分析器 - aifruit.example.com', canvasWidth / 2, canvasHeight - 30);
 
       // 生成圖片URL
       const dataUrl = canvas.toDataURL('image/png');
