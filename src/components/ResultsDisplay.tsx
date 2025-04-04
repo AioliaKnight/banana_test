@@ -42,7 +42,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     setIsClient(true);
   }, []);
   
-  const shareTitle = `我的${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}獲得了 ${result.score.toFixed(1)}/10 的評分！`;
+  const shareTitle = `這根${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}獲得了 ${result.score.toFixed(1)}/10 的評分！`;
   const shareDescription = `長度: ${result.length}cm, 粗細: ${result.thickness}cm, 新鮮度: ${result.freshness}/10\n${result.comment}`;
   const hashtag = "#AI蔬果分析";
 
