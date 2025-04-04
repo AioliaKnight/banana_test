@@ -106,12 +106,12 @@ export default function Home() {
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="flex justify-between items-center">
             <h1 className="text-2xl sm:text-3xl font-bold">
-              <div className="inline-block px-2 py-1 rounded bg-white/70 shadow-sm">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600 drop-shadow-sm">AI</span>
-                <span className="text-yellow-500 drop-shadow-sm">香蕉</span>
-                <span className="text-blue-900 drop-shadow-sm">與</span>
-                <span className="text-green-600 drop-shadow-sm">小黃瓜</span>
-                <span className="text-blue-900 drop-shadow-sm">分析器</span>
+              <div className="inline-block px-2 py-1">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">AI</span>
+                <span className="text-yellow-500">香蕉</span>
+                <span className="text-blue-900">與</span>
+                <span className="text-green-600">小黃瓜</span>
+                <span className="text-blue-900">分析器</span>
               </div>
             </h1>
             <a 
@@ -135,7 +135,7 @@ export default function Home() {
             className="max-w-4xl mx-auto text-center mb-8 sm:mb-12"
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4">
-              <span className="bg-white/80 px-3 py-1 rounded-lg shadow-sm inline-block mb-2">
+              <span className="inline-block mb-2">
                 <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">AI</span>
                 <span className="text-slate-900">評測你的</span>
                 <span className="text-green-600">小黃瓜</span>
@@ -143,7 +143,7 @@ export default function Home() {
                 <span className="text-yellow-500">香蕉</span>
               </span>
             </h2>
-            <p className="text-base sm:text-lg text-slate-800 max-w-2xl mx-auto bg-white/70 px-4 py-2 rounded-lg shadow-sm">
+            <p className="text-base sm:text-lg text-slate-800 max-w-2xl mx-auto">
               上傳照片，由AI進行專業評測。無須註冊，保護您的隱私，立即獲得評分結果。
             </p>
           </motion.div>
@@ -153,7 +153,7 @@ export default function Home() {
             initial={{ y: 30, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
             transition={{ delay: 0.4 }}
-            className="card max-w-3xl mx-auto shadow-lg border-slate-200 p-4 sm:p-6"
+            className="card max-w-3xl mx-auto shadow-lg border-slate-200 p-4 sm:p-6 mb-16"
           >
             {!analysisResult ? (
               <div className="flex flex-col gap-6">
@@ -177,8 +177,8 @@ export default function Home() {
           </motion.div>
 
           {/* 捲動指示 */}
-          <div className="absolute left-0 right-0 bottom-0 flex flex-col items-center justify-center pb-2 text-slate-500">
-            <div className="animate-bounce flex flex-col items-center bg-white/80 px-3 py-1 rounded-full shadow-sm">
+          <div className="absolute left-0 right-0 bottom-[-60px] flex flex-col items-center justify-center pb-2">
+            <div className="animate-bounce flex flex-col items-center">
               <span className="text-sm font-medium text-blue-900 mb-1">了解更多</span>
               <HiOutlineChevronDown className="h-5 w-5 text-blue-600" />
             </div>
@@ -189,7 +189,7 @@ export default function Home() {
       {/* 關於區塊 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 inline-block bg-white/70 px-4 py-2 rounded-lg shadow-sm text-blue-900">
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 inline-block px-4 py-2 text-blue-900">
             關於 AI香蕉與小黃瓜分析器
           </h2>
           
@@ -230,7 +230,7 @@ export default function Home() {
       </div>
 
       {/* 頁腳 */}
-      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-slate-200 bg-white/80 shadow-inner">
+      <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-slate-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
           <p className="text-slate-700 text-sm font-medium">
             © {new Date().getFullYear()} AI香蕉與小黃瓜分析器 - 所有權利保留
