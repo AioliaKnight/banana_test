@@ -427,7 +427,7 @@ export default function Home() {
                   </h3>
                   <p className="text-slate-600 mb-4">
                     幫助我們養活可憐的伺服器，讓我們繼續為全台灣的香蕉和黃瓜提供專業測量服務。您的廣告位將被放在最吸睛的位置，
-                    每天有大量對「尺寸」充滿好奇的用戶<span className="line-through">盯著</span>欣賞！每月只要一箱水果的價格，就能獲得以下專屬福利：
+                    每天有大量對「尺寸」充滿好奇的用戶<span className="line-through">盯著</span>欣賞！每月只要一個醫療業助理薪水的價格再加上美國32%關稅，就能獲得以下專屬福利：
                   </p>
                   
                   <ul className="space-y-2 mb-6">
