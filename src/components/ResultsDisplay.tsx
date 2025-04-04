@@ -659,16 +659,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-100/70 pl-3">
               <div className="max-h-56 overflow-y-auto pr-2 custom-scrollbar">
                 <p className="text-slate-700 leading-relaxed whitespace-pre-line">
-                  {result.comment.split('').map((char, index) => (
-                    <motion.span
-                      key={index}
-                      initial={{ opacity: 0 }}
-                      animate={{ opacity: 1 }}
-                      transition={{ delay: 0.4 + (index * 0.005), duration: 0.2 }}
-                    >
-                      {char}
-                    </motion.span>
-                  ))}
+                  {result.comment}
                 </p>
               </div>
             </div>
