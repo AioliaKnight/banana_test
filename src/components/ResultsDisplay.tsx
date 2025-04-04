@@ -671,11 +671,17 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                     />
                   </div>
                   
-                  <div className="mt-3 grid grid-cols-5">
-                    {[2, 4, 6, 8, 10].map((mark) => (
-                      <div key={mark} className="text-center">
+                  <div className="mt-3 relative h-7">
+                    {[0, 2, 4, 6, 8, 10].map((mark) => (
+                      <div 
+                        key={mark} 
+                        className="absolute transform -translate-x-1/2"
+                        style={{ left: `${(mark / 10) * 100}%` }}
+                      >
                         <div className={`mx-auto w-0.5 h-1.5 ${result.score >= mark ? 'bg-slate-700' : 'bg-slate-300'}`}></div>
-                        <div className={`text-xs mt-1 ${result.score >= mark ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>{mark}</div>
+                        <div className={`text-xs mt-1 ${result.score >= mark ? 'text-slate-700 font-medium' : 'text-slate-400'}`}>
+                          {mark}
+                        </div>
                       </div>
                     ))}
                   </div>
