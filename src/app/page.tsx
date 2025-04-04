@@ -105,13 +105,14 @@ export default function Home() {
         {/* 頂部導航和 GitHub 連結 */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              <div className="inline-block px-2 py-1">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">AI</span>
-                <span className="text-yellow-500">香蕉</span>
-                <span className="text-blue-900">與</span>
-                <span className="text-green-600">小黃瓜</span>
-                <span className="text-blue-900">分析器</span>
+            <h1 className="text-2xl sm:text-3xl font-bold group">
+              <div className="flex items-center space-x-1">
+                <span className="text-slate-900 bg-slate-100 px-3 py-1 rounded-md">AI</span>
+                <div className="flex flex-row">
+                  <span className="bg-yellow-400 text-white px-3 py-1 rounded-l-md">香蕉</span>
+                  <span className="bg-green-500 text-white px-3 py-1 rounded-r-md">小黃瓜</span>
+                </div>
+                <span className="text-slate-800 border-b-2 border-slate-800">分析器</span>
               </div>
             </h1>
             <a 
@@ -134,16 +135,16 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="max-w-4xl mx-auto text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-4">
-              <span className="inline-block mb-2">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-purple-600">AI</span>
-                <span className="text-slate-900">評測你的</span>
-                <span className="text-green-600">小黃瓜</span>
-                <span className="text-slate-900">或</span>
-                <span className="text-yellow-500">香蕉</span>
-              </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
+              <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
+                <span className="bg-slate-100 px-4 py-2 rounded-md text-slate-900">AI測量評分</span>
+                <div className="flex flex-row mt-3 sm:mt-0">
+                  <span className="bg-green-500 text-white px-4 py-2 rounded-l-md">小黃瓜</span>
+                  <span className="bg-yellow-400 text-white px-4 py-2 rounded-r-md">香蕉</span>
+                </div>
+              </div>
             </h2>
-            <p className="text-base sm:text-lg text-slate-800 max-w-2xl mx-auto">
+            <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
               上傳照片，由AI進行專業評測。無須註冊，保護您的隱私，立即獲得評分結果。
             </p>
           </motion.div>
@@ -189,8 +190,13 @@ export default function Home() {
       {/* 關於區塊 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 inline-block px-4 py-2 text-blue-900">
-            關於 AI香蕉與小黃瓜分析器
+          <h2 className="text-2xl sm:text-3xl font-bold mb-8">
+            <span className="bg-slate-100 px-4 py-2 rounded-md text-slate-900 inline-block">
+              關於 
+              <span className="text-yellow-500 mx-1">香蕉</span>
+              <span className="text-green-600 mx-1">小黃瓜</span>
+              分析器
+            </span>
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
