@@ -437,20 +437,20 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     <div className="flex flex-col gap-8">
       {/* 圖片預覽彈窗 */}
       {showImagePreview && shareImageUrl && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-4 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-4">
-              <h3 className="text-xl font-bold">
+        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm">
+          <div className="bg-white rounded-xl p-3 sm:p-4 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+            <div className="flex justify-between items-center mb-3 sm:mb-4">
+              <h3 className="text-lg sm:text-xl font-bold">
                 {selectedPlatform ? `分享到${selectedPlatform === 'facebook' ? 'Facebook' : selectedPlatform === 'twitter' ? 'Twitter' : 'Line'}` : '分享圖片預覽'}
               </h3>
               <button 
                 onClick={() => setShowImagePreview(false)}
-                className="text-slate-400 hover:text-slate-600 h-10 w-10 flex items-center justify-center rounded-full"
+                className="text-slate-400 hover:text-slate-600 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full"
               >
                 ✕
               </button>
             </div>
-            <div className="overflow-auto flex-1 mb-4">
+            <div className="overflow-auto flex-1 mb-3 sm:mb-4">
               <img src={shareImageUrl} alt="分享預覽" className="w-full h-auto object-contain rounded-lg" />
             </div>
             <div className="flex flex-wrap gap-3 justify-end">
@@ -505,7 +505,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             transition={{ delay: 0.1 }}
             className="mb-5"
           >
-            <div className="flex items-center justify-between mb-4">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
               <h2 className="text-xl font-bold text-slate-800">
                 {result.type === 'cucumber' 
                   ? '小黃瓜分析結果' 
@@ -521,7 +521,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="btn btn-outline flex items-center gap-2 text-sm py-2 px-4"
+                className="btn btn-outline flex items-center gap-2 text-sm py-2 px-4 self-start sm:self-auto"
                 onClick={onReset}
               >
                 <FaRedo className="h-3 w-3" />
@@ -598,13 +598,13 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.3 }}
-            className="relative border border-slate-100 bg-white/50 rounded-xl p-5 backdrop-blur-sm shadow-sm mb-6"
+            className="relative border border-slate-100 bg-white/50 rounded-xl p-4 sm:p-5 backdrop-blur-sm shadow-sm mb-5"
           >
-            <div className="flex items-center gap-2 mb-3">
-              <FaRegLightbulb className="text-amber-500" />
+            <div className="flex items-center gap-2 mb-2 sm:mb-3">
+              <FaRegLightbulb className="text-amber-500 flex-shrink-0" />
               <h3 className="font-medium text-slate-800">AI評語</h3>
             </div>
-            <p className="text-slate-600 text-sm leading-relaxed italic">
+            <p className="text-slate-600 text-sm leading-relaxed mobile-text-tight">
               {result.comment}
             </p>
           </motion.div>
@@ -637,40 +637,43 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             
             <p className="text-sm text-slate-500 mb-2 mt-2">分享到社群媒體</p>
             
-            <div className="flex justify-center space-x-5">
-              <motion.button 
-                whileHover={{ scale: 1.1 }} 
-                whileTap={{ scale: 0.9 }}
-                className="bg-[#1877F2] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShare('facebook')}
-                disabled={isGeneratingImage}
-                aria-label="分享到Facebook"
-              >
-                <FaFacebook size={22} />
-              </motion.button>
-              
-              <motion.button 
-                whileHover={{ scale: 1.1 }} 
-                whileTap={{ scale: 0.9 }}
-                className="bg-[#1DA1F2] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShare('twitter')}
-                disabled={isGeneratingImage}
-                aria-label="分享到Twitter"
-              >
-                <FaTwitter size={22} />
-              </motion.button>
-              
-              <motion.button 
-                whileHover={{ scale: 1.1 }} 
-                whileTap={{ scale: 0.9 }}
-                className="bg-[#06C755] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShare('line')}
-                disabled={isGeneratingImage}
-                aria-label="分享到Line"
-              >
-                <FaLine size={22} />
-              </motion.button>
-            </div>
+            <motion.div
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.4 }}
+            >
+              <div className="mb-2 text-sm font-medium text-slate-700">分享結果</div>
+              <div className="flex flex-wrap sm:flex-nowrap gap-2">
+                <button
+                  onClick={() => handleShare('facebook')}
+                  className="flex-1 btn btn-outline text-blue-600 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
+                >
+                  <FaFacebook />
+                  <span className="hidden xs:inline whitespace-nowrap">Facebook</span>
+                </button>
+                <button
+                  onClick={() => handleShare('twitter')}
+                  className="flex-1 btn btn-outline text-blue-400 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
+                >
+                  <FaTwitter />
+                  <span className="hidden xs:inline whitespace-nowrap">Twitter</span>
+                </button>
+                <button
+                  onClick={() => handleShare('line')}
+                  className="flex-1 btn btn-outline text-green-600 border-green-100 hover:bg-green-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
+                >
+                  <FaLine />
+                  <span className="hidden xs:inline whitespace-nowrap">Line</span>
+                </button>
+                <button
+                  onClick={handleDownload}
+                  className="flex-1 btn btn-primary flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
+                >
+                  <FaDownload />
+                  <span className="hidden xs:inline whitespace-nowrap">下載圖片</span>
+                </button>
+              </div>
+            </motion.div>
           </motion.div>
         </div>
       </div>
@@ -687,7 +690,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         transition={{ delay: 0.7 }}
-        className="text-center text-xs text-slate-400 bg-slate-50 p-3 rounded-lg"
+        className="text-center text-xs text-slate-400 bg-slate-50 p-2 sm:p-3 rounded-lg mt-4"
       >
         保護隱私：您的圖片僅用於即時分析，分析完成後不會保存在伺服器上
       </motion.div>
