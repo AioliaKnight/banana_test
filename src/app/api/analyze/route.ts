@@ -87,8 +87,8 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
 
     // 初始化Gemini API
     const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({ 
-      model: "gemini-1.5-pro",
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
       generationConfig: {
         temperature: 0.2,
         maxOutputTokens: 800,
