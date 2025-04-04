@@ -11,8 +11,8 @@ const nextConfig = {
   },
   experimental: {
     turbo: {
-      loaders: {
-        '.svg': ['@svgr/webpack'],
+      rules: {
+        '*.svg': ['@svgr/webpack'],
       },
       resolveAlias: {
         // 這裡可以添加自定義別名解析
