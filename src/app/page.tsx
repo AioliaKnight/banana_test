@@ -218,7 +218,7 @@ export default function Home() {
               </div>
             </h2>
             <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
-              只需上傳照片，<span className="font-semibold">30秒內</span>獲取專業分析評測。先進AI技術精準測量長度、粗細與新鮮度，
+              只需上傳照片，<span className="font-semibold">3秒內</span>獲取專業分析評測。先進AI技術精準測量長度、粗細與新鮮度，
               給您最客觀的評分和建議。無需註冊，<span className="font-semibold">隱私安全有保障</span>。
             </p>
             
