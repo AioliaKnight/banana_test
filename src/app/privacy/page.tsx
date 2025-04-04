@@ -34,7 +34,7 @@ export default function PrivacyPage() {
             
             <div className="prose prose-slate max-w-none">
               <p className="mb-4">
-                本隱私政策描述了TopBana AI（以下簡稱"我們"、"本服務"）如何收集、使用和披露您的信息。
+                本隱私政策描述了TopBana AI（以下簡稱&quot;我們&quot;、&quot;本服務&quot;）如何收集、使用和披露您的信息。
                 我們重視您的隱私，並致力於保護您的個人資料。使用本服務即表示您同意本隱私政策中描述的做法。
               </p>
 
