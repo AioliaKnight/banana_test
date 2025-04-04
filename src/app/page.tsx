@@ -5,6 +5,7 @@ import { motion } from "framer-motion";
 import ImageUploader from "@/components/ImageUploader";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import { HiOutlineChevronDown } from "react-icons/hi";
+import Link from "next/link";
 
 // 上傳限制常數
 const DAILY_UPLOAD_LIMIT = 10;
@@ -684,9 +685,9 @@ export default function Home() {
             </p>
           </div>
           <div className="flex items-center gap-4 sm:gap-6 mt-4 sm:mt-0">
-            <a href="#" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">使用條款</a>
-            <a href="#" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">隱私政策</a>
-            <a href="#" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">常見問題</a>
+            <Link href="/terms" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">使用條款</Link>
+            <Link href="/privacy" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">隱私政策</Link>
+            <Link href="/faq" className="text-sm text-slate-700 hover:text-blue-600 transition-colors p-2 font-medium">常見問題</Link>
           </div>
         </div>
       </footer>
