@@ -17,11 +17,11 @@ const jakarta = Plus_Jakarta_Sans({
 
 export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3000'),
-  title: "AI 蔬果分析器 | 專業評測小黃瓜與香蕉",
+  title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
   description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。保護隱私，無需註冊，立即分析。",
   keywords: "蔬果分析, AI分析, 小黃瓜分析, 香蕉分析, 蔬果評分, 人工智慧, 長度評測, 粗細評測",
-  authors: [{ name: "AI蔬果實驗室" }],
-  creator: "AI蔬果實驗室",
+  authors: [{ name: "AI香蕉與小黃瓜實驗室" }],
+  creator: "AI香蕉與小黃瓜實驗室",
   viewport: {
     width: 'device-width',
     initialScale: 1,
@@ -39,24 +39,24 @@ export const metadata: Metadata = {
   appleWebApp: {
     capable: true,
     statusBarStyle: 'default',
-    title: 'AI蔬果分析器',
+    title: 'AI香蕉與小黃瓜分析器',
   },
   openGraph: {
     type: "website",
-    title: "AI 蔬果分析器 | 專業評測小黃瓜與香蕉",
+    title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
     description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。",
     images: [
       {
         url: "/og-image.png",
         width: 1200,
         height: 630,
-        alt: "AI 蔬果分析器",
+        alt: "AI 香蕉與小黃瓜分析器",
       },
     ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "AI 蔬果分析器 | 專業評測小黃瓜與香蕉",
+    title: "AI 香蕉與小黃瓜分析器 | 專業評測長度與粗細",
     description: "上傳小黃瓜或香蕉照片，獲得AI專業評測與評分。",
     images: ["/og-image.png"],
   },

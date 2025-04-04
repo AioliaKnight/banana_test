@@ -105,8 +105,12 @@ export default function Home() {
         {/* 頂部導航和 GitHub 連結 */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-3xl font-bold text-slate-800">
-              <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-violet-500">AI蔬果</span>分析器
+            <h1 className="text-2xl sm:text-3xl font-bold text-slate-800">
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-500 to-blue-600">AI</span>
+              <span className="text-yellow-500">香蕉</span>
+              <span className="text-slate-700">與</span>
+              <span className="text-green-600">小黃瓜</span>
+              <span className="text-slate-800">分析器</span>
             </h1>
             <a 
               href="https://github.com/yourusername/cucumber-banana-analyzer" 
@@ -177,7 +181,7 @@ export default function Home() {
       {/* 關於區塊 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-16 sm:py-20">
         <div className="max-w-4xl mx-auto">
-          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-800">關於 AI蔬果分析器</h2>
+          <h2 className="text-2xl sm:text-3xl font-bold mb-6 sm:mb-8 text-slate-800">關於 AI香蕉與小黃瓜分析器</h2>
           
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6 sm:gap-8">
             <div className="card card-hover">
@@ -219,7 +223,7 @@ export default function Home() {
       <footer className="container mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 border-t border-slate-200">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row justify-between items-center">
           <p className="text-slate-500 text-sm">
-            © {new Date().getFullYear()} AI蔬果分析器 - 所有權利保留
+            © {new Date().getFullYear()} AI香蕉與小黃瓜分析器 - 所有權利保留
           </p>
           <div className="flex items-center gap-4 sm:gap-6 mt-4 sm:mt-0">
             <a href="#" className="text-sm text-slate-500 hover:text-slate-700 transition-colors p-2">使用條款</a>
