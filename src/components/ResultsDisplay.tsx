@@ -52,26 +52,12 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     
     // 生成預設分享圖片
     if (!shareImageUrl) {
-      // 內聯generateShareImage以避免依賴問題
-      const generateImage = async () => {
-        if (!canvasRef.current) return;
-        setIsGeneratingImage(true);
-        try {
-          // 執行圖片生成邏輯
-          // ... 圖片生成邏輯 ...
-          // 模擬生成並設置URL
-          await new Promise(resolve => setTimeout(resolve, 100));
-          
-          // 在這裡我們只是設置一個簡單的值來避免重複觸發
-          setShareImageUrl("generated-image");
-        } catch (err) {
-          console.error("Error generating share image", err);
-        } finally {
-          setIsGeneratingImage(false);
+      // 直接調用實際的圖片生成函數
+      generateShareImage().then(url => {
+        if (url) {
+          setShareImageUrl(url);
         }
-      };
-      
-      generateImage();
+      });
     }
     
     // 動態更新meta標籤
@@ -85,6 +71,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     if (ogImage && shareImageUrl) {
       ogImage.setAttribute('content', shareImageUrl);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareImageUrl, isClient]);
 
   const scoreColor = result.score >= 8 
@@ -182,7 +169,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.fillStyle = lineGradient;
         ctx.fillRect(50, 70, 200, 4);
         
-        // 添加分數 - 放在頂部中央
+        // 添加分數
         const scoreColorValue = result.score >= 8 
           ? '#10b981' // 綠色
           : result.score >= 6 
@@ -230,25 +217,241 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, canvasWidth/2, 260);
         ctx.textAlign = 'start';
         
-        // 載入預覽圖片
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = preview;
+        try {
+          // 載入預覽圖片
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = (e) => {
+              console.error('圖片載入失敗:', e);
+              reject(new Error('圖片載入失敗'));
+            };
+            img.src = preview;
+          });
+          
+          // 繪製預覽圖片（置中）
+          const imgWidth = canvasWidth - 100;
+          const imgHeight = 320;
+          const imgX = 50;
+          const imgY = 290;
+          
+          // 繪製圖片框
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
+          ctx.fill();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+          ctx.shadowBlur = 15;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 5;
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          // 清除陰影，避免影響後續繪製
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          
+          // 繪製圖片
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
+          ctx.clip();
+          
+          // 計算要繪製的圖片大小（保持比例）
+          const aspectRatio = img.width / img.height;
+          let sWidth, sHeight, sx, sy;
+          
+          if(aspectRatio > imgWidth / imgHeight) {
+            // 圖片較寬
+            sHeight = img.height;
+            sWidth = imgHeight * aspectRatio;
+            sx = (img.width - sWidth) / 2;
+            sy = 0;
+          } else {
+            // 圖片較高
+            sWidth = img.width;
+            sHeight = img.width / aspectRatio;
+            sx = 0;
+            sy = (img.height - sHeight) / 2;
+          }
+          
+          ctx.drawImage(img, 0, 0, img.width, img.height, imgX, imgY, imgWidth, imgHeight);
+          ctx.restore();
+        } catch (imgError) {
+          console.error('載入圖片失敗:', imgError);
+          // 如果圖片載入失敗，繪製一個替代區塊
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(50, 290, canvasWidth - 100, 320);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('圖片載入失敗', canvasWidth / 2, 290 + 160);
+          ctx.textAlign = 'start';
+        }
+        
+        // 添加分析數據
+        const statY = 650;
+        const statGap = 110;
+        
+        // 長度
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 64px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText(result.length.toString(), canvasWidth / 4, statY);
+        ctx.font = '18px sans-serif';
+        ctx.fillText('厘米', canvasWidth / 4, statY + 30);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('長度', canvasWidth / 4, statY + 60);
+        
+        // 粗細
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 64px sans-serif';
+        ctx.fillText(result.thickness.toString(), canvasWidth * 3 / 4, statY);
+        ctx.font = '18px sans-serif';
+        ctx.fillText('厘米', canvasWidth * 3 / 4, statY + 30);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('粗細', canvasWidth * 3 / 4, statY + 60);
+        
+        // 新鮮度
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 64px sans-serif';
+        ctx.fillText(result.freshness.toString(), canvasWidth / 4, statY + statGap);
+        ctx.font = '18px sans-serif';
+        ctx.fillText('/ 10', canvasWidth / 4, statY + statGap + 30);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('新鮮度', canvasWidth / 4, statY + statGap + 60);
+        
+        // 總評分
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 64px sans-serif';
+        ctx.fillText(result.score.toFixed(1), canvasWidth * 3 / 4, statY + statGap);
+        ctx.font = '18px sans-serif';
+        ctx.fillText('/ 10', canvasWidth * 3 / 4, statY + statGap + 30);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('總評分', canvasWidth * 3 / 4, statY + statGap + 60);
+        
+        // 添加評語
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'left';
+        ctx.fillText('專業評語：', 50, statY + statGap * 2);
+        
+        // 換行處理評語文字
+        ctx.font = '18px sans-serif';
+        const comment = result.comment;
+        const commentWidth = canvasWidth - 100;
+        const commentLines = wrapTextChinese(ctx, comment, 50, statY + statGap * 2 + 35, commentWidth, 28);
+        
+        // 繪製評語
+        commentLines.forEach(line => {
+          ctx.fillText(line.text, line.x, line.y);
         });
         
-        // 繪製預覽圖片（置中）
-        const imgWidth = canvasWidth - 100;
-        const imgHeight = 320;
-        const imgX = 50;
-        const imgY = 290;
+        // 添加網站連結
+        ctx.fillStyle = '#64748b';
+        ctx.font = '16px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('AI蔬果分析器 - aifruit.example.com', canvasWidth / 2, canvasHeight - 40);
+      } else {
+        // 桌面版水平布局
+        // 添加標題和logo
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText('AI蔬果分析器', 50, 80);
         
-        // 繪製圖片框
+        // 添加漸變標題底線
+        const lineGradient = ctx.createLinearGradient(50, 90, 250, 90);
+        lineGradient.addColorStop(0, '#3b82f6');
+        lineGradient.addColorStop(1, '#8b5cf6');
+        ctx.fillStyle = lineGradient;
+        ctx.fillRect(50, 90, 180, 3);
+        
+        try {
+          // 載入預覽圖片
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          
+          await new Promise((resolve, reject) => {
+            img.onload = resolve;
+            img.onerror = (e) => {
+              console.error('圖片載入失敗:', e);
+              reject(new Error('圖片載入失敗'));
+            };
+            img.src = preview;
+          });
+          
+          // 繪製預覽圖片
+          const imgWidth = 500;
+          const imgHeight = 400;
+          const imgX = 50;
+          const imgY = 130;
+          
+          // 繪製圖片框
+          ctx.fillStyle = '#ffffff';
+          ctx.beginPath();
+          ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
+          ctx.fill();
+          ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
+          ctx.shadowBlur = 15;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 5;
+          ctx.strokeStyle = '#e2e8f0';
+          ctx.lineWidth = 1;
+          ctx.stroke();
+          
+          // 清除陰影
+          ctx.shadowColor = 'transparent';
+          ctx.shadowBlur = 0;
+          ctx.shadowOffsetX = 0;
+          ctx.shadowOffsetY = 0;
+          
+          // 繪製圖片
+          ctx.save();
+          ctx.beginPath();
+          ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
+          ctx.clip();
+          
+          // 計算繪製區域（保持圖片比例）
+          const aspectRatio = img.width / img.height;
+          let sWidth, sHeight, sx, sy;
+          
+          if(aspectRatio > imgWidth / imgHeight) {
+            // 圖片較寬
+            sHeight = img.height;
+            sWidth = imgHeight * aspectRatio;
+            sx = (img.width - sWidth) / 2;
+            sy = 0;
+          } else {
+            // 圖片較高
+            sWidth = img.width;
+            sHeight = img.width / aspectRatio;
+            sx = 0;
+            sy = (img.height - sHeight) / 2;
+          }
+          
+          ctx.drawImage(img, 0, 0, img.width, img.height, imgX, imgY, imgWidth, imgHeight);
+          ctx.restore();
+        } catch (imgError) {
+          console.error('載入圖片失敗:', imgError);
+          // 如果圖片載入失敗，繪製替代區塊
+          ctx.fillStyle = '#f1f5f9';
+          ctx.fillRect(50, 130, 500, 400);
+          ctx.fillStyle = '#94a3b8';
+          ctx.font = '24px sans-serif';
+          ctx.textAlign = 'center';
+          ctx.fillText('圖片載入失敗', 50 + 250, 130 + 200);
+          ctx.textAlign = 'start';
+        }
+        
+        // 添加分析結果區域
         ctx.fillStyle = '#ffffff';
         ctx.beginPath();
-        ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
+        ctx.roundRect(600, 130, 550, 400, 15);
         ctx.fill();
         ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
         ctx.shadowBlur = 15;
@@ -258,151 +461,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.lineWidth = 1;
         ctx.stroke();
         
-        // 清除陰影，避免影響後續繪製
+        // 清除陰影
         ctx.shadowColor = 'transparent';
         ctx.shadowBlur = 0;
         ctx.shadowOffsetX = 0;
         ctx.shadowOffsetY = 0;
         
-        // 繪製圖片
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
-        ctx.clip();
-        
-        // 計算保持圖像比例的繪製尺寸
-        const imgRatio = img.width / img.height;
-        let drawWidth = imgWidth;
-        let drawHeight = imgWidth / imgRatio;
-        
-        if (drawHeight > imgHeight) {
-          drawHeight = imgHeight;
-          drawWidth = imgHeight * imgRatio;
-        }
-        
-        // 居中繪製
-        const offsetX = (imgWidth - drawWidth) / 2;
-        const offsetY = (imgHeight - drawHeight) / 2;
-        
-        ctx.drawImage(
-          img, 
-          imgX + offsetX, 
-          imgY + offsetY, 
-          drawWidth, 
-          drawHeight
-        );
-        ctx.restore();
-        
-        // 繪製參數區塊（垂直排列）
-        const statsWidth = canvasWidth - 100;
-        const statHeight = 80;
-        const statsX = 50;
-        let currentY = imgY + imgHeight + 40;
-        
-        // 繪製參數區塊陰影和背景
-        const bgColors = ['#eff6ff', '#f5f3ff', '#ecfdf5'];
-        const icons = ['📏', '⭕', '🌟'];
-        const titles = ['長度', '粗細', '新鮮度'];
-        const values = [`${result.length} cm`, `${result.thickness} cm`, `${result.freshness}/10`];
-        const colors = ['#3b82f6', '#8b5cf6', '#10b981'];
-        
-        for (let i = 0; i < 3; i++) {
-          // 底部陰影
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-          ctx.beginPath();
-          ctx.roundRect(statsX + 5, currentY + 5, statsWidth, statHeight, 15);
-          ctx.fill();
-          
-          // 背景
-          ctx.fillStyle = bgColors[i];
-          ctx.beginPath();
-          ctx.roundRect(statsX, currentY, statsWidth, statHeight, 15);
-          ctx.fill();
-          
-          // 繪製圖示和文字
-          ctx.font = '24px sans-serif';
-          ctx.fillText(icons[i], statsX + 30, currentY + statHeight/2 + 8);
-          
-          // 標題
-          ctx.fillStyle = '#64748b';
-          ctx.font = '20px sans-serif';
-          ctx.fillText(titles[i], statsX + 80, currentY + statHeight/2 - 5);
-          
-          // 數值
-          ctx.fillStyle = colors[i];
-          ctx.font = 'bold 24px sans-serif';
-          ctx.fillText(values[i], statsX + 80, currentY + statHeight/2 + 25);
-          
-          currentY += statHeight + 20;
-        }
-        
-        // 繪製評語區塊
-        const commentWidth = canvasWidth - 100;
-        const commentHeight = 240;
-        const commentX = 50;
-        const commentY = currentY + 20;
-        
-        // 繪製評語區塊陰影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.beginPath();
-        ctx.roundRect(commentX + 5, commentY + 5, commentWidth, commentHeight, 15);
-        ctx.fill();
-        
-        // 繪製評語區塊背景
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.roundRect(commentX, commentY, commentWidth, commentHeight, 15);
-        ctx.fill();
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        
-        // 繪製評語標題背景
-        ctx.fillStyle = '#fef3c7';
-        ctx.beginPath();
-        ctx.roundRect(commentX + 20, commentY + 20, 110, 40, 8);
-        ctx.fill();
-        
-        // 繪製評語標題
-        ctx.fillStyle = '#d97706';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText('💡 AI評語', commentX + 30, commentY + 48);
-        
-        // 繪製評語文字
-        ctx.font = '20px sans-serif';
-        ctx.fillStyle = '#475569';
-        
-        // 使用優化的中文換行函數
-        const commentLines = wrapTextChinese(
-          ctx, 
-          result.comment, 
-          commentX + 30, 
-          commentY + 85, 
-          commentWidth - 60, 
-          32
-        );
-        
-        commentLines.forEach(line => {
-          ctx.fillText(line.text, line.x, line.y);
-        });
-      } else {
-        // 桌面版水平布局，保持原樣
-        // 添加標題
+        // 添加蔬果類型標題
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 52px sans-serif';
-        ctx.fillText('AI蔬果分析器', 50, 80);
-        
-        // 添加漸變標題底線
-        const lineGradient = ctx.createLinearGradient(50, 90, 300, 90);
-        lineGradient.addColorStop(0, '#3b82f6');
-        lineGradient.addColorStop(1, '#8b5cf6');
-        ctx.fillStyle = lineGradient;
-        ctx.fillRect(50, 90, 250, 4);
-        
-        // 添加日期
-        ctx.fillStyle = '#94a3b8';
-        ctx.font = '20px sans-serif';
-        ctx.fillText(new Date().toLocaleDateString(), canvas.width - 200, canvas.height - 40);
+        ctx.font = 'bold 28px sans-serif';
+        ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 630, 170);
         
         // 添加分數
         const scoreColorValue = result.score >= 8 
@@ -412,18 +480,14 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             : '#f59e0b'; // 琥珀色
         
         // 繪製分數背景
-        const scoreX = canvas.width - 180;
-        const scoreY = 50;
-        const scoreSize = 130;
+        const scoreSize = 100;
+        const scoreX = 1050;
+        const scoreY = 135;
         
         // 繪製光暈效果
         const scoreGlow = ctx.createRadialGradient(
-          scoreX + scoreSize/2, 
-          scoreY + scoreSize/2, 
-          scoreSize/4,
-          scoreX + scoreSize/2, 
-          scoreY + scoreSize/2, 
-          scoreSize
+          scoreX, scoreY, scoreSize/4,
+          scoreX, scoreY, scoreSize
         );
         scoreGlow.addColorStop(0, scoreColorValue + '40'); // 40% 透明度
         scoreGlow.addColorStop(1, 'rgba(255,255,255,0)');
@@ -433,268 +497,140 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         // 繪製分數背景
         ctx.fillStyle = scoreColorValue;
         ctx.beginPath();
-        ctx.roundRect(scoreX, scoreY, scoreSize, scoreSize, 20);
+        ctx.arc(scoreX, scoreY, scoreSize/2, 0, Math.PI * 2);
         ctx.fill();
         
         // 繪製分數文字
         ctx.fillStyle = '#ffffff';
-        ctx.font = 'bold 72px sans-serif';
+        ctx.font = 'bold 38px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText(result.score.toFixed(1), scoreX + scoreSize/2, scoreY + scoreSize/2 + 20);
-        ctx.font = 'bold 20px sans-serif';
-        ctx.fillText('評分', scoreX + scoreSize/2, scoreY + scoreSize - 20);
+        ctx.fillText(result.score.toFixed(1), scoreX, scoreY + 12);
         ctx.textAlign = 'start';
         
-        // 添加蔬果類型
+        // 添加分析數據
+        const statX = 630;
+        const statY = 220;
+        const statGap = 100;
+        
+        // 長度
         ctx.fillStyle = '#1e293b';
-        ctx.font = 'bold 42px sans-serif';
-        ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 50, 170);
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('長度', statX, statY);
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(result.length.toString(), statX, statY + 40);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('厘米', statX + 60, statY + 40);
         
-        // 載入預覽圖片
-        const img = new Image();
-        img.crossOrigin = 'anonymous';
-        await new Promise((resolve, reject) => {
-          img.onload = resolve;
-          img.onerror = reject;
-          img.src = preview;
-        });
+        // 粗細
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('粗細', statX + 200, statY);
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(result.thickness.toString(), statX + 200, statY + 40);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('厘米', statX + 260, statY + 40);
         
-        // 繪製預覽圖片（左側）
-        const imgX = 50;
-        const imgY = 200;
-        const imgWidth = 350;
-        const imgHeight = 350;
+        // 新鮮度
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 16px sans-serif';
+        ctx.fillText('新鮮度', statX, statY + statGap);
+        ctx.font = 'bold 36px sans-serif';
+        ctx.fillText(result.freshness.toString(), statX, statY + statGap + 40);
+        ctx.font = '16px sans-serif';
+        ctx.fillText('/ 10', statX + 60, statY + statGap + 40);
         
-        // 繪製圖片框
-        ctx.fillStyle = '#ffffff';
-        ctx.beginPath();
-        ctx.roundRect(imgX - 10, imgY - 10, imgWidth + 20, imgHeight + 20, 15);
-        ctx.fill();
-        ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
-        ctx.shadowBlur = 15;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 5;
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.stroke();
+        // 添加評語
+        ctx.fillStyle = '#1e293b';
+        ctx.font = 'bold 18px sans-serif';
+        ctx.fillText('專業評語：', statX, statY + statGap * 2);
         
-        // 清除陰影，避免影響後續繪製
-        ctx.shadowColor = 'transparent';
-        ctx.shadowBlur = 0;
-        ctx.shadowOffsetX = 0;
-        ctx.shadowOffsetY = 0;
+        // 換行處理評語文字
+        ctx.font = '16px sans-serif';
+        const comment = result.comment;
+        const commentWidth = 500;
+        const commentLines = wrapTextChinese(ctx, comment, statX, statY + statGap * 2 + 30, commentWidth, 24);
         
-        // 繪製圖片
-        ctx.save();
-        ctx.beginPath();
-        ctx.roundRect(imgX, imgY, imgWidth, imgHeight, 10);
-        ctx.clip();
-        
-        // 計算保持圖像比例的繪製尺寸
-        const imgRatio = img.width / img.height;
-        let drawWidth = imgWidth;
-        let drawHeight = imgWidth / imgRatio;
-        
-        if (drawHeight > imgHeight) {
-          drawHeight = imgHeight;
-          drawWidth = imgHeight * imgRatio;
-        }
-        
-        // 居中繪製
-        const offsetX = (imgWidth - drawWidth) / 2;
-        const offsetY = (imgHeight - drawHeight) / 2;
-        
-        ctx.drawImage(
-          img, 
-          imgX + offsetX, 
-          imgY + offsetY, 
-          drawWidth, 
-          drawHeight
-        );
-        ctx.restore();
-        
-        // 繪製參數區塊（右側）
-        const statsX = 450;
-        const statsY = 200;
-        const statWidth = 200;
-        const statHeight = 140;
-        const statGap = 25;
-        
-        // 繪製參數區塊陰影和背景
-        for (let i = 0; i < 3; i++) {
-          const curX = statsX + (statWidth + statGap) * i;
-          
-          // 底部陰影
-          ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-          ctx.beginPath();
-          ctx.roundRect(curX + 5, statsY + 5, statWidth, statHeight, 15);
-          ctx.fill();
-          
-          // 背景
-          const bgColors = ['#eff6ff', '#f5f3ff', '#ecfdf5'];
-          ctx.fillStyle = bgColors[i];
-          ctx.beginPath();
-          ctx.roundRect(curX, statsY, statWidth, statHeight, 15);
-          ctx.fill();
-        }
-        
-        // 繪製圖示和文字
-        const icons = ['📏', '⭕', '🌟'];
-        const titles = ['長度', '粗細', '新鮮度'];
-        const values = [`${result.length} cm`, `${result.thickness} cm`, `${result.freshness}/10`];
-        const colors = ['#3b82f6', '#8b5cf6', '#10b981'];
-        
-        for (let i = 0; i < 3; i++) {
-          const curX = statsX + (statWidth + statGap) * i;
-          
-          // 圖示
-          ctx.font = '36px sans-serif';
-          ctx.textAlign = 'center';
-          ctx.fillText(icons[i], curX + statWidth/2, statsY + 50);
-          
-          // 標題
-          ctx.fillStyle = '#64748b';
-          ctx.font = '24px sans-serif';
-          ctx.fillText(titles[i], curX + statWidth/2, statsY + 90);
-          
-          // 數值
-          ctx.fillStyle = colors[i];
-          ctx.font = 'bold 30px sans-serif';
-          ctx.fillText(values[i], curX + statWidth/2, statsY + 130);
-        }
-        
-        ctx.textAlign = 'start';
-        
-        // 繪製評語區塊
-        const commentX = 450;
-        const commentY = 370;
-        const commentWidth = 700;
-        const commentHeight = 200;
-        
-        // 繪製評語區塊陰影
-        ctx.fillStyle = 'rgba(0, 0, 0, 0.05)';
-        ctx.beginPath();
-        ctx.roundRect(commentX + 5, commentY + 5, commentWidth, commentHeight, 15);
-        ctx.fill();
-        
-        // 繪製評語區塊背景
-        ctx.fillStyle = '#f8fafc';
-        ctx.beginPath();
-        ctx.roundRect(commentX, commentY, commentWidth, commentHeight, 15);
-        ctx.fill();
-        ctx.strokeStyle = '#e2e8f0';
-        ctx.lineWidth = 1;
-        ctx.stroke();
-        
-        // 繪製評語標題背景
-        ctx.fillStyle = '#fef3c7';
-        ctx.beginPath();
-        ctx.roundRect(commentX + 20, commentY + 20, 110, 40, 8);
-        ctx.fill();
-        
-        // 繪製評語標題
-        ctx.fillStyle = '#d97706';
-        ctx.font = 'bold 28px sans-serif';
-        ctx.fillText('💡 AI評語', commentX + 30, commentY + 48);
-        
-        // 繪製評語文字
-        ctx.font = '24px sans-serif';
-        ctx.fillStyle = '#475569';
-        
-        // 使用優化的中文換行函數
-        const commentLines = wrapTextChinese(
-          ctx, 
-          result.comment, 
-          commentX + 30, 
-          commentY + 85, 
-          commentWidth - 60, 
-          36
-        );
-        
+        // 繪製評語
         commentLines.forEach(line => {
           ctx.fillText(line.text, line.x, line.y);
         });
       }
-      
-      // 繪製品牌水印
-      ctx.fillStyle = 'rgba(59, 130, 246, 0.8)';
-      ctx.font = 'bold 24px sans-serif';
-      ctx.fillText(hashtag, 50, canvas.height - 40);
-      
-      // 繪製網址
-      ctx.fillStyle = '#64748b';
-      ctx.font = '16px sans-serif';
-      ctx.textAlign = 'right';
-      ctx.fillText('AI蔬果分析平台 | cucumber-banana-analyzer.com', canvas.width - 50, canvas.height - 40);
-      ctx.textAlign = 'start';
-      
+
       // 生成圖片URL
       const dataUrl = canvas.toDataURL('image/png');
-      setShareImageUrl(dataUrl);
       return dataUrl;
     } catch (error) {
-      console.error('生成分享圖片失敗:', error);
+      console.error('Error generating share image:', error);
       return null;
     } finally {
       setIsGeneratingImage(false);
     }
   };
 
-  const downloadImage = async () => {
-    let imgUrl = shareImageUrl;
-    
-    if (!imgUrl) {
-      imgUrl = await generateShareImage();
-      if (!imgUrl) {
-        alert('生成分享圖片失敗，請稍後再試');
-        return;
-      }
-    }
-    
-    const link = document.createElement('a');
-    link.download = `AI蔬果分析_${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}_${new Date().getTime()}.png`;
-    link.href = imgUrl;
-    link.click();
-  };
-
-  const handleShareClick = async (platform: 'facebook' | 'twitter' | 'line') => {
+  // 處理分享動作
+  const handleShare = (platform: 'facebook' | 'twitter' | 'line') => {
     setSelectedPlatform(platform);
     
     if (!shareImageUrl) {
-      const imgUrl = await generateShareImage();
-      if (!imgUrl) {
-        alert('生成分享圖片失敗，請稍後再試');
-        return;
-      }
-      
-      // 自動顯示圖片預覽
-      setShowImagePreview(true);
+      setIsGeneratingImage(true);
+      generateShareImage().then(url => {
+        if (url) {
+          setShareImageUrl(url);
+        }
+        setShowImagePreview(true);
+        setIsGeneratingImage(false);
+      });
     } else {
-      // 已經有圖片URL，直接顯示預覽
       setShowImagePreview(true);
     }
   };
-
-  const shareToSelectedPlatform = () => {
-    if (!selectedPlatform || !shareImageUrl) return;
+  
+  // 處理下載圖片
+  const handleDownload = () => {
+    if (!shareImageUrl) {
+      setIsGeneratingImage(true);
+      generateShareImage().then(url => {
+        if (url) {
+          setShareImageUrl(url);
+          downloadImage(url);
+        }
+        setIsGeneratingImage(false);
+      });
+    } else {
+      downloadImage(shareImageUrl);
+    }
+  };
+  
+  // 下載圖片
+  const downloadImage = (url: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}_分析結果.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+  
+  // 確認分享到社交媒體
+  const confirmShare = () => {
+    if (!shareImageUrl || !selectedPlatform) return;
     
-    // 確保有生成分享圖片
-    const finalShareText = `${shareTitle}\n${shareDescription}\n${hashtag}\n查看我的完整分析結果：`;
+    let shareUrl = '';
     
     switch (selectedPlatform) {
       case 'facebook':
-        window.open(`https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(shareUrl)}&quote=${encodeURIComponent(finalShareText)}`, '_blank');
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareTitle)}`;
         break;
       case 'twitter':
-        window.open(`https://twitter.com/intent/tweet?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}&hashtags=${hashtag.replace('#', '')}`, '_blank');
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}&url=${encodeURIComponent(window.location.href)}&hashtags=${encodeURIComponent(hashtag.replace('#', ''))}`;
         break;
       case 'line':
-        window.open(`https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(shareUrl)}&text=${encodeURIComponent(finalShareText)}`, '_blank');
+        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}`;
         break;
     }
     
-    // 重置選擇的平台
-    setSelectedPlatform(null);
+    // 開啟分享視窗
+    window.open(shareUrl, '_blank', 'width=600,height=600');
     setShowImagePreview(false);
   };
 
@@ -727,7 +663,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               </button>
               <button 
                 className="btn btn-outline flex items-center gap-2 text-sm py-2.5 px-4"
-                onClick={downloadImage}
+                onClick={handleDownload}
               >
                 <FaDownload className="h-4 w-4" />
                 下載圖片
@@ -735,7 +671,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               {selectedPlatform && (
                 <button 
                   className="btn btn-primary flex items-center gap-2 text-sm py-2.5 px-4"
-                  onClick={shareToSelectedPlatform}
+                  onClick={confirmShare}
                 >
                   <FaShareAlt className="h-4 w-4" />
                   {`分享到${selectedPlatform === 'facebook' ? 'Facebook' : selectedPlatform === 'twitter' ? 'Twitter' : 'Line'}`}
@@ -883,7 +819,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             <div className="flex flex-col md:flex-row gap-3 w-full justify-center">
               <button 
                 className="btn btn-outline flex items-center justify-center gap-2 md:w-auto w-full text-sm py-2.5 px-4"
-                onClick={downloadImage}
+                onClick={handleDownload}
                 disabled={isGeneratingImage}
               >
                 {isGeneratingImage ? (
@@ -907,7 +843,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                 whileHover={{ scale: 1.1 }} 
                 whileTap={{ scale: 0.9 }}
                 className="bg-[#1877F2] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShareClick('facebook')}
+                onClick={() => handleShare('facebook')}
                 disabled={isGeneratingImage}
                 aria-label="分享到Facebook"
               >
@@ -918,7 +854,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                 whileHover={{ scale: 1.1 }} 
                 whileTap={{ scale: 0.9 }}
                 className="bg-[#1DA1F2] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShareClick('twitter')}
+                onClick={() => handleShare('twitter')}
                 disabled={isGeneratingImage}
                 aria-label="分享到Twitter"
               >
@@ -929,7 +865,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                 whileHover={{ scale: 1.1 }} 
                 whileTap={{ scale: 0.9 }}
                 className="bg-[#06C755] rounded-full w-12 h-12 flex items-center justify-center text-white shadow-md"
-                onClick={() => handleShareClick('line')}
+                onClick={() => handleShare('line')}
                 disabled={isGeneratingImage}
                 aria-label="分享到Line"
               >
