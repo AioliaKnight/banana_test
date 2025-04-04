@@ -1,10 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import ImageUploader from "@/components/ImageUploader";
 import ResultsDisplay from "@/components/ResultsDisplay";
 import { HiOutlineChevronDown } from "react-icons/hi";
+
+// 上傳限制常數
+const DAILY_UPLOAD_LIMIT = 10;
+const UPLOAD_COUNTER_KEY = 'cucumber_banana_daily_uploads';
 
 interface ApiError {
   code: 'INVALID_OBJECT' | 'MULTIPLE_OBJECTS' | 'LOW_QUALITY' | 'API_ERROR' | 'GENERAL_ERROR';
@@ -26,8 +30,70 @@ export default function Home() {
   const [loading, setLoading] = useState(false);
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  // 剩餘上傳次數
+  const [remainingUploads, setRemainingUploads] = useState<number>(DAILY_UPLOAD_LIMIT);
+
+  // 初始化和檢查上傳次數限制
+  useEffect(() => {
+    // 獲取當前日期
+    const today = new Date().toISOString().split('T')[0];
+    
+    // 檢查local storage中的上傳記錄
+    const uploadRecord = localStorage.getItem(UPLOAD_COUNTER_KEY);
+    let uploadData = { date: today, count: 0 };
+    
+    if (uploadRecord) {
+      try {
+        const savedData = JSON.parse(uploadRecord);
+        // 如果日期相同，使用保存的計數
+        // 如果日期不同，重置計數
+        uploadData = savedData.date === today 
+          ? savedData 
+          : { date: today, count: 0 };
+      } catch (e) {
+        console.error('解析上傳記錄時出錯:', e);
+      }
+    }
+    
+    // 設置剩餘上傳次數
+    setRemainingUploads(Math.max(0, DAILY_UPLOAD_LIMIT - uploadData.count));
+    
+    // 保存回 localStorage
+    localStorage.setItem(UPLOAD_COUNTER_KEY, JSON.stringify(uploadData));
+  }, []);
+
+  // 增加上傳計數
+  const incrementUploadCount = () => {
+    const today = new Date().toISOString().split('T')[0];
+    const uploadRecord = localStorage.getItem(UPLOAD_COUNTER_KEY);
+    
+    let uploadData = { date: today, count: 1 };
+    
+    if (uploadRecord) {
+      try {
+        const savedData = JSON.parse(uploadRecord);
+        if (savedData.date === today) {
+          uploadData = { 
+            date: today, 
+            count: savedData.count + 1 
+          };
+        }
+      } catch (e) {
+        console.error('解析上傳記錄時出錯:', e);
+      }
+    }
+    
+    localStorage.setItem(UPLOAD_COUNTER_KEY, JSON.stringify(uploadData));
+    setRemainingUploads(Math.max(0, DAILY_UPLOAD_LIMIT - uploadData.count));
+  };
 
   const handleImageUpload = (file: File) => {
+    // 檢查是否達到上傳限制
+    if (remainingUploads <= 0) {
+      setError('很抱歉，您已達到今日分析次數限制（10次/天）。請明天再試。');
+      return;
+    }
+    
     setImage(file);
     setPreview(URL.createObjectURL(file));
     setAnalysisResult(null);
@@ -36,6 +102,12 @@ export default function Home() {
 
   const handleAnalyze = async () => {
     if (!image) return;
+
+    // 再次檢查是否達到上傳限制
+    if (remainingUploads <= 0) {
+      setError('很抱歉，您已達到今日分析次數限制（10次/天）。請明天再試。');
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -65,6 +137,9 @@ export default function Home() {
 
       const data = await response.json();
       setAnalysisResult(data);
+      
+      // 分析成功後增加計數
+      incrementUploadCount();
     } catch (err: unknown) {
       console.error("Analysis error:", err);
       setError(err instanceof Error ? err.message : "分析時發生未知錯誤");
@@ -140,6 +215,13 @@ export default function Home() {
             <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
               上傳照片，立即獲取專業分析評測。先進AI技術精準測量長度與粗細，保護隱私無需註冊，享受快速準確的評分體驗。
             </p>
+            
+            {/* 顯示剩餘分析次數 */}
+            <div className="mt-3 bg-blue-50 rounded-full px-4 py-1 inline-flex items-center">
+              <span className="text-sm text-blue-700">
+                今日剩餘分析次數: <strong>{remainingUploads}</strong>/10
+              </span>
+            </div>
           </motion.div>
 
           {/* 主內容卡片 */}
