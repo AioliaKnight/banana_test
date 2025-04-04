@@ -208,7 +208,8 @@ export default function Home() {
                 "name": "台灣第一香蕉AI量測站 | TopBana AI 智能分析蔬果",
                 "isPartOf": { "@id": "https://topbana.ai/#website" },
                 "about": { "@id": "https://topbana.ai/#organization" },
-                "description": "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度。3秒快速分析，隱私安全有保障",
+                "description": "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度。提供香蕉AI量測、蔬果尺寸檢測、數位化農產品分級與智能品質評估服務。",
+                "keywords": "香蕉AI量測, 蔬果智能檢測, 香蕉長度測量, 黃瓜尺寸分析, AI蔬果評分, 線上量測工具",
                 "inLanguage": "zh-TW",
                 "potentialAction": [
                   {
@@ -219,9 +220,10 @@ export default function Home() {
               },
               {
                 "@type": "SoftwareApplication",
-                "name": "TopBana AI 蔬果測量工具",
-                "operatingSystem": "任何支援現代瀏覽器的系統",
+                "name": "TopBana AI 香蕉量測系統",
                 "applicationCategory": "UtilityApplication",
+                "operatingSystem": "任何支援現代瀏覽器的系統",
+                "description": "台灣領先的香蕉AI量測工具，提供精確的長度、粗細與曲率分析，並給予專業評分與建議",
                 "offers": {
                   "@type": "Offer",
                   "price": "0",
@@ -238,10 +240,18 @@ export default function Home() {
                 "mainEntity": [
                   {
                     "@type": "Question",
-                    "name": "TopBana AI 如何測量蔬果大小？",
+                    "name": "TopBana AI 香蕉量測系統如何運作？",
                     "acceptedAnswer": {
                       "@type": "Answer",
-                      "text": "我們的AI使用先進的電腦視覺技術分析上傳的照片，精確測量香蕉和黃瓜的長度、粗細以及估計新鮮度，提供綜合評分和詳細評測結果。"
+                      "text": "我們的AI使用先進的電腦視覺技術和機器學習演算法分析上傳的照片，精確測量香蕉和黃瓜的長度、粗細、曲率以及估計新鮮度，提供綜合評分和詳細評測結果。量測過程只需3秒，結果準確可靠。"
+                    }
+                  },
+                  {
+                    "@type": "Question",
+                    "name": "台灣第一香蕉AI量測站有哪些獨特功能？",
+                    "acceptedAnswer": {
+                      "@type": "Answer",
+                      "text": "我們提供業界領先的香蕉曲率分析、精確的數位尺寸量測、新鮮度評估和綜合品質評分，並支援一鍵分享功能，讓您輕鬆與朋友分享測量結果。所有服務完全免費，無需註冊，保障用戶隱私。"
                     }
                   },
                   {
@@ -298,18 +308,28 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
               <div className="inline-flex flex-col sm:flex-row items-center justify-center gap-3">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創AI精準測量</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創香蕉AI量測系統</span>
                 <div className="flex flex-row mt-3 sm:mt-0 items-center">
                   <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
-                  <span className="ml-2 text-slate-700 font-bold">專業評分</span>
+                  <span className="ml-2 text-slate-700 font-bold">專業量測</span>
                 </div>
               </div>
             </h2>
             <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
-              只需上傳照片，<span className="font-semibold">3秒內</span>獲取專業分析評測。先進AI技術精準測量長度、粗細與新鮮度，
-              給您最客觀的評分和建議。無需註冊，<span className="font-semibold">隱私安全有保障</span>。
+              只需上傳照片，<span className="font-semibold">3秒內</span>獲取專業香蕉AI量測結果。先進演算法精準分析長度、粗細、曲率與新鮮度，
+              提供客觀評分和建議。無需註冊，<span className="font-semibold">隱私安全有保障</span>。
             </p>
+            
+            <div className="mt-6">
+              <a href="#upload" className="bg-gradient-to-r from-indigo-600 to-blue-600 text-white px-6 py-3 rounded-full font-medium hover:shadow-lg transform hover:scale-105 transition-all inline-flex items-center gap-2">
+                立即體驗香蕉AI量測
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 8l4 4m0 0l-4 4m4-4H3"></path>
+                </svg>
+              </a>
+              <p className="text-xs text-slate-500 mt-2">每日免費提供10次量測服務</p>
+            </div>
             
             {/* 顯示剩餘分析次數 */}
             <div className="mt-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-4 py-1 inline-flex items-center">
@@ -489,7 +509,7 @@ export default function Home() {
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600">
               認識 
               <span className="font-bold mx-1">TopBana AI</span>
-              的優勢
+              的香蕉量測優勢
             </span>
           </h2>
           
@@ -500,11 +520,11 @@ export default function Home() {
                   <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
                   <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
                 </svg>
-                精準技術分析
+                AI精準量測技術
               </h3>
               <p className="text-sm sm:text-base text-slate-600">
                 採用先進的AI視覺辨識技術，我們能快速分析您上傳的黃瓜或香蕉照片。系統自動辨識類型，
-                精準評估長度、粗細和新鮮度，提供可靠的專業評分和詳細分析。
+                精準評估長度、粗細、曲率和新鮮度，提供可靠的專業評分和詳細量測數據。
               </p>
             </div>
             
@@ -871,54 +891,54 @@ export default function Home() {
         {/* SEO優化頁腳 */}
         <div className="max-w-7xl mx-auto mt-8 pt-6 border-t border-slate-100">
           <div className="text-center">
-            <h2 className="text-lg font-bold text-slate-700 mb-3">台灣專業蔬果AI檢測平台</h2>
+            <h2 className="text-lg font-bold text-slate-700 mb-3">台灣首創香蕉AI量測平台</h2>
             <p className="text-xs text-slate-500 mb-4 max-w-3xl mx-auto">
-              TopBana AI是台灣首創專業香蕉與黃瓜AI測量平台，結合先進人工智慧技術，提供精準的蔬果尺寸測量、新鮮度評估與品質分析服務。
-              我們的技術可應用於農產品分級、品質把關與娛樂測量，為台灣農業數位化提供創新解決方案。
+              TopBana AI是台灣第一香蕉AI量測站，結合先進人工智慧技術，提供精準的蔬果尺寸量測、曲率分析、新鮮度評估與品質檢測服務。
+              我們專精於香蕉與黃瓜的數位化量測，為台灣農業與消費者提供創新的蔬果評估解決方案。
             </p>
           </div>
           
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center text-xs text-slate-600 mt-4">
             <div>
-              <h3 className="font-medium mb-2 text-slate-700">熱門測量服務</h3>
+              <h3 className="font-medium mb-2 text-slate-700">熱門AI量測服務</h3>
               <ul className="space-y-1">
-                <li>香蕉曲率測量</li>
-                <li>黃瓜長度精確檢測</li>
-                <li>蔬果粗細分析</li>
-                <li>農產品新鮮度評估</li>
+                <li>香蕉智能曲率量測</li>
+                <li>黃瓜精確長度檢測</li>
+                <li>蔬果AI粗細分析</li>
+                <li>香蕉數位化品質評估</li>
               </ul>
             </div>
             <div>
               <h3 className="font-medium mb-2 text-slate-700">服務地區</h3>
               <ul className="space-y-1">
-                <li>台北蔬果測量</li>
-                <li>台中香蕉評測</li>
-                <li>高雄黃瓜分析</li>
-                <li>全台線上測量服務</li>
+                <li>台北香蕉AI量測</li>
+                <li>台中蔬果數據分析</li>
+                <li>高雄農產品檢測</li>
+                <li>全台線上量測系統</li>
               </ul>
             </div>
             <div>
-              <h3 className="font-medium mb-2 text-slate-700">技術優勢</h3>
+              <h3 className="font-medium mb-2 text-slate-700">量測技術特色</h3>
               <ul className="space-y-1">
-                <li>AI精準測量技術</li>
-                <li>視覺辨識系統</li>
-                <li>雲端運算分析</li>
-                <li>隱私安全保障</li>
+                <li>香蕉精準AI量測</li>
+                <li>多維度蔬果分析</li>
+                <li>智能曲率計算系統</li>
+                <li>隱私資料保護機制</li>
               </ul>
             </div>
             <div>
               <h3 className="font-medium mb-2 text-slate-700">關於我們</h3>
               <ul className="space-y-1">
-                <li>台灣AI技術團隊</li>
-                <li>蔬果測量專家</li>
-                <li>專業研發中心</li>
-                <li>農業科技合作</li>
+                <li>台灣AI量測領導品牌</li>
+                <li>香蕉數據分析專家</li>
+                <li>專業蔬果研究中心</li>
+                <li>數位農業技術合作</li>
               </ul>
             </div>
           </div>
           
           <p className="text-center text-xs text-slate-400 mt-8">
-            台灣第一香蕉AI量測站 © {new Date().getFullYear()} - 專業提供香蕉測量、黃瓜評測、蔬果分析、AI尺寸檢測服務
+            台灣第一香蕉AI量測站 © {new Date().getFullYear()} - 專業提供香蕉AI量測、黃瓜尺寸檢測、蔬果曲率分析、農產品品質數位評估服務
           </p>
         </div>
       </footer>

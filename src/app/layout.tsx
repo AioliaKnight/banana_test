@@ -19,7 +19,7 @@ export const metadata: Metadata = {
   metadataBase: new URL('http://localhost:3000'),
   title: "台灣第一香蕉AI量測站 | TopBana AI 智能分析蔬果",
   description: "台灣首創專業香蕉與黃瓜AI測量平台，精準評估長度、粗細、曲率與新鮮度。3秒快速分析，隱私安全有保障，免費體驗台灣最值得信賴的蔬果評測服務。",
-  keywords: "台灣香蕉測量, AI蔬果分析, 黃瓜評測, 香蕉曲率, 蔬果品質, 人工智慧分析, 精準尺寸測量, 農產品評分, 新鮮度檢測, 台灣第一, 長度測量, 粗細評估, TopBana AI",
+  keywords: "台灣香蕉測量, AI蔬果分析, 黃瓜評測, 香蕉曲率, 香蕉AI量測工具, 智能香蕉長度測量, 香蕉粗細AI分析, 台灣蔬果量測專家, 線上香蕉品質評估, 黃瓜尺寸AI檢測, 蔬果數位量測系統, 免費香蕉測量工具, 農產品AI評分, 香蕉品質數據分析, 人工智慧香蕉檢測, 即時蔬果量測APP, 專業香蕉曲率計算, 台灣農產品數位分級, 黃瓜新鮮度AI評估, 香蕉成熟度檢測, 台灣第一, 蔬果品質AI辨識, TopBana AI",
   authors: [{ name: "TopBana AI實驗室" }],
   creator: "TopBana AI團隊 - 台灣第一蔬果AI研究中心",
   viewport: {
