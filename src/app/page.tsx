@@ -165,9 +165,11 @@ export default function Home() {
           </motion.div>
 
           {/* 捲動指示 */}
-          <div className="absolute bottom-4 left-1/2 transform -translate-x-1/2 flex flex-col items-center text-slate-500 animate-bounce">
-            <span className="text-sm mb-1">了解更多</span>
-            <HiOutlineChevronDown className="h-5 w-5" />
+          <div className="absolute left-0 right-0 bottom-0 flex flex-col items-center justify-center pb-2 text-slate-500">
+            <div className="animate-bounce flex flex-col items-center">
+              <span className="text-sm mb-1">了解更多</span>
+              <HiOutlineChevronDown className="h-5 w-5" />
+            </div>
           </div>
         </div>
       </div>
