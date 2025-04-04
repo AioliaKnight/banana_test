@@ -179,11 +179,11 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           img.src = preview;
         });
         
-        // 繪製預覽圖片
-        const imgWidth = 500;
-        const imgHeight = 400;
-        const imgX = 50;
-        const imgY = 130;
+        // 調整預覽圖片尺寸和位置 - 縮小並靠左
+        const imgWidth = 450;
+        const imgHeight = 380;
+        const imgX = 40;
+        const imgY = 120;
         
         // 繪製圖片框
         ctx.fillStyle = '#ffffff';
@@ -235,18 +235,18 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         console.error('載入圖片失敗:', imgError);
         // 如果圖片載入失敗，繪製替代區塊
         ctx.fillStyle = '#f1f5f9';
-        ctx.fillRect(50, 130, 500, 400);
+        ctx.fillRect(40, 120, 450, 380);
         ctx.fillStyle = '#94a3b8';
         ctx.font = '24px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('圖片載入失敗', 50 + 250, 130 + 200);
+        ctx.fillText('圖片載入失敗', 40 + 225, 120 + 190);
         ctx.textAlign = 'start';
       }
       
-      // 添加分析結果區域
+      // 添加分析結果區域 - 右側區域調整
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.roundRect(600, 130, 550, 400, 15);
+      ctx.roundRect(520, 120, 630, 380, 15);
       ctx.fill();
       ctx.shadowColor = 'rgba(0, 0, 0, 0.1)';
       ctx.shadowBlur = 15;
@@ -265,7 +265,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       // 添加蔬果類型標題
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 28px sans-serif';
-      ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 630, 170);
+      ctx.fillText(`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果`, 550, 160);
       
       // 添加分數
       const scoreColorValue = result.score >= 8 
@@ -275,9 +275,9 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           : '#f59e0b'; // 琥珀色
       
       // 繪製分數背景
-      const scoreSize = 100;
-      const scoreX = 1050;
-      const scoreY = 135;
+      const scoreSize = 90;
+      const scoreX = 1080;
+      const scoreY = 140;
       
       // 繪製光暈效果
       const scoreGlow = ctx.createRadialGradient(
@@ -297,55 +297,82 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       
       // 繪製分數文字
       ctx.fillStyle = '#ffffff';
-      ctx.font = 'bold 38px sans-serif';
+      ctx.font = 'bold 36px sans-serif';
       ctx.textAlign = 'center';
       ctx.fillText(result.score.toFixed(1), scoreX, scoreY + 12);
       ctx.textAlign = 'start';
       
       // 添加分析數據
-      const statX = 630;
-      const statY = 220;
-      const statGap = 100;
+      const statX = 550;
+      const statY = 200;
+      const statGap = 90;
       
       // 長度
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 16px sans-serif';
       ctx.fillText('長度', statX, statY);
-      ctx.font = 'bold 36px sans-serif';
+      ctx.font = 'bold 34px sans-serif';
       ctx.fillText(result.length.toString(), statX, statY + 40);
       ctx.font = '16px sans-serif';
-      ctx.fillText('厘米', statX + 60, statY + 40);
+      ctx.fillText('厘米', statX + 55, statY + 40);
       
       // 粗細
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 16px sans-serif';
-      ctx.fillText('粗細', statX + 200, statY);
-      ctx.font = 'bold 36px sans-serif';
-      ctx.fillText(result.thickness.toString(), statX + 200, statY + 40);
+      ctx.fillText('粗細', statX + 180, statY);
+      ctx.font = 'bold 34px sans-serif';
+      ctx.fillText(result.thickness.toString(), statX + 180, statY + 40);
       ctx.font = '16px sans-serif';
-      ctx.fillText('厘米', statX + 260, statY + 40);
+      ctx.fillText('厘米', statX + 235, statY + 40);
       
       // 新鮮度
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 16px sans-serif';
-      ctx.fillText('新鮮度', statX, statY + statGap);
-      ctx.font = 'bold 36px sans-serif';
-      ctx.fillText(result.freshness.toString(), statX, statY + statGap + 40);
+      ctx.fillText('新鮮度', statX + 360, statY);
+      ctx.font = 'bold 34px sans-serif';
+      ctx.fillText(result.freshness.toString(), statX + 360, statY + 40);
       ctx.font = '16px sans-serif';
-      ctx.fillText('/ 10', statX + 60, statY + statGap + 40);
+      ctx.fillText('/ 10', statX + 410, statY + 40);
       
-      // 添加評語
-      ctx.fillStyle = '#1e293b';
-      ctx.font = 'bold 18px sans-serif';
-      ctx.fillText('專業評語：', statX, statY + statGap * 2);
+      // 評語區域背景與標題
+      const commentX = 550;
+      const commentY = 315;
+      const commentWidth = 570;
+      const lineHeight = 22;
       
-      // 換行處理評語文字
+      // 準備評語文字並計算行數
       ctx.font = '16px sans-serif';
       const comment = result.comment;
-      const commentWidth = 500;
-      const commentLines = wrapTextChinese(ctx, comment, statX, statY + statGap * 2 + 30, commentWidth, 24);
+      const commentLines = wrapTextChinese(ctx, comment, commentX, commentY, commentWidth, lineHeight);
+      
+      // 增加評語背景區域使文字更易讀
+      ctx.fillStyle = '#f8fafc';
+      ctx.beginPath();
+      ctx.roundRect(commentX - 10, commentY - 30, commentWidth + 20, 
+                  lineHeight * (commentLines.length + 0.5) + 20, 8);
+      ctx.fill();
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.lineWidth = 1;
+      ctx.stroke();
+      
+      // 添加評語圖標
+      ctx.fillStyle = '#f59e0b';
+      ctx.beginPath();
+      ctx.arc(commentX + 8, commentY - 12, 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = 'bold 12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.fillText('!', commentX + 8, commentY - 8);
+      ctx.textAlign = 'start';
+      
+      // 繪製評語標題
+      ctx.fillStyle = '#1e293b';
+      ctx.font = 'bold 18px sans-serif';
+      ctx.fillText('專業評語：', commentX + 24, commentY - 10);
       
       // 繪製評語
+      ctx.font = '16px sans-serif';
       commentLines.forEach(line => {
         ctx.fillText(line.text, line.x, line.y);
       });
@@ -438,28 +465,30 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     <div className="flex flex-col gap-8">
       {/* 圖片預覽彈窗 */}
       {showImagePreview && shareImageUrl && (
-        <div className="fixed inset-0 bg-black/70 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-sm">
-          <div className="bg-white rounded-xl p-3 sm:p-4 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-            <div className="flex justify-between items-center mb-3 sm:mb-4">
-              <h3 className="text-lg sm:text-xl font-bold">
+        <div className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-3 sm:p-4 backdrop-blur-md">
+          <div className="bg-white rounded-xl p-4 sm:p-6 max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col shadow-2xl">
+            <div className="flex justify-between items-center mb-4 sm:mb-5">
+              <h3 className="text-lg sm:text-xl font-bold text-slate-800">
                 {selectedPlatform ? `分享到${selectedPlatform === 'facebook' ? 'Facebook' : selectedPlatform === 'twitter' ? 'Twitter' : 'Line'}` : '分享圖片預覽'}
               </h3>
               <button 
                 onClick={() => setShowImagePreview(false)}
-                className="text-slate-400 hover:text-slate-600 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full"
+                className="text-slate-400 hover:text-slate-600 h-8 w-8 sm:h-10 sm:w-10 flex items-center justify-center rounded-full hover:bg-slate-100 transition-colors"
               >
                 ✕
               </button>
             </div>
-            <div className="overflow-auto flex-1 mb-3 sm:mb-4">
-              <Image 
-                src={shareImageUrl} 
-                alt="分享預覽" 
-                className="w-full h-auto object-contain rounded-lg" 
-                width={800}
-                height={420}
-                style={{width: '100%', height: 'auto'}}
-              />
+            <div className="overflow-auto flex-1 mb-4 sm:mb-5">
+              <div className="relative rounded-lg overflow-hidden border border-slate-100 shadow-sm">
+                <Image 
+                  src={shareImageUrl} 
+                  alt="分享預覽" 
+                  className="w-full h-auto object-contain" 
+                  width={800}
+                  height={420}
+                  style={{width: '100%', height: 'auto'}}
+                />
+              </div>
             </div>
             <div className="flex flex-wrap gap-3 justify-end">
               <button 
@@ -615,9 +644,11 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               <FaRegLightbulb className="text-amber-500 flex-shrink-0" />
               <h3 className="font-medium text-slate-800">AI評語</h3>
             </div>
-            <p className="text-slate-600 text-sm leading-relaxed mobile-text-tight">
-              {result.comment}
-            </p>
+            <div className="max-h-48 overflow-y-auto pr-1 custom-scrollbar">
+              <p className="text-slate-600 text-sm leading-relaxed mobile-text-tight">
+                {result.comment}
+              </p>
+            </div>
           </motion.div>
 
           <motion.div
@@ -626,65 +657,54 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             transition={{ delay: 0.5 }}
             className="flex flex-col gap-4 items-center"
           >
-            <div className="flex flex-col md:flex-row gap-3 w-full justify-center">
-              <button 
-                className="btn btn-outline flex items-center justify-center gap-2 md:w-auto w-full text-sm py-2.5 px-4"
-                onClick={handleDownload}
-                disabled={isGeneratingImage}
-              >
-                {isGeneratingImage ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-                    處理中...
-                  </>
-                ) : (
-                  <>
-                    <FaDownload className="h-4 w-4" />
-                    下載分享圖片
-                  </>
-                )}
-              </button>
-            </div>
-            
-            <p className="text-sm text-slate-500 mb-2 mt-2">分享到社群媒體</p>
-            
-            <motion.div
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
-            >
-              <div className="mb-2 text-sm font-medium text-slate-700">分享結果</div>
-              <div className="flex flex-wrap sm:flex-nowrap gap-2">
-                <button
-                  onClick={() => handleShare('facebook')}
-                  className="flex-1 btn btn-outline text-blue-600 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
-                >
-                  <FaFacebook />
-                  <span className="hidden xs:inline whitespace-nowrap">Facebook</span>
-                </button>
-                <button
-                  onClick={() => handleShare('twitter')}
-                  className="flex-1 btn btn-outline text-blue-400 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
-                >
-                  <FaTwitter />
-                  <span className="hidden xs:inline whitespace-nowrap">Twitter</span>
-                </button>
-                <button
-                  onClick={() => handleShare('line')}
-                  className="flex-1 btn btn-outline text-green-600 border-green-100 hover:bg-green-50 flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
-                >
-                  <FaLine />
-                  <span className="hidden xs:inline whitespace-nowrap">Line</span>
-                </button>
-                <button
-                  onClick={handleDownload}
-                  className="flex-1 btn btn-primary flex items-center justify-center gap-2 min-w-0 sm:min-w-[100px]"
-                >
-                  <FaDownload />
-                  <span className="hidden xs:inline whitespace-nowrap">下載圖片</span>
-                </button>
+            <div className="w-full bg-slate-50 rounded-xl p-4 border border-slate-100">
+              <div className="flex flex-col gap-4">
+                <div className="flex justify-between items-center">
+                  <h3 className="text-sm font-medium text-slate-700">分享結果</h3>
+                  <button 
+                    className="btn btn-primary flex items-center justify-center gap-2 text-sm py-2 px-4"
+                    onClick={handleDownload}
+                    disabled={isGeneratingImage}
+                  >
+                    {isGeneratingImage ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+                        處理中...
+                      </>
+                    ) : (
+                      <>
+                        <FaDownload className="h-4 w-4" />
+                        下載圖片
+                      </>
+                    )}
+                  </button>
+                </div>
+                
+                <div className="grid grid-cols-3 gap-3">
+                  <button
+                    onClick={() => handleShare('facebook')}
+                    className="btn btn-outline text-blue-600 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 py-3"
+                  >
+                    <FaFacebook className="text-lg" />
+                    <span className="hidden sm:inline">Facebook</span>
+                  </button>
+                  <button
+                    onClick={() => handleShare('twitter')}
+                    className="btn btn-outline text-blue-400 border-blue-100 hover:bg-blue-50 flex items-center justify-center gap-2 py-3"
+                  >
+                    <FaTwitter className="text-lg" />
+                    <span className="hidden sm:inline">Twitter</span>
+                  </button>
+                  <button
+                    onClick={() => handleShare('line')}
+                    className="btn btn-outline text-green-600 border-green-100 hover:bg-green-50 flex items-center justify-center gap-2 py-3"
+                  >
+                    <FaLine className="text-lg" />
+                    <span className="hidden sm:inline">Line</span>
+                  </button>
+                </div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         </div>
       </div>
