@@ -9,10 +9,6 @@ const nextConfig = {
       },
     ],
   },
-  eslint: {
-    // 在生产构建期间忽略ESLint错误
-    ignoreDuringBuilds: true,
-  },
   experimental: {
     turbo: {
       rules: {
