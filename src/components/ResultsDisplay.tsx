@@ -74,12 +74,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [shareImageUrl, isClient]);
 
-  const scoreColor = result.score >= 8 
-    ? 'from-green-500 to-green-600' 
-    : result.score >= 6 
-      ? 'from-blue-500 to-blue-600'
-      : 'from-amber-500 to-amber-600';
-  
   // 優化的中文文字換行函數
   const wrapTextChinese = (
     ctx: CanvasRenderingContext2D, 
