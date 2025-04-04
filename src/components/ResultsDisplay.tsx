@@ -138,13 +138,43 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       ctx.fillRect(20, 20, canvasWidth - 40, canvasHeight - 40);
       ctx.shadowColor = 'transparent';
 
-      // 左側圖片區域 - 使用 result.jpg 作為代表
+      // 左側圖片區域 - 使用用戶上傳的圖片或預設圖片
       try {
+        // 判斷內容是否可能敏感
+        const isSensitiveContent = (): boolean => {
+          // 如果不是other_rod類型，則不是敏感內容
+          if (result.type !== 'other_rod') {
+            return false;
+          }
+          
+          // 檢查評語中是否包含可能暗示敏感內容的關鍵詞
+          const sensitiveKeywords = [
+            '男性特徵', '私密', '敏感', '性', '親愛的', '姐妹', 
+            '尺寸適中', '尺寸還不錯', '遐想', '有趣的棒狀物', '棒狀物體'
+          ];
+          
+          // 評語中包含敏感詞，或評分特別高（超過8.5分）且為other_rod類型
+          const hasSensitiveWords = sensitiveKeywords.some(keyword => 
+            result.comment.toLowerCase().includes(keyword.toLowerCase())
+          );
+          
+          // 如果是other_rod並且評分很高或包含敏感詞，則視為敏感內容
+          return hasSensitiveWords || (result.type === 'other_rod' && result.score > 8.5);
+        };
+        
+        // 決定使用哪個圖片來源
+        // 1. 如果是一般水果(小黃瓜或香蕉)，則使用用戶原始圖片
+        // 2. 如果是other_rod但非敏感內容，也使用用戶原始圖片
+        // 3. 如果是敏感內容，則使用替代圖片
+        const imageSrc = !isSensitiveContent()
+          ? preview  // 使用用戶上傳的圖片
+          : '/result.jpg';  // 敏感內容使用替代圖片
+        
         const userImage = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new window.Image();
           img.onload = () => resolve(img);
           img.onerror = reject;
-          img.src = '/result.jpg'; // 使用public目錄下的result.jpg
+          img.src = imageSrc;
         });
         
         // 圖片區域
