@@ -186,7 +186,8 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           try {
             new URL(url, window.location.origin);
             return true;
-          } catch (_) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          } catch (error) {
             return false;
           }
         };
@@ -691,136 +692,156 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         </button>
       </div>
 
-      <div className="mb-6">
-        <div className="relative mb-6">
-          <div className="flex justify-center">
-            <div className="relative rounded-lg w-full h-64 sm:h-72 md:h-80 overflow-hidden border border-slate-200 shadow-sm">
-              <Image 
-                src={preview} 
-                alt="上傳圖片" 
-                className="rounded-lg object-contain"
-                fill
-                style={{ objectFit: 'contain' }}
-                sizes="(max-width: 768px) 100vw, 50vw"
-                priority
-              />
+      <div className="flex flex-col md:flex-row gap-6 md:gap-8 mb-6 md:mb-10 relative">
+        {/* 結果圖片預覽 */}
+        <div className="relative w-full md:w-1/2 lg:w-2/5 aspect-square flex-shrink-0 rounded-xl md:rounded-2xl overflow-hidden bg-white shadow-md">
+          <Image
+            src={result.shareImagePath || preview}
+            alt={`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果圖片`}
+            width={500}
+            height={500}
+            priority
+            className="w-full h-full object-cover"
+            style={{ objectFit: 'contain' }}
+          />
+          
+          {/* 物體類型標籤 */}
+          <div className={`absolute top-4 left-4 px-3 py-1.5 rounded-full text-sm font-medium shadow-sm 
+            ${result.type === 'cucumber' ? 'bg-green-500 text-white' :
+             result.type === 'banana' ? 'bg-yellow-500 text-white' :
+             'bg-slate-500 text-white'}`}>
+            {result.type === 'cucumber' ? '小黃瓜' : 
+             result.type === 'banana' ? '香蕉' : '其他物體'}
+          </div>
+          
+          {/* 真實度標籤 */}
+          {result.truthAnalysis && (
+            <div className={`absolute top-4 right-4 px-3 py-1.5 rounded-full text-sm font-medium shadow-sm
+              ${result.truthAnalysis.isSuspicious ? 'bg-red-500 text-white' : 'bg-emerald-500 text-white'}`}>
+              {result.truthAnalysis.isSuspicious ? '真實度可疑' : '真實度高'}
+            </div>
+          )}
+        </div>
+
+        {/* 結果資訊卡 */}
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold text-slate-800 mb-3">
+            AI{result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果
+          </h1>
+          <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
+            <StatCard
+              title="長度"
+              value={`${getDisplayLength()} cm`} // Already handles undefined
+              icon={<FaRuler className="h-4 w-4 sm:h-5 sm:w-5" />}
+              bgColor="bg-blue-50"
+              iconColor="text-blue-600"
+              className="hover:bg-blue-100 transition-colors duration-200"
+            />
+            <StatCard
+              title="粗細"
+              value={`${result.thickness ?? 0} cm`} // Add default value
+              icon={<FaCircle className="h-4 w-4 sm:h-5 sm:w-5" />}
+              bgColor="bg-purple-50"
+              iconColor="text-purple-600"
+              className="hover:bg-purple-100 transition-colors duration-200"
+            />
+            <StatCard
+              title="新鮮度"
+              value={`${result.freshness ?? 0}/10`} // Add default value
+              icon={<FaRegLightbulb className="h-4 w-4 sm:h-5 sm:w-5" />}
+              bgColor="bg-green-50"
+              iconColor="text-green-600"
+              className="hover:bg-green-100 transition-colors duration-200"
+            />
+            <StatCard
+              title="總評分"
+              value={`${(result.score ?? 0).toFixed(1)}/10`} // Add default value and fix toFixed call
+              icon={<FaStar className="h-4 w-4 sm:h-5 sm:w-5" />}
+              bgColor="bg-amber-50"
+              iconColor="text-amber-600"
+              className="hover:bg-amber-100 transition-colors duration-200"
+            />
+          </div>
+          
+          {/* 在統計卡下方顯示真實度分析器 */}
+          {result.truthAnalysis && (
+            <TruthfulnessIndicator
+              truthAnalysis={result.truthAnalysis}
+              // Ensure type is one of the expected values or default
+              objectType={result.type ?? 'other_rod'} 
+              originalLength={result.length ?? 0}
+            />
+          )}
+
+          <div className="bg-slate-50 p-4 sm:p-5 rounded-lg mb-8 shadow-sm border border-slate-100">
+            <div className="text-slate-700 text-sm sm:text-base leading-relaxed font-medium">
+              <p>{result.comment || '暫無評語'}</p> {/* Add default value */}
             </div>
           </div>
-        </div>
-
-        <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
-          <StatCard
-            title="長度"
-            value={`${getDisplayLength()} cm`} // Already handles undefined
-            icon={<FaRuler className="h-4 w-4 sm:h-5 sm:w-5" />}
-            bgColor="bg-blue-50"
-            iconColor="text-blue-600"
-            className="hover:bg-blue-100 transition-colors duration-200"
-          />
-          <StatCard
-            title="粗細"
-            value={`${result.thickness ?? 0} cm`} // Add default value
-            icon={<FaCircle className="h-4 w-4 sm:h-5 sm:w-5" />}
-            bgColor="bg-purple-50"
-            iconColor="text-purple-600"
-            className="hover:bg-purple-100 transition-colors duration-200"
-          />
-          <StatCard
-            title="新鮮度"
-            value={`${result.freshness ?? 0}/10`} // Add default value
-            icon={<FaRegLightbulb className="h-4 w-4 sm:h-5 sm:w-5" />}
-            bgColor="bg-green-50"
-            iconColor="text-green-600"
-            className="hover:bg-green-100 transition-colors duration-200"
-          />
-          <StatCard
-            title="總評分"
-            value={`${(result.score ?? 0).toFixed(1)}/10`} // Add default value and fix toFixed call
-            icon={<FaStar className="h-4 w-4 sm:h-5 sm:w-5" />}
-            bgColor="bg-amber-50"
-            iconColor="text-amber-600"
-            className="hover:bg-amber-100 transition-colors duration-200"
-          />
-        </div>
-        
-        {/* 在統計卡下方顯示真實度分析器 */}
-        {result.truthAnalysis && (
-          <TruthfulnessIndicator
-            truthAnalysis={result.truthAnalysis}
-            // Ensure type is one of the expected values or default
-            objectType={result.type ?? 'other_rod'} 
-            originalLength={result.length ?? 0}
-          />
-        )}
-
-        <div className="bg-slate-50 p-4 sm:p-5 rounded-lg mb-8 shadow-sm border border-slate-100">
-          <div className="text-slate-700 text-sm sm:text-base leading-relaxed font-medium">
-            <p>{result.comment || '暫無評語'}</p> {/* Add default value */}
-          </div>
-        </div>
-        
-        {/* 相機圖標和水印 */}
-        <canvas ref={canvasRef} style={{ display: 'none' }} />
-        
-        <div className="flex flex-wrap justify-center gap-3 mt-8">
-          {isClient && (
-            <>
-              <button 
-                onClick={handleDownload}
-                className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
-                disabled={isGeneratingImage}
-              >
-                <FaDownload className="h-4 w-4" />
-                {isGeneratingImage ? '生成中...' : '儲存結果圖片'}
-              </button>
-              
-              <div className="relative">
+          
+          {/* 相機圖標和水印 */}
+          <canvas ref={canvasRef} style={{ display: 'none' }} />
+          
+          <div className="flex flex-wrap justify-center gap-3 mt-8">
+            {isClient && (
+              <>
                 <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowShareOptions(!showShareOptions);
-                  }}
+                  onClick={handleDownload}
                   className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
+                  disabled={isGeneratingImage}
                 >
-                  <FaShareAlt className="h-4 w-4" />
-                  分享結果
+                  <FaDownload className="h-4 w-4" />
+                  {isGeneratingImage ? '生成中...' : '儲存結果圖片'}
                 </button>
                 
-                <AnimatePresence>
-                  {showShareOptions && (
-                    <motion.div 
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      exit={{ opacity: 0, y: 10 }}
-                      className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-slate-200 p-3 z-10"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <div className="flex gap-2">
-                        <button 
-                          onClick={() => handleShare('facebook')} 
-                          className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
-                        >
-                          <FaFacebook className="h-5 w-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleShare('twitter')} 
-                          className="w-9 h-9 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
-                        >
-                          <FaTwitter className="h-5 w-5" />
-                        </button>
-                        <button 
-                          onClick={() => handleShare('line')} 
-                          className="w-9 h-9 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"
-                        >
-                          <FaLine className="h-5 w-5" />
-                        </button>
-                      </div>
-                    </motion.div>
-                  )}
-                </AnimatePresence>
-              </div>
-            </>
-          )}
+                <div className="relative">
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setShowShareOptions(!showShareOptions);
+                    }}
+                    className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
+                  >
+                    <FaShareAlt className="h-4 w-4" />
+                    分享結果
+                  </button>
+                  
+                  <AnimatePresence>
+                    {showShareOptions && (
+                      <motion.div 
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: 10 }}
+                        className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-slate-200 p-3 z-10"
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <div className="flex gap-2">
+                          <button 
+                            onClick={() => handleShare('facebook')} 
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                          >
+                            <FaFacebook className="h-5 w-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleShare('twitter')} 
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
+                          >
+                            <FaTwitter className="h-5 w-5" />
+                          </button>
+                          <button 
+                            onClick={() => handleShare('line')} 
+                            className="w-9 h-9 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"
+                          >
+                            <FaLine className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </div>
+              </>
+            )}
+          </div>
         </div>
       </div>
 

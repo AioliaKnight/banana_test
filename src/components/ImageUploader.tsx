@@ -2,6 +2,7 @@ import { useCallback, useRef, useState, useEffect } from 'react';
 import { useDropzone, FileRejection } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUpload, FiCheck, FiAlertCircle, FiCamera, FiRefreshCw } from 'react-icons/fi';
+import Image from 'next/image';
 
 // Maximum file size in bytes (10MB)
 const MAX_FILE_SIZE = 10 * 1024 * 1024;
@@ -174,13 +175,21 @@ export default function ImageUploader({
         <div className="p-3 sm:p-6 text-center">
           {preview ? (
             <div className="relative">
-              <motion.img 
+              <motion.div 
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
-                src={preview} 
-                alt="預覽圖片" 
-                className="max-h-64 sm:max-h-80 mx-auto rounded-lg object-contain"
-              />
+                className="max-h-64 sm:max-h-80 mx-auto rounded-lg overflow-hidden flex justify-center"
+              >
+                <Image 
+                  src={preview} 
+                  alt="預覽圖片" 
+                  width={500}
+                  height={300}
+                  priority
+                  className="rounded-lg max-h-64 sm:max-h-80 w-auto object-contain"
+                  style={{ maxHeight: '20rem' }}
+                />
+              </motion.div>
               {loading && (
                 <motion.div 
                   initial={{ opacity: 0 }}
