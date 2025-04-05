@@ -312,7 +312,7 @@ export default function Home() {
                 <div className="flex items-center justify-center mt-2">
                   <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
-                  <span className="ml-2 text-slate-700 font-bold">專業第三方認證</span>
+                  <span className="ml-2 text-slate-700 font-bold">專業第三方蔬果認證</span>
                 </div>
               </div>
             </h2>
