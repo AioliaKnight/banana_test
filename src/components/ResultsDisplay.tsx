@@ -45,7 +45,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [isClient, setIsClient] = useState(false);
-  const [selectedPlatform, setSelectedPlatform] = useState<'facebook' | 'twitter' | 'line' | null>(null);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   
@@ -391,8 +390,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
 
   // 處理分享動作
   const handleShare = (platform: 'facebook' | 'twitter' | 'line') => {
-    setSelectedPlatform(platform);
-    
     if (!shareImageUrl) {
       setIsGeneratingImage(true);
       generateShareImage().then(url => {
@@ -405,6 +402,24 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     } else {
       setShowImagePreview(true);
     }
+    
+    // 直接開啟分享視窗
+    let shareUrl = '';
+    
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareTitle)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}&url=${encodeURIComponent(window.location.href)}&hashtags=${encodeURIComponent(hashtag.replace('#', ''))}`;
+        break;
+      case 'line':
+        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}`;
+        break;
+    }
+    
+    // 開啟分享視窗
+    window.open(shareUrl, '_blank', 'width=600,height=600');
   };
   
   // 處理下載圖片
@@ -433,43 +448,6 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     document.body.removeChild(link);
   };
   
-  // 確認分享到社交媒體
-  const confirmShare = () => {
-    if (!shareImageUrl || !selectedPlatform) return;
-    
-    let shareUrl = '';
-    
-    switch (selectedPlatform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareTitle)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}&url=${encodeURIComponent(window.location.href)}&hashtags=${encodeURIComponent(hashtag.replace('#', ''))}`;
-        break;
-      case 'line':
-        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareTitle + '\n' + shareDescription)}`;
-        break;
-    }
-    
-    // 開啟分享視窗
-    window.open(shareUrl, '_blank', 'width=600,height=600');
-    setShowImagePreview(false);
-  };
-
-  // 獲取物品名稱
-  const getObjectName = () => {
-    switch (result.type) {
-      case 'cucumber':
-        return '小黃瓜';
-      case 'banana':
-        return '香蕉';
-      case 'other_rod':
-        return '物體';
-      default:
-        return '物體';
-    }
-  };
-
   // 決定顯示的長度（考慮測謊儀調整）
   const getDisplayLength = () => {
     // 如果有真實度分析且被判定為可疑，顯示調整後的長度
@@ -496,11 +474,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       <div className="mb-6">
         <div className="relative mb-6">
           <div className="flex justify-center">
-            <img 
-              src={preview} 
-              alt="上傳圖片" 
-              className="object-contain rounded-lg max-h-64 sm:max-h-72"
-            />
+            <div className="relative object-contain rounded-lg max-h-64 sm:max-h-72 w-full">
+              <Image 
+                src={preview} 
+                alt="上傳圖片" 
+                className="rounded-lg object-contain"
+                fill
+                style={{ objectFit: 'contain' }}
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
           </div>
         </div>
 
@@ -611,11 +594,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       {showImagePreview && shareImageUrl && (
         <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4" onClick={() => setShowImagePreview(false)}>
           <div className="relative max-w-md w-full" onClick={e => e.stopPropagation()}>
-            <img 
-              src={shareImageUrl} 
-              alt="分享圖片" 
-              className="w-full rounded-lg shadow-2xl"
-            />
+            <div className="relative w-full aspect-[3/2]">
+              <Image 
+                src={shareImageUrl} 
+                alt="分享圖片" 
+                className="rounded-lg shadow-2xl"
+                fill
+                style={{ objectFit: 'contain' }}
+                sizes="(max-width: 768px) 100vw, 50vw"
+              />
+            </div>
             <button 
               className="absolute top-4 right-4 bg-white/10 backdrop-blur-sm text-white rounded-full p-2 hover:bg-white/20"
               onClick={() => setShowImagePreview(false)}

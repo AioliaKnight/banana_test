@@ -125,7 +125,8 @@ export default function TruthfulnessIndicator({
             <div className="mt-3 text-xs p-2 rounded bg-white/50">
               <p className="font-medium">AI測謊儀小提示:</p>
               <p className="mt-1">
-                若要拍出更「真實」的蔬果照片，建議使用自然光線，適當距離，並避免使用廣角鏡頭或特殊相機角度。
+                若要拍出更「真實」的{objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '物體'}照片，
+                建議使用自然光線，適當距離，並避免使用廣角鏡頭或特殊相機角度。
               </p>
             </div>
           )}
