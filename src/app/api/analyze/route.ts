@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { analyzeTruth, adjustDimensions, calculateFinalScore, getSuggestionMessage, CONFIG } from '@/components/utils/TruthDetector';
-import { AnalysisResult, ObjectType, TruthAnalysisResult as SharedTruthAnalysisResult, TruthDetectorConfig } from '@/types';
+import { AnalysisResult, ObjectType, TruthDetectorConfig } from '@/types';
 
 // =================================
 // Interfaces & Types (Local)
@@ -734,83 +734,84 @@ function extractFallbackInfo(responseText: string): AnalysisResult {
 // =================================
 
 /**
- * Processes the raw analysis results, adding truthfulness analysis and share image path.
- * @param {AnalysisResult} analysisResults The basic analysis results from Gemini (or fallback).
- * @returns {Promise<AnalysisResult & SharedTruthAnalysisResult>} The fully processed analysis result.
+ * Process the analysis results from the API or random data
+ * Performs various calculations on the data and prepares it for the client
  */
-export async function processAnalysisResults(analysisResults: AnalysisResult): Promise<AnalysisResult & SharedTruthAnalysisResult> {
-  try {
-    // Define default truth analysis structure and share image path for error cases
-    const defaultTruthAnalysis: SharedTruthAnalysisResult = {
-        truthScore: 75, isSuspicious: false, suspiciousFeatures: [],
-        funnyMessage: "無法進行真實性分析，請嘗試上傳更清晰的照片。",
-        suggestionMessage: "請確保照片清晰且只包含一個物體。"
-        // adjustedLength and adjustmentFactor are optional
-    };
-    const defaultShareImagePath = analysisResults.originalImagePath || "/uploads/default.jpg";
-
-    // If there's an error in the initial analysis, return immediately with defaults
-    if (analysisResults.error) {
-      return {
-        ...analysisResults,
-        ...defaultTruthAnalysis,
-        shareImagePath: defaultShareImagePath
-      } as AnalysisResult & SharedTruthAnalysisResult;
+export function processAnalysisResults(
+  data: Record<string, unknown>,
+  imagePath: string | null = null
+): AnalysisResult {
+  // Process the subtype information from the comment text
+  let subtype: 'male_feature' | 'regular_rod' | null = null;
+  let commentText = data.commentText || '';
+  
+  // Extract the subtype tag and remove it from the comment
+  if (data.objectType === 'other_rod' && commentText) {
+    const maleFeaturePrefix = '[male_feature]';
+    const regularRodPrefix = '[regular_rod]';
+    
+    if (commentText.startsWith(maleFeaturePrefix)) {
+      subtype = 'male_feature';
+      commentText = commentText.replace(maleFeaturePrefix, '').trim();
+    } else if (commentText.startsWith(regularRodPrefix)) {
+      subtype = 'regular_rod';
+      commentText = commentText.replace(regularRodPrefix, '').trim();
     }
-    
-    // --- Perform Truth Analysis & Determine Share Image --- 
-    
-    // Extract necessary fields
-    const { objectType, lengthEstimate, thicknessEstimate, rodSubtype, isMaleFeature, originalImagePath } = analysisResults;
-
-    // 1. Analyze truthfulness using the utility function
-    const truthAnalysisCore = analyzeTruth( objectType, lengthEstimate, thicknessEstimate, rodSubtype );
-
-    // 2. Generate suggestion message based on truth score
-    const suggestionMessage = getSuggestionMessage( truthAnalysisCore.truthScore, objectType, rodSubtype, lengthEstimate );
-    
-    // 3. Determine the appropriate share image path
-    let shareImagePath = originalImagePath || ""; // Default to original image
-    if (objectType === 'other_rod' && (rodSubtype === 'male_feature' || isMaleFeature === true)) {
-      shareImagePath = "/result.jpg"; // Use default image for male features
-    }
-    
-    // --- Construct Final Result ---
-
-    // Construct the final truthAnalysis object, adding the suggestion message
-    const finalTruthAnalysis: SharedTruthAnalysisResult = {
-        ...truthAnalysisCore,
-        suggestionMessage: suggestionMessage || "無法生成建議信息。" // Add fallback for suggestion
-    };
-
-    // Ensure a funny message exists
-    if (!finalTruthAnalysis.funnyMessage) {
-      finalTruthAnalysis.funnyMessage = "分析完成，但無法產生幽默評論。";
-    }
-
-    // Combine base results, truth analysis results, and share image path
-    return {
-        ...analysisResults,
-        ...finalTruthAnalysis,
-        shareImagePath: shareImagePath
-    } as AnalysisResult & SharedTruthAnalysisResult;
-
-  } catch (error) {
-    console.error("處理分析結果時出錯:", error);
-    // Use predefined defaults in case of error during this processing step
-    const defaultTruthAnalysisOnError: SharedTruthAnalysisResult = {
-        truthScore: 75, isSuspicious: false, suspiciousFeatures: [],
-        funnyMessage: "處理結果時發生錯誤，無法提供完整分析。",
-        suggestionMessage: "請稍後再試或嘗試上傳其他照片。"
-    };
-    const defaultShareImagePathOnError = analysisResults.originalImagePath || "/uploads/default.jpg";
-    
-    return {
-      ...analysisResults,
-      ...defaultTruthAnalysisOnError,
-      shareImagePath: defaultShareImagePathOnError
-    } as AnalysisResult & SharedTruthAnalysisResult;
   }
+  
+  // Create dimensions object, ensuring values are numbers (not strings)
+  const dimensions = adjustDimensions({
+    length: typeof data.lengthEstimate === 'number' ? data.lengthEstimate : 0,
+    thickness: typeof data.thicknessEstimate === 'number' ? data.thicknessEstimate : 0
+  }, data.objectType as ObjectType);
+  
+  // Calculate final score
+  const finalScore = calculateFinalScore({
+    freshnessScore: typeof data.freshnessScore === 'number' ? data.freshnessScore : 0,
+    overallScore: typeof data.overallScore === 'number' ? data.overallScore : 0,
+    dimensions,
+    objectType: data.objectType as ObjectType
+  });
+  
+  // Get truthfulness analysis
+  const truthfulness = analyzeTruth(dimensions, data.objectType as ObjectType, subtype, finalScore.credibilityScore);
+  
+  // Get suggestion message
+  const suggestion = getSuggestionMessage(
+    dimensions, 
+    data.objectType as ObjectType, 
+    subtype, 
+    truthfulness.percentile
+  );
+  
+  // Determine share image path based on object type and subtypes
+  let shareImagePath = imagePath;
+  if (data.objectType === 'other_rod' && (subtype === 'male_feature' || truthfulness.isMaleFeature)) {
+    // For male features, use a default image for sharing instead of the uploaded one
+    shareImagePath = '/result.jpg';
+  }
+  
+  // Return results with all processed data
+  return {
+    multipleObjects: data.multipleObjects || false,
+    lowQuality: data.lowQuality || false,
+    objectType: data.objectType as ObjectType,
+    subtype,
+    dimensions,
+    scores: {
+      freshness: typeof data.freshnessScore === 'number' ? data.freshnessScore : 0,
+      overall: typeof data.overallScore === 'number' ? data.overallScore : 0,
+      final: finalScore.score
+    },
+    comments: {
+      main: commentText,
+      suggestion
+    },
+    credibilityScore: finalScore.credibilityScore,
+    truth: truthfulness,
+    imagePath,
+    shareImagePath
+  };
 }
 
 // =================================
@@ -883,11 +884,12 @@ export async function POST(req: NextRequest) {
     
     // --- Prepare Data (Random or Real) ---
     let data: AnalysisResult;
-    let useRandomData = false;
+    // Unused variable removed
+    // let useRandomData = false;
 
     // Use random data in development if flag is set
     if (process.env.NODE_ENV === 'development' && process.env.USE_RANDOM_DATA === 'true') {
-      useRandomData = true;
+      // useRandomData = true; // This variable was unused
       const randomData = getRandomData(initialAnalysisResult.objectType as 'cucumber' | 'banana' | 'other_rod');
       data = {
         ...initialAnalysisResult, // Start with initial result structure

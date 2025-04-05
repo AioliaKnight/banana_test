@@ -16,7 +16,7 @@ import {
 import Image from 'next/image';
 import TruthfulnessIndicator from './utils/TruthfulnessIndicator';
 import StatCard from './utils/StatCard';
-import { AnalysisResult, ObjectType } from '@/types'; // Import shared type
+import { AnalysisResult } from '@/types'; // Removed unused ObjectType import
 
 // Comment out the local definition
 /* export interface AnalysisResult {
@@ -387,7 +387,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       setIsGeneratingImage(false);
       return null;
     }
-  }, [isClient, preview, result, wrapTextChinese, getDisplayLength]);
+  }, [isClient, preview, result, getDisplayLength]);
 
   // 設定Open Graph元標籤（如果還未存在）
   useEffect(() => {
@@ -458,7 +458,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     
     // 開啟分享視窗
     window.open(shareUrl, '_blank', 'width=600,height=600');
-  }, [shareInfo]);
+  }, [shareInfo, result]);
 
   const handleShare = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     if (!shareImageUrl) {

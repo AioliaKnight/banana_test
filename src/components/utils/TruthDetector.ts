@@ -200,27 +200,6 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
- * Calculates the truth score based on dimensions and issues count.
- * (Note: This function seems unused after refactoring, potentially removable? Keeping for now.)
- * @param {ObjectType} objectType
- * @param {number} length
- * @param {number} thickness
- * @param {number} issueCount
- * @returns {number} Truth score (0-1).
- */
-function calculateTruthScore(objectType: ObjectType, length: number, thickness: number, issueCount: number): number {
-  // Base score - higher if dimensions are reasonable
-  const isReasonable = isReasonableDimension(length, thickness, objectType);
-  const score = isReasonable ? 0.85 : 0.65;
-  
-  // Deduct points based on issue count
-  const finalScore = Math.max(0, score - Math.min(0.5, issueCount * 0.1));
-  
-  // Ensure score is within 0-1 range
-  return Math.max(0, Math.min(1, finalScore));
-}
-
-/**
  * Calculates the credibility score specifically for male features using Gaussian distribution.
  * @param {number} length Length value (cm).
  * @returns {number} Credibility score (0-100).
@@ -307,7 +286,6 @@ export function analyzeTruth(
 
   if (isMaleFeature) {
     truthScore = calculateMaleCredibilityScore(length);
-    const percentileDesc = getMalePercentileDescription(length);
 
     if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
       suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見"); suspicionScore += 50;
@@ -481,22 +459,21 @@ export function getSuggestionMessage(
 ): string {
   const stats = TAIWAN_MALE_STATS;
   const isMaleFeature = rodSubtype === 'male_feature';
-  let percentileDesc = (lengthValue && isMaleFeature) ? getMalePercentileDescription(lengthValue) : '';
-
+  
   if (truthScore >= 85) {
-    if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
+    if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${lengthValue ? getMalePercentileDescription(lengthValue) : ''}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
     return "測量結果非常可信，尺寸數據符合常規。";
   } else if (truthScore >= 65) {
-    if (isMaleFeature && lengthValue) return `測量結果基本可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
+    if (isMaleFeature && lengthValue) return `測量結果基本可信。您的長度 ${lengthValue}cm ${lengthValue ? getMalePercentileDescription(lengthValue) : ''}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
     return "測量結果基本可信，可能存在輕微偏差。可嘗試更換角度重新拍攝。";
   } else if (truthScore >= 40) {
-    if (isMaleFeature && lengthValue) return `測量結果可疑。您測得 ${lengthValue}cm (${percentileDesc})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
+    if (isMaleFeature && lengthValue) return `測量結果可疑。您測得 ${lengthValue}cm (${lengthValue ? getMalePercentileDescription(lengthValue) : ''})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
     return "測量結果有些可疑。建議檢查拍攝角度，避免透視變形。";
   } else {
     if (isMaleFeature && lengthValue) {
       if (lengthValue > stats.PERCENTILE_99) return `測量結果極不可信。您測得 ${lengthValue}cm 遠超台灣男性99%水平 (${stats.PERCENTILE_99}cm)。請勿使用誇張拍攝手法。`;
       if (lengthValue < stats.REASONABLE_MIN) return `測量結果可能不準確。您測得 ${lengthValue}cm 低於常見範圍下限。請確保完整測量物體。`;
-      return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${percentileDesc})。建議使用標準測量方法。`;
+      return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${lengthValue ? getMalePercentileDescription(lengthValue) : ''})。建議使用標準測量方法。`;
     }
     return "測量結果極不可信。請確保拍攝角度正確，避免透視及裁剪。";
   }
