@@ -17,30 +17,158 @@ export interface TruthAnalysisResult {
 // 物件類型定義
 export type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
 
-// 用於生成隨機結果的常量
-const FUNNY_RESPONSES = [
-  "這根香蕉看起來像是在「特定角度」拍攝的呢！畫面構圖很巧妙～",
-  "哎呀，AI偵測到「特殊的拍攝技巧」，這角度和距離很...有創意！",
-  "AI測謊儀發現此照片與標準蔬果比例有些「創造性差異」，您是攝影師嗎？",
-  "有趣！測謊儀偵測到此蔬果似乎借助了「光學魔法」顯得特別雄偉！",
-  "根據我們的「蕉學資料庫」，這根的尺寸宣稱有點像是被強化過。您是園藝專家？",
-  "您這個「獨特視角」拍攝的蔬果，讓AI測謊儀都忍不住發出了疑惑的笑聲！",
-  "測謊儀提醒：過度「慷慨」的測量值可能導致女性用戶嚴重失望，建議適度謙虛～",
-  "距離真是個奇妙的東西！靠近拍攝總是能讓事物看起來比實際更...壯觀！"
-];
+// TruthDetector 配置接口
+export interface TruthDetectorConfig {
+  // 各物體類型平均長度 (公分)
+  averageLengths: Record<string, number>;
+  
+  // 各物體類型長度/粗細比率
+  reasonableRatios: Record<string, number>;
+  
+  // 可疑判定閾值
+  suspiciousThresholds: {
+    truthScoreThreshold: number;    // 低於此真實度分數判定為可疑
+    lengthExceedRatio: number;      // 超過平均長度比例判定為可疑
+    otherRodMaxLength: number;      // other_rod 特別可疑的最大長度
+  };
+  
+  // 長度與比率評分權重
+  suspicionWeights: {
+    lengthWeight: number;    // 長度異常的權重
+    ratioWeight: number;     // 比率異常的權重
+  };
+  
+  // 調整因子設定
+  adjustmentSettings: {
+    maxAdjustment: number;   // 最大調整比例
+    minAdjustmentFactor: number; // 最小調整因子
+  };
+  
+  // 用於生成回應的常量
+  responses: {
+    funnyResponses: string[];      // 幽默回應列表
+    suspiciousFeatures: string[];  // 可疑特徵列表
+  };
+}
 
-const SUSPICIOUS_FEATURES = [
-  "不自然的透視效果",
-  "可疑的光線角度",
-  "異常的比例關係",
-  "與參考物尺寸不協調",
-  "拍攝距離過近",
-  "可能使用了廣角鏡",
-  "影像有輕微扭曲",
-  "邊緣有平滑處理痕跡",
-  "光影與尺寸不成比例",
-  "疑似進行了「戰略性裁剪」"
-];
+// 全域配置
+const CONFIG: TruthDetectorConfig = {
+  averageLengths: {
+    cucumber: 17.5, // 小黃瓜平均長度
+    banana: 18,     // 香蕉平均長度
+    other_rod: 12.5 // other_rod (台灣男性平均)
+  },
+  
+  reasonableRatios: {
+    cucumber: 5.5, // 小黃瓜長度/粗細平均比率
+    banana: 5,     // 香蕉長度/粗細平均比率
+    other_rod: 4.5 // other_rod平均比率
+  },
+  
+  suspiciousThresholds: {
+    truthScoreThreshold: 75,
+    lengthExceedRatio: 1.5,
+    otherRodMaxLength: 20
+  },
+  
+  suspicionWeights: {
+    lengthWeight: 0.6,
+    ratioWeight: 0.4
+  },
+  
+  adjustmentSettings: {
+    maxAdjustment: 0.3,
+    minAdjustmentFactor: 0.7
+  },
+  
+  responses: {
+    funnyResponses: [
+      "這根香蕉看起來像是在「特定角度」拍攝的呢！畫面構圖很巧妙～",
+      "哎呀，AI偵測到「特殊的拍攝技巧」，這角度和距離很...有創意！",
+      "AI測謊儀發現此照片與標準蔬果比例有些「創造性差異」，您是攝影師嗎？",
+      "有趣！測謊儀偵測到此蔬果似乎借助了「光學魔法」顯得特別雄偉！",
+      "根據我們的「蕉學資料庫」，這根的尺寸宣稱有點像是被強化過。您是園藝專家？",
+      "您這個「獨特視角」拍攝的蔬果，讓AI測謊儀都忍不住發出了疑惑的笑聲！",
+      "測謊儀提醒：過度「慷慨」的測量值可能導致女性用戶嚴重失望，建議適度謙虛～",
+      "距離真是個奇妙的東西！靠近拍攝總是能讓事物看起來比實際更...壯觀！"
+    ],
+    
+    suspiciousFeatures: [
+      "不自然的透視效果",
+      "可疑的光線角度",
+      "異常的比例關係",
+      "與參考物尺寸不協調",
+      "拍攝距離過近",
+      "可能使用了廣角鏡",
+      "影像有輕微扭曲",
+      "邊緣有平滑處理痕跡",
+      "光影與尺寸不成比例",
+      "疑似進行了「戰略性裁剪」"
+    ]
+  }
+};
+
+/**
+ * 根據可疑因素選擇相關特徵
+ * @param lengthSuspicion 長度可疑程度
+ * @param ratioSuspicion 比率可疑程度
+ * @returns 相關的可疑特徵列表
+ */
+function selectSuspiciousFeatures(
+  lengthSuspicion: number, 
+  ratioSuspicion: number
+): string[] {
+  const features: string[] = [];
+  const allFeatures = CONFIG.responses.suspiciousFeatures;
+  
+  // 根據不同可疑類型選擇相關特徵
+  if (lengthSuspicion > 50) {
+    // 長度異常相關特徵
+    const lengthSuspiciousFeatures = [
+      "不自然的透視效果",
+      "可能使用了廣角鏡",
+      "拍攝距離過近",
+      "疑似進行了「戰略性裁剪」"
+    ];
+    
+    // 從長度相關特徵中隨機選擇1-2項
+    const count = Math.min(lengthSuspiciousFeatures.length, 1 + Math.floor(Math.random() * 2));
+    const shuffled = [...lengthSuspiciousFeatures].sort(() => 0.5 - Math.random());
+    features.push(...shuffled.slice(0, count));
+  }
+  
+  if (ratioSuspicion > 40) {
+    // 比率異常相關特徵
+    const ratioSuspiciousFeatures = [
+      "異常的比例關係",
+      "與參考物尺寸不協調",
+      "影像有輕微扭曲",
+      "光影與尺寸不成比例"
+    ];
+    
+    // 從比率相關特徵中隨機選擇1-2項
+    const count = Math.min(ratioSuspiciousFeatures.length, 1 + Math.floor(Math.random() * 2));
+    const shuffled = [...ratioSuspiciousFeatures].sort(() => 0.5 - Math.random());
+    
+    // 添加未重複的特徵
+    for (const feature of shuffled.slice(0, count)) {
+      if (!features.includes(feature)) {
+        features.push(feature);
+      }
+    }
+  }
+  
+  // 如果特徵不夠2個，從全部特徵中隨機補充
+  if (features.length < 2) {
+    const remainingFeatures = allFeatures.filter(f => !features.includes(f));
+    const shuffled = [...remainingFeatures].sort(() => 0.5 - Math.random());
+    const neededCount = Math.min(shuffled.length, 2 - features.length);
+    features.push(...shuffled.slice(0, neededCount));
+  }
+  
+  // 限制最多4個特徵
+  return features.slice(0, 4);
+}
 
 /**
  * 分析圖片真實度
@@ -54,59 +182,63 @@ export function analyzeTruth(
   measuredLength: number,
   measuredThickness: number
 ): TruthAnalysisResult {
-  // 根據對象類型決定平均尺寸範圍
-  const averageLength = objectType === 'cucumber' 
-    ? 17.5 // 小黃瓜平均長度
-    : objectType === 'banana' 
-      ? 18 // 香蕉平均長度
-      : 12.5; // other_rod (台灣男性平均)
-      
-  // 計算合理的長度/粗細比率
-  const reasonableRatio = objectType === 'cucumber' 
-    ? 5.5 // 小黃瓜長度/粗細平均比率
-    : objectType === 'banana' 
-      ? 5 // 香蕉長度/粗細平均比率
-      : 4.5; // other_rod平均比率
+  // 從配置中取得平均尺寸範圍
+  const averageLength = CONFIG.averageLengths[objectType];
   
-  const actualRatio = measuredLength / measuredThickness;
+  // 從配置中取得合理的長度/粗細比率
+  const reasonableRatio = CONFIG.reasonableRatios[objectType];
+  
+  // 計算實際比率
+  const actualRatio = measuredThickness > 0 ? measuredLength / measuredThickness : 0;
   
   // 可疑因素1：長度明顯超過平均值
-  const lengthSuspicion = measuredLength > (averageLength * 1.3) ? 
-    (measuredLength - averageLength * 1.3) / (averageLength * 0.7) * 100 : 0;
+  const lengthSuspicionThreshold = averageLength * 1.3;
+  const lengthSuspicion = measuredLength > lengthSuspicionThreshold
+    ? (measuredLength - lengthSuspicionThreshold) / (averageLength * 0.7) * 100 
+    : 0;
   
   // 可疑因素2：長度/粗細比率異常
-  const ratioSuspicion = Math.abs(actualRatio - reasonableRatio) / reasonableRatio * 100;
+  const ratioSuspicion = reasonableRatio > 0 
+    ? Math.abs(actualRatio - reasonableRatio) / reasonableRatio * 100
+    : 0;
   
-  // 綜合可疑度計算
-  let totalSuspicion = (lengthSuspicion * 0.6) + (ratioSuspicion * 0.4);
+  // 從配置獲取權重
+  const { lengthWeight, ratioWeight } = CONFIG.suspicionWeights;
+  
+  // 綜合可疑度計算 (權重從配置獲取)
+  let totalSuspicion = (lengthSuspicion * lengthWeight) + (ratioSuspicion * ratioWeight);
   totalSuspicion = Math.min(totalSuspicion, 100);
   
   // 真實度得分 (越高越真實)
   const truthScore = Math.max(0, Math.min(100, 100 - totalSuspicion));
   
+  // 從配置獲取閾值
+  const { truthScoreThreshold, lengthExceedRatio, otherRodMaxLength } = CONFIG.suspiciousThresholds;
+  
   // 是否判定為可疑
-  const isSuspicious = truthScore < 75 || 
-                      (objectType === 'other_rod' && measuredLength > 20) ||
-                      (measuredLength > averageLength * 1.5);
+  const isSuspicious = 
+    truthScore < truthScoreThreshold || 
+    (objectType === 'other_rod' && measuredLength > otherRodMaxLength) ||
+    (measuredLength > averageLength * lengthExceedRatio);
   
   // 選擇幽默回應
-  const funnyMessage = FUNNY_RESPONSES[Math.floor(Math.random() * FUNNY_RESPONSES.length)];
+  const funnyResponses = CONFIG.responses.funnyResponses;
+  const funnyMessage = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
   
-  // 選擇可疑特徵
-  const suspiciousFeatures: string[] = [];
-  if (isSuspicious) {
-    // 隨機選擇2-4個可疑特徵
-    const numFeatures = Math.floor(Math.random() * 3) + 2;
-    const shuffledFeatures = [...SUSPICIOUS_FEATURES].sort(() => 0.5 - Math.random());
-    suspiciousFeatures.push(...shuffledFeatures.slice(0, numFeatures));
-  }
+  // 根據可疑原因選擇相關特徵
+  const suspiciousFeatures = isSuspicious 
+    ? selectSuspiciousFeatures(lengthSuspicion, ratioSuspicion)
+    : [];
+  
+  // 從配置獲取調整設定
+  const { maxAdjustment, minAdjustmentFactor } = CONFIG.adjustmentSettings;
   
   // 計算調整因子 (真實度越低，調整幅度越大)
-  const maxAdjustment = 0.3; // 最大調整30%
-  const adjustmentFactor = isSuspicious ? 
-    Math.max(0.7, 1 - (maxAdjustment * (1 - truthScore / 100))) : 1;
+  const adjustmentFactor = isSuspicious 
+    ? Math.max(minAdjustmentFactor, 1 - (maxAdjustment * (1 - truthScore / 100))) 
+    : 1;
   
-  // 計算調整後的長度
+  // 計算調整後的長度 (保留一位小數)
   const adjustedLength = Math.round(measuredLength * adjustmentFactor * 10) / 10;
   
   return {
