@@ -554,32 +554,71 @@ function detectTruthfulness(
   if (!enableDetection) {
     return {
       isSuspicious: false,
-      truthScore: 95,
+      truthScore: 1.0, // 使用0-1範圍值，遵循最新的TruthDetector接口
       adjustedLength: measuredLength,
       adjustmentFactor: 1,
-      suspiciousFeatures: [],
-      funnyMessage: "照片真實度檢測已關閉。"
+      suspiciousFeatures: ['真實度檢測已關閉'],
+      funnyMessage: "真實度檢測已關閉，無法判斷照片真實性。"
     };
   }
   
-  // 使用TruthDetector模組的analyzeTruth函數
-  if (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) {
-    return analyzeTruth(
-      objectType as 'cucumber' | 'banana' | 'other_rod',
-      measuredLength,
-      measuredThickness
-    );
+  // 處理無效數據情況
+  if (measuredLength <= 0 || measuredThickness <= 0) {
+    return {
+      isSuspicious: true,
+      truthScore: 0.5,
+      adjustedLength: Math.max(1, measuredLength),  // 至少給一個最小值
+      adjustmentFactor: 1,
+      suspiciousFeatures: ['測量數據異常'],
+      funnyMessage: "測量結果異常，無法進行有效的真實度分析。"
+    };
   }
   
-  // 對於無法識別的類型，提供默認值
-  return {
-    isSuspicious: false,
-    truthScore: 80,
-    adjustedLength: measuredLength,
-    adjustmentFactor: 1,
-    suspiciousFeatures: [],
-    funnyMessage: "無法確定對象類型，無法進行真實度分析。"
-  };
+  try {
+    // 使用TruthDetector模組的analyzeTruth函數進行分析
+    if (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) {
+      // 原始類型轉換
+      const objectTypeChecked = objectType as 'cucumber' | 'banana' | 'other_rod';
+      
+      // 執行真實度分析
+      const truthResult = analyzeTruth(
+        objectTypeChecked,
+        measuredLength,
+        measuredThickness
+      );
+      
+      // 確保返回的對象符合接口要求
+      return {
+        isSuspicious: truthResult.isSuspicious,
+        truthScore: truthResult.truthScore,
+        adjustedLength: truthResult.adjustedLength,
+        adjustmentFactor: truthResult.adjustmentFactor,
+        suspiciousFeatures: truthResult.suspiciousFeatures,
+        funnyMessage: truthResult.funnyMessage
+      };
+    }
+    
+    // 對於無法識別的類型，提供默認值
+    return {
+      isSuspicious: false,
+      truthScore: 0.8,
+      adjustedLength: measuredLength,
+      adjustmentFactor: 1,
+      suspiciousFeatures: ['無法確定對象類型'],
+      funnyMessage: "無法確定對象類型，無法進行準確的真實度分析。"
+    };
+  } catch (error) {
+    // 處理分析過程中的異常
+    console.error('Error in truth analysis:', error);
+    return {
+      isSuspicious: true,
+      truthScore: 0.5,
+      adjustedLength: measuredLength,
+      adjustmentFactor: 1,
+      suspiciousFeatures: ['分析處理錯誤'],
+      funnyMessage: "真實度分析過程中發生錯誤，結果可能不準確。"
+    };
+  }
 }
 
 // 主要處理函數
