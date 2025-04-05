@@ -236,193 +236,125 @@ const CONFIG: TruthDetectorConfig = {
 };
 
 /**
- * 分析圖像真實性
- * @param objectType 物體類型
- * @param measuredLength 測量長度
- * @param measuredThickness 測量粗細
- * @returns 真實性分析結果
+ * 分析對象真實度
+ * @param options 包含對象類型、長度、粗細和是否為男性特徵的選項
+ * @returns 分析結果對象
  */
-export function analyzeTruth(
-  objectType: ObjectType | null,
-  measuredLength: number,
-  measuredThickness: number,
-): TruthAnalysisResult {
-  if (!objectType) {
+export function analyzeTruth(options: { 
+  type: ObjectType; 
+  length: number; 
+  thickness: number;
+  isMaleFeature?: boolean;
+}): TruthAnalysisResult {
+  const { type, length, thickness, isMaleFeature = false } = options;
+  
+  if (!type) {
     return {
-      truthScore: 0.5,
-      suspiciousFeatures: ['無法識別物體類型'],
-      adjustedLength: measuredLength,
+      truthScore: 75,
+      suspiciousFeatures: ['無法識別的物體類型'],
+      adjustedLength: length,
       adjustmentFactor: 1,
       funnyMessage: CONFIG.responses.unidentified[Math.floor(Math.random() * CONFIG.responses.unidentified.length)],
-      isSuspicious: true
+      isSuspicious: false
     };
   }
 
-  // 根據物體類型調整尺寸
-  const { adjustedLength, adjustedThickness } = adjustDimensions(
-    measuredLength,
-    measuredThickness,
-    objectType
-  );
-
-  // 計算長寬比
-  const ratio = adjustedThickness > 0 ? adjustedLength / adjustedThickness : 0;
-
-  // 初始化可疑特徵列表
-  const suspiciousFeatures: string[] = [];
+  // 檢查物體長度是否合理
+  const averageLength = CONFIG.averageLengths[type] || CONFIG.averageLengths.cucumber;
+  const averageRatio = CONFIG.reasonableRatios[type] || CONFIG.reasonableRatios.cucumber;
   
-  // 獲取物體類型的參考標準
-  const isReasonable = isReasonableDimension(adjustedLength, adjustedThickness, objectType);
+  // 計算實際比率和關鍵指標
+  const actualRatio = length / thickness;
+  const lengthRatio = length / averageLength;
+  const ratioDifference = Math.abs(actualRatio - averageRatio) / averageRatio;
   
-  // 計算調整系數
-  let adjustmentFactor = 1.0;
+  // 計算可疑程度分數
+  let suspicionScore = 0;
   
-  // 特殊處理other_rod類型
-  if (objectType === 'other_rod') {
-    // 從配置中獲取限制和參考值
-    const limits = CONFIG.dimensionLimits.other_rod;
-    const avgLength = CONFIG.averageLengths.other_rod;
-    
-    // 判斷是否可能是男性特徵
-    const isLikelyMaleBodyPart = 
-      adjustedLength >= limits.maleFeatureMinLength && 
-      adjustedLength <= limits.maleFeatureMaxLength && 
-      adjustedThickness >= limits.maleFeatureMinThickness;
+  // 針對other_rod特別處理 - 依據是否為男性特徵採用不同標準
+  if (type === 'other_rod') {
+    if (isMaleFeature) {
+      // 男性特徵的標準
+      const { maleFeatureMinLength, maleFeatureMaxLength, maleFeatureMinThickness } = CONFIG.dimensionLimits.other_rod;
       
-    if (isLikelyMaleBodyPart) {
-      // 檢查尺寸是否合理
-      const lengthRatio = adjustedLength / avgLength;
-      
-      // 計算長度的合理性得分（0-1之間，1為最合理）
-      // 基於距離平均值的遠近
-      // const lengthReasonableScore = 1 - Math.min(1, Math.abs(lengthRatio - 1) / 0.5);
-      
-      // 長度明顯超過平均太多
-      if (lengthRatio > 1.5) {
-        suspiciousFeatures.push('長度可能誇大');
-        
-        // 調整系數基於超出程度
-        const excessRatio = (lengthRatio - 1.5) / 0.5; // 每超出0.5個比例單位，增加一個調整單位
-        adjustmentFactor = Math.max(0.7, 1 - excessRatio * 0.1);
+      // 如果長度超出合理範圍，增加懷疑分數
+      if (length > maleFeatureMaxLength) {
+        suspicionScore += (length - maleFeatureMaxLength) / maleFeatureMaxLength * CONFIG.suspicionWeights.lengthWeight;
       }
       
-      // 長度明顯小於平均太多
-      if (lengthRatio < 0.7) {
-        suspiciousFeatures.push('長度可能縮小');
-        
-        // 調整系數基於縮小程度
-        const shrinkRatio = (0.7 - lengthRatio) / 0.3; // 每縮小0.3個比例單位，增加一個調整單位
-        adjustmentFactor = Math.min(1.3, 1 + shrinkRatio * 0.1);
+      // 如果尺寸不符合男性特徵的特性，增加懷疑分數
+      if (length < maleFeatureMinLength || thickness < maleFeatureMinThickness) {
+        suspicionScore += 0.3;
       }
-      
-      // 檢查長寬比是否合理
-      if (ratio < 3) {
-        suspiciousFeatures.push('粗細比例不太合理');
-      } else if (ratio > 7) {
-        suspiciousFeatures.push('過於細長');
-      }
-      
-      // 檢查長度有沒有超出物理極限
-      if (adjustedLength > 25) {
-        suspiciousFeatures.push('長度超出常見範圍');
-        
-        // 調整系數進一步降低
-        adjustmentFactor *= 0.8;
-      }
-    }
-  } else if (objectType === 'cucumber') {
-    // 小黃瓜特有的判斷邏輯
-    const limits = CONFIG.dimensionLimits.cucumber;
-    
-    // 檢查長度與合理範圍的關係
-    if (adjustedLength < limits.reasonableMinLength) {
-      suspiciousFeatures.push('小黃瓜長度過短');
-    } else if (adjustedLength > limits.reasonableMaxLength) {
-      suspiciousFeatures.push('小黃瓜長度過長');
-    }
-    
-    // 檢查粗細與合理範圍的關係
-    if (adjustedThickness < limits.reasonableMinThickness) {
-      suspiciousFeatures.push('小黃瓜過細');
-    } else if (adjustedThickness > limits.reasonableMaxThickness) {
-      suspiciousFeatures.push('小黃瓜過粗');
-    }
-    
-    // 檢查長寬比
-    if (ratio < 4) {
-      suspiciousFeatures.push('小黃瓜比例不協調');
-    } else if (ratio > 10) {
-      suspiciousFeatures.push('小黃瓜過於細長');
-    }
-  } else if (objectType === 'banana') {
-    // 香蕉特有的判斷邏輯
-    const limits = CONFIG.dimensionLimits.banana;
-    
-    // 檢查長度與合理範圍的關係
-    if (adjustedLength < limits.reasonableMinLength) {
-      suspiciousFeatures.push('香蕉長度過短');
-    } else if (adjustedLength > limits.reasonableMaxLength) {
-      suspiciousFeatures.push('香蕉長度過長');
-    }
-    
-    // 檢查粗細與合理範圍的關係
-    if (adjustedThickness < limits.reasonableMinThickness) {
-      suspiciousFeatures.push('香蕉過細');
-    } else if (adjustedThickness > limits.reasonableMaxThickness) {
-      suspiciousFeatures.push('香蕉過粗');
-    }
-    
-    // 檢查長寬比
-    if (ratio < 3.5) {
-      suspiciousFeatures.push('香蕉比例不協調');
-    } else if (ratio > 8) {
-      suspiciousFeatures.push('香蕉過於細長');
-    }
-  }
-  
-  // 通用檢查：圖像裁剪、角度、尺寸誇大
-  
-  // 檢查尺寸是否極端（極大或極小）
-  if (adjustedLength < 5) {
-    suspiciousFeatures.push('物體過小');
-  } else if (adjustedLength > CONFIG.dimensionLimits[objectType].maxLength * 0.9) {
-    suspiciousFeatures.push('物體接近或超出測量範圍上限');
-  }
-  
-  // 拍攝角度問題（從長寬比判斷）
-  if (ratio < 2 && objectType !== 'other_rod') {
-    suspiciousFeatures.push('可能拍攝角度不佳');
-  }
-  
-  // 特殊處理：空白特徵列表時添加一個默認項
-  if (suspiciousFeatures.length === 0) {
-    if (!isReasonable) {
-      suspiciousFeatures.push('尺寸不在理想範圍內');
     } else {
-      suspiciousFeatures.push('看起來合理');
+      // 一般棒狀物的標準
+      const { nonMaleFeatureMaxLength, nonMaleFeatureMaxThickness } = CONFIG.dimensionLimits.other_rod;
+      
+      // 如果長度/粗細與一般物品不符，增加懷疑分數
+      if (length > nonMaleFeatureMaxLength || thickness > nonMaleFeatureMaxThickness) {
+        suspicionScore += 0.4;
+      }
+    }
+  } else {
+    // 針對蔬果類型的標準處理
+    
+    // 檢查長度超過平均值的程度
+    if (lengthRatio > CONFIG.suspiciousThresholds.lengthExceedRatio) {
+      suspicionScore += (lengthRatio - 1) * CONFIG.suspicionWeights.lengthWeight;
+    }
+    
+    // 檢查長度/粗細比率的異常程度
+    if (ratioDifference > 0.3) {
+      suspicionScore += ratioDifference * CONFIG.suspicionWeights.ratioWeight;
     }
   }
-
-  // 計算真實性得分，範圍 0-1
-  const truthScoreValue = calculateTruthScore(objectType, adjustedLength, adjustedThickness, suspiciousFeatures.length);
   
-  // 將0-1範圍分數轉換為0-100範圍
-  const truthScore100 = Math.round(truthScoreValue * 100);
+  // 計算調整因子
+  const adjustmentFactor = Math.max(
+    CONFIG.adjustmentSettings.minAdjustmentFactor,
+    1 - Math.min(suspicionScore, CONFIG.adjustmentSettings.maxAdjustment)
+  );
   
-  // 定義這張圖是否值得懷疑（真實度低於閾值或有太多可疑特徵）
-  const isSuspicious = truthScore100 < 65 || suspiciousFeatures.length > 2;
+  // 計算調整後的長度
+  const adjustedLength = length * adjustmentFactor;
   
-  // 根據懷疑程度選擇不同的反饋訊息
-  const messageCategory = isSuspicious ? "suspicious" : "reasonable";
-  const messages = CONFIG.responses[messageCategory] || CONFIG.responses.general;
-  const funnyMessage = messages[Math.floor(Math.random() * messages.length)];
+  // 計算最終真實度分數 - 從0-1轉換為0-100分
+  const truthScoreValue = Math.max(0, Math.min(1, 1 - suspicionScore));
+  
+  // 決定是否標記為可疑
+  const isSuspicious = truthScoreValue * 100 < CONFIG.suspiciousThresholds.truthScoreThreshold;
+  
+  // 生成反饋訊息
+  let message = '';
+  let suspiciousFeatures: string[] = [];
+  
+  if (isSuspicious) {
+    // 選擇隨機的幽默回應和可疑特徵
+    const randomResponse = CONFIG.responses.suspicious[Math.floor(Math.random() * CONFIG.responses.suspicious.length)];
+    const funnyResponse = CONFIG.responses.funnyResponses[Math.floor(Math.random() * CONFIG.responses.funnyResponses.length)];
+    message = `${randomResponse} ${funnyResponse}`;
+    
+    // 隨機選擇2-4個可疑特徵
+    const featureCount = Math.floor(Math.random() * 3) + 2; // 2到4個
+    const selectedFeatures = [...CONFIG.responses.suspiciousFeatures];
+    suspiciousFeatures = [];
+    
+    for (let i = 0; i < featureCount; i++) {
+      if (selectedFeatures.length === 0) break;
+      const randomIndex = Math.floor(Math.random() * selectedFeatures.length);
+      suspiciousFeatures.push(selectedFeatures[randomIndex]);
+      selectedFeatures.splice(randomIndex, 1);
+    }
+  } else {
+    message = CONFIG.responses.reasonable[Math.floor(Math.random() * CONFIG.responses.reasonable.length)];
+  }
   
   return {
-    truthScore: truthScore100, // 返回0-100範圍分數
+    truthScore: Math.round(truthScoreValue * 100),
     suspiciousFeatures,
     adjustedLength,
     adjustmentFactor,
-    funnyMessage,
+    funnyMessage: message,
     isSuspicious
   };
 }
@@ -632,61 +564,69 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
- * 根據真實性分析結果獲取建議訊息
- * @param truthAnalysis 真實性分析結果
- * @param objectType 物體類型
+ * 基於真實度分析結果生成建議訊息
+ * @param result 真實度分析結果
+ * @param objectType 對象類型
+ * @param isMaleFeature 是否為男性特徵
  * @returns 建議訊息
  */
 export function getSuggestionMessage(
-  truthAnalysis: TruthAnalysisResult,
-  objectType: ObjectType | null
+  result: TruthAnalysisResult,
+  objectType: ObjectType,
+  isMaleFeature?: boolean
 ): string {
-  const { isSuspicious, truthScore, suspiciousFeatures } = truthAnalysis;
-  
-  if (!objectType) {
-    return "請確保圖像中有清晰可見的目標物體，並嘗試從不同角度拍攝。";
-  }
-  
-  // 根據真實度和物體類型選擇適當建議
-  if (truthScore < 40) {
-    return "這張圖片可能不適合精確測量。建議在良好光線下，從側面直接拍攝物體，確保整個物體都在畫面中，並放置一些參考物（如硬幣或尺）提高準確度。";
-  } 
-  
-  if (isSuspicious) {
-    // 檢查特定的可疑特徵，提供針對性建議
-    if (suspiciousFeatures.some(f => f.includes('角度') || f.includes('拍攝'))) {
-      return "拍攝角度可能影響測量結果。建議從物體的側面直接拍攝，保持相機與物體平行，避免使用廣角或變焦功能。";
+  // 如果檢測到可疑（低真實度）情況
+  if (result.isSuspicious) {
+    if (objectType === 'other_rod' && isMaleFeature) {
+      // 男性特徵的專門提示
+      const suggestions = [
+        `我們注意到您上傳的照片似乎不太符合自然比例。拍攝男性特徵時，請保持適當距離並使用正確角度，以獲得更準確的測量結果。`,
+        `此照片可能因為拍攝角度或距離問題導致測量結果不夠客觀。建議下次拍攝時使用中性背景、自然光線，並保持直角視角以提高準確度。`,
+        `您上傳的圖片可能存在透視失真，影響了測量的準確性。拍攝時建議將相機與物體保持垂直，並避免使用廣角鏡頭，這樣測量結果會更可靠。`,
+        `我們的測謊系統檢測到此圖片的尺寸可能不太符合現實。請確保下次拍攝時避免任何可能導致視覺誇大的技巧，這樣我們才能提供更準確的評估。`
+      ];
+      return suggestions[Math.floor(Math.random() * suggestions.length)];
     }
     
-    if (suspiciousFeatures.some(f => f.includes('比例') || f.includes('粗細'))) {
-      return "物體的比例看起來不太自然。建議使用自然光線，拍攝整個物體，並避免使用可能扭曲比例的濾鏡或特效。";
-    }
-    
-    if (suspiciousFeatures.some(f => f.includes('長度'))) {
-      if (objectType === 'cucumber') {
-        return "小黃瓜的長度測量結果不在典型範圍內。為了獲得更準確的測量，請確保拍攝整個小黃瓜，並使用常見物體（如尺、硬幣）作為比例參考。";
-      } else if (objectType === 'banana') {
-        return "香蕉的長度測量結果不在典型範圍內。請嘗試拍攝完整的香蕉，避免彎曲或截斷導致的測量誤差。";
-      } else {
-        return "測量結果似乎不在典型範圍內。請確保拍攝完整物體，並避免使用可能扭曲比例的相機設置。";
-      }
-    }
-    
-    // 默認可疑情況建議
-    return "為獲得更準確的測量結果，建議在明亮自然光線下拍攝，避免使用特效或濾鏡，並保持物體完整可見。";
-  }
-  
-  // 對於準確度尚可的測量
-  if (truthScore >= 60 && truthScore < 80) {
-    if (objectType === 'cucumber') {
-      return "這次測量結果看起來合理。小黃瓜的測量通常在15-22公分之間較為準確，您可以使用直尺作為參考進一步提高準確度。";
-    } else if (objectType === 'banana') {
-      return "測量結果在合理範圍內。香蕉的型態因品種不同而異，放置一個參考物體（如錢幣）有助於校準系統的測量準確度。";
+    // 真實度低於閾值，給出改進建議
+    if (result.truthScore < 50) {
+      // 真實度非常低的情況
+      return "這張照片的測量精度有顯著問題，可能是因為拍攝角度、距離或圖像處理導致。建議重新拍攝，確保物體平放、相機與物體保持垂直，並使用自然光線。";
     } else {
-      return "測量結果在合理範圍內。若需更精確的數據，可使用固定距離拍攝，並添加已知大小的參考物體在畫面中。";
+      // 真實度較低但尚可接受的情況
+      const suggestions = [
+        "照片有些可疑特徵可能影響測量準確性。建議拍攝時使用均勻光源，並保持相機與物體垂直以減少透視變形。",
+        "這張照片的測量結果可能不太準確。試著在自然光下，將物體放在平面上，並從正上方拍攝以獲得更準確的比例。",
+        "我們的系統檢測到一些異常比例。拍攝時請避免使用廣角鏡頭，並保持適當距離，以減少視覺扭曲。",
+        "測量結果可能受到拍攝技巧的影響。下次可以嘗試放置參考物（如尺子）一同拍攝，這樣可以提高精度。"
+      ];
+      return suggestions[Math.floor(Math.random() * suggestions.length)];
+    }
+  } else {
+    // 真實度高的情況
+    if (objectType === 'other_rod' && isMaleFeature) {
+      // 男性特徵的專門提示
+      const positiveSuggestions = [
+        "您的照片拍攝角度和距離恰到好處，測量結果非常精確。請繼續保持這種專業的拍攝方式。",
+        "這是一張拍攝得非常好的照片，光線均勻、角度適中，使我們能夠提供準確的分析結果。",
+        "從照片來看，您已掌握了理想的拍攝技巧，使得測量結果非常可靠。保持這種水準！",
+        "您的拍攝技巧值得表揚，照片清晰且比例準確，這對於獲得精確的測量結果至關重要。"
+      ];
+      return positiveSuggestions[Math.floor(Math.random() * positiveSuggestions.length)];
+    }
+    
+    if (result.truthScore > 90) {
+      // 真實度非常高的情況
+      return "這張照片拍攝得非常好！光線充足、角度恰當，使我們能夠提供最準確的分析結果。請繼續保持這種拍攝品質。";
+    } else {
+      // 真實度較高的情況
+      const positiveSuggestions = [
+        "照片品質不錯，測量結果可信度高。如需更精確的結果，可以考慮在更均勻的光線下重新拍攝。",
+        "這是一張拍得不錯的照片，光線和角度都還可以，使我們能夠提供相當準確的分析。",
+        "照片拍攝角度和距離都很合適，測量結果值得參考。若要更上一層樓，可嘗試使用自然日光。",
+        "您的拍攝技巧很好，照片清晰且比例協調。如果添加一個比例尺參考物，結果會更加精準。"
+      ];
+      return positiveSuggestions[Math.floor(Math.random() * positiveSuggestions.length)];
     }
   }
-  
-  // 高準確度測量的鼓勵訊息
-  return "您的測量看起來非常準確！清晰的圖像和良好的拍攝角度有助於獲得這樣精確的結果。";
 } 

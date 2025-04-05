@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { analyzeTruth, adjustDimensions, calculateFinalScore, ObjectType } from '@/components/utils/TruthDetector';
+import { analyzeTruth, adjustDimensions, calculateFinalScore, ObjectType, getSuggestionMessage } from '@/components/utils/TruthDetector';
 
 // 分析結果類型
 type AnalysisResult = {
@@ -53,16 +53,34 @@ function getRandomData(type: 'cucumber' | 'banana' | 'other_rod') {
 // Generate fallback comment
 function generateComment(data: Record<string, unknown>): string {
   if (data.type === 'other_rod') {
-    const comments = [
-      `哎呀～這個不是小黃瓜也不是香蕉呢！不過沒關係，讓我來看看這個有趣的條狀物。長度約${data.length}cm，粗細約${data.thickness}cm。嗯...形狀和大小都挺特別的，讓人遐想呢！不過親愛的，下次如果想要更專業的分析，建議上傳真正的小黃瓜或香蕉哦～`,
-      
-      `天啊！這個不是我們平常分析的小黃瓜或香蕉呢～不過我還是很樂意為妳評估這個特別的棒狀物體。它長${data.length}cm，粗細${data.thickness}cm，嗯...尺寸還不錯哦！姐妹們可能會對這個形狀有些想法，但我不便多說。想要更準確的水果分析，下次上傳正確的水果照片哦！`,
-      
-      `噢！這是個有點特別的物體呢～不是我們常見的小黃瓜或香蕉，但作為一個女孩子，我覺得這個條狀物體還挺...有趣的。長度${data.length}cm，粗細${data.thickness}cm，尺寸適中。不知道妳拿它來做什麼用途呢？如果只是想測量水果，下次記得上傳真正的水果照片哦，我會更專業地分析的～`,
-      
-      `親愛的，這不是標準的分析對象呢！但我得說，這個棒狀物體形狀挺特別的～長度為${data.length}cm，粗細為${data.thickness}cm。讓人不禁聯想到一些...嗯，算了，不說了！女孩子之間心照不宣啦～不過說真的，如果想要認真分析水果品質，建議上傳真正的小黃瓜或香蕉照片哦！`
-    ];
-    return comments[Math.floor(Math.random() * comments.length)];
+    // 根據是否為男性特徵選擇不同的評論集
+    if (data.isMaleFeature === true) {
+      // 男性特徵評論集 - 閨蜜尖酸刻薄的高標準風格，帶有強烈露骨性暗示
+      const maleFeatureComments = [
+        `哎呀～親愛的，這個規格也太...普通了吧？長度${data.length}cm，粗細${data.thickness}cm，勉強及格而已啦！雖然表面看起來還行，但這種尺寸在閨蜜團裡絕對是會被嘲笑的對象。說真的，我前男友至少比這個粗一圈長三公分，而且技巧也好～如果你的約會對象只有這個水平，建議妳還是提前準備個按摩棒備用哦～`,
+        
+        `天啊～這個尺寸算是...特別的嗎？長度${data.length}cm，粗細才${data.thickness}cm？姐妹，我們得談談妳的品味問題了！這種規格頂多就是一夜情的水準，根本無法成為長期伴侶好嗎？除非他技巧特別好或是很有錢，否則我真的很難想像怎麼從這種大小獲得完全的滿足...保險起見，下次約會前先帶個道具在包包裡吧！`,
+        
+        `親愛的，我得老實告訴妳，這個尺寸有點...不夠看呢！長度${data.length}cm，粗細${data.thickness}cm，說實話這在我的前男友們中絕對是墊底的～如果他在床上沒有超強的補償技巧或是願意用上各種花樣和玩具，這樣的條件真的很難讓女生爽到！建議妳跟他約會時多觀察他的手指長度和靈活度，那可能比這個更重要哦！`,
+        
+        `哈哈哈！妳把這個當寶貝啊？長度才${data.length}cm，粗細${data.thickness}cm的尺寸也好意思拿出來測量？姐妹，我們得提高標準了！在我的評分系統裡，這頂多算個基本配備，除非他前戲特別出色或是能堅持超過30分鐘，否則這種規格很難讓人印象深刻。說真的，要是我碰到這種size，可能會找個藉口提前結束約會～要不要考慮再物色一下？`,
+        
+        `噢親愛的～這個尺寸...呃...怎麼說呢？長${data.length}cm，粗${data.thickness}cm，如果這是你男朋友的"裝備"，那麼我隆重地建議你們的性愛清單裡一定要加上各種道具和玩具！因為老實說，光靠這個規格想要征服G點簡直是天方夜譚！除非他有張能說會道的嘴和靈活的手指，否則這種尺寸在閨蜜團的評分系統裡絕對是需要"額外努力"的類型～`
+      ];
+      return maleFeatureComments[Math.floor(Math.random() * maleFeatureComments.length)];
+    } else {
+      // 一般棒狀物評論集 - 保持原有的閨蜜私密風格
+      const regularRodComments = [
+        `哎呀～這個不是小黃瓜也不是香蕉呢！不過沒關係，讓我來看看這個有趣的條狀物。長度約${data.length}cm，粗細約${data.thickness}cm。嗯...形狀和大小都挺特別的，讓人遐想呢！不過親愛的，下次如果想要更專業的分析，建議上傳真正的小黃瓜或香蕉哦～`,
+        
+        `天啊！這個不是我們平常分析的小黃瓜或香蕉呢～不過我還是很樂意為妳評估這個特別的棒狀物體。它長${data.length}cm，粗細${data.thickness}cm，嗯...尺寸還不錯哦！姐妹們可能會對這個形狀有些想法，但我不便多說。想要更準確的水果分析，下次上傳正確的水果照片哦！`,
+        
+        `噢！這是個有點特別的物體呢～不是我們常見的小黃瓜或香蕉，但作為一個女孩子，我覺得這個條狀物體還挺...有趣的。長度${data.length}cm，粗細${data.thickness}cm，尺寸適中。不知道妳拿它來做什麼用途呢？如果只是想測量水果，下次記得上傳真正的水果照片哦，我會更專業地分析的～`,
+        
+        `親愛的，這不是標準的分析對象呢！但我得說，這個棒狀物體形狀挺特別的～長度為${data.length}cm，粗細為${data.thickness}cm。讓人不禁聯想到一些...嗯，算了，不說了！女孩子之間心照不宣啦～不過說真的，如果想要認真分析水果品質，建議上傳真正的小黃瓜或香蕉照片哦！`
+      ];
+      return regularRodComments[Math.floor(Math.random() * regularRodComments.length)];
+    }
   }
   
   const comments = [
@@ -85,7 +103,11 @@ const promptTemplates = {
    - 這是小黃瓜還是香蕉？如果都不是，但是棒狀或條狀物體，請標識為"other_rod"。
    - 如果圖片中有多個主要物體，請將multipleObjects設為true。
    - 如果圖片質量太差（太暗、太模糊等），請將lowQuality設為true。
-   - 若無法確定物體類型，objectType應為null。`,
+   - 若無法確定物體類型，objectType應為null。
+   - 特別注意：如果識別為"other_rod"，請進一步判斷：
+     * 是否明顯屬於男性特徵（陰莖、龜頭等）？在commentText中標記"[male_feature]"作為識別標記
+     * 若不是男性特徵，則標記"[regular_rod]"
+     * 這個標記將幫助系統選擇適當的評論風格，不會出現在最終回應中`,
   
   // 尺寸估計與風格評價指南
   sizeEstimationGuidelines: `
@@ -145,20 +167,37 @@ const promptTemplates = {
      * 幽默但適度，類似美食評論家的風格
      * 例如：「這根20cm的黃瓜切片後絕對能成為沙拉的主角！彎度適中，粗細均勻，新鮮度給9分毫不誇張。這種品質的小黃瓜絕對是涼拌、醃漬的絕佳選擇，甚至可以考慮做成精緻的小黃瓜卷。皮色碧綠，質地緊實，是我見過最標準的小黃瓜典範之一。」
    
-   - other_rod：維持閨蜜間的私密評論風格
-     * 像是在閨蜜團體聊天室分享約會對象的評價，毫無保留但不刻意惡意
-     * 使用女生之間才懂的梗和隱喻
-     * 評論要有真誠建議+惡作劇吐槽的完美平衡，犀利中帶著姐妹情誼
-     * 例如：「天啊～這尺寸絕對是約會首選級別的！姐妹們，這種等級的，整個過程直接昇天～如果遇到這種，絕對要把握機會！不然被別人撿走後悔都來不及～」
+   - other_rod區分為兩種評論風格：
+     * [male_feature]男性特徵：使用閨蜜間尖酸刻薄的高標準評價，帶有強烈露骨性暗示
+       - 表現出對尺寸和表現的高期望值，用挑剔的語氣評論
+       - 對不滿意的尺寸給予嘲笑和負面評價，建議"額外手段"彌補不足
+       - 使用閨蜜間會直白討論的露骨性暗示和比較
+       - 將測量結果與"前男友們"進行不利比較
+       - 例如：「天啊～這尺寸也太普通了吧？長度才17cm？我前男友比這個至少大一圈好嗎！如果約會對象只有這個規格，建議準備些輔助道具，否則很難有滿足感～除非他技巧超群或特別持久，否則這種size實在難以令人印象深刻！」
+     
+     * [regular_rod]一般棒狀物：使用原有的閨蜜私密評論風格
+       - 像是在閨蜜團體聊天室分享約會對象的評價，毫無保留但不刻意惡意
+       - 使用女生之間才懂的梗和隱喻
+       - 評論要有真誠建議+惡作劇吐槽的完美平衡，犀利中帶著姐妹情誼
+       - 例如：「天啊～這尺寸絕對是約會首選級別的！姐妹們，這種等級的，整個過程直接昇天～如果遇到這種，絕對要把握機會！不然被別人撿走後悔都來不及～」
 
    a) **水果專業評語範例**：
       - 「這根香蕉長度達到18.5cm，明顯高於市場平均水準。表皮呈現完美的金黃色，沒有任何瑕疵或黑斑，這意味著它處於最佳食用期。彎度恰到好處，方便握持，厚度均勻，估計口感極佳。新鮮度給9分，總體品質達到8.7分，屬於「市場佳品級」。這種香蕉適合直接食用、做冰沙或製作香蕉點心，絕對是挑剔的水果愛好者會選擇的等級！」
 
-   b) **other_rod閨蜜私密評語**：
-      - 如果是other_rod，維持現有的閨蜜私密對話風格：
-      - 參考台灣男性平均長度12.5cm給予客觀但帶著主觀喜好的評價
-      - 除了長度外，也評論形狀、曲度、粗細等維度，並提及這些對女性的重要性
-      - 加入一些「私房建議」`,
+   b) **other_rod評語風格區分**：
+      * [male_feature]男性特徵評語：
+        - 以閨蜜間的尖酸刻薄標準直接評價尺寸，強調大小遠低於期望
+        - 用挑剔的語氣討論長度和粗細不足的問題
+        - 加入與"前男友"、"理想標準"的直接比較
+        - 提供避免失望的"建議"，如準備替代方案或額外道具
+        - 直截了當表達對不夠大尺寸的嘲諷和不滿
+        - 例如：「長度只有15cm，粗細才3.5cm？親愛的，這在姐妹團的評分表上頂多得C-！這種尺寸根本無法碰到關鍵位置，建議你約會時最好先確認他有沒有其他方面的優勢，或者乾脆在包包裡帶個備用按摩棒～以防萬一！」
+      
+      * [regular_rod]一般棒狀物評語：
+        - 參考台灣男性平均長度12.5cm給予客觀但帶著主觀喜好的評價
+        - 除了長度外，也評論形狀、曲度、粗細等維度，並提及這些對女性的重要性
+        - 加入一些「私房建議」和暗示
+        - 保持一貫的閨蜜間的直率風格`,
   
   // 回應格式要求
   responseFormatRequirements: `
@@ -437,6 +476,7 @@ function parseGeminiResponse(responseText: string): {
   freshnessScore: number;
   overallScore: number;
   commentText: string;
+  isMaleFeature?: boolean;
   error?: string;
 } {
   try {
@@ -475,6 +515,19 @@ function parseGeminiResponse(responseText: string): {
       
       const parsedResponse = JSON.parse(cleaned);
       
+      // 檢查是否包含男性特徵標記並移除標記
+      let isMaleFeature = false;
+      let commentText = parsedResponse.commentText || "";
+      
+      // 檢測和移除標記
+      if (commentText.includes('[male_feature]')) {
+        isMaleFeature = true;
+        commentText = commentText.replace('[male_feature]', '').trim();
+      } else if (commentText.includes('[regular_rod]')) {
+        isMaleFeature = false;
+        commentText = commentText.replace('[regular_rod]', '').trim();
+      }
+      
       // 確保所有屬性都存在並有正確類型
       return {
         objectType: ['cucumber', 'banana', 'other_rod'].includes(parsedResponse.objectType) 
@@ -485,15 +538,27 @@ function parseGeminiResponse(responseText: string): {
         thicknessEstimate: parseFloat(parsedResponse.thicknessEstimate) || 0,
         freshnessScore: parseFloat(parsedResponse.freshnessScore) || 0,
         overallScore: parseFloat(parsedResponse.overallScore) || 0,
-        commentText: typeof parsedResponse.commentText === 'string' 
-          ? parsedResponse.commentText 
-          : "分析未能生成完整評語。"
+        commentText: commentText || "分析未能生成完整評語。",
+        isMaleFeature: parsedResponse.objectType === 'other_rod' ? isMaleFeature : undefined
       };
     } catch (/* firstError */ error) {
       // 如果清理後仍無法解析，嘗試直接解析原始響應
       console.error('Cleaned JSON parsing failed:', error);
       try {
         const parsedResponse = JSON.parse(jsonStr);
+        
+        // 檢查是否包含男性特徵標記並移除標記
+        let isMaleFeature = false;
+        let commentText = parsedResponse.commentText || "";
+        
+        // 檢測和移除標記
+        if (commentText.includes('[male_feature]')) {
+          isMaleFeature = true;
+          commentText = commentText.replace('[male_feature]', '').trim();
+        } else if (commentText.includes('[regular_rod]')) {
+          isMaleFeature = false;
+          commentText = commentText.replace('[regular_rod]', '').trim();
+        }
         
         return {
           objectType: ['cucumber', 'banana', 'other_rod'].includes(parsedResponse.objectType) 
@@ -504,9 +569,8 @@ function parseGeminiResponse(responseText: string): {
           thicknessEstimate: parseFloat(parsedResponse.thicknessEstimate) || 0,
           freshnessScore: parseFloat(parsedResponse.freshnessScore) || 0,
           overallScore: parseFloat(parsedResponse.overallScore) || 0,
-          commentText: typeof parsedResponse.commentText === 'string' 
-            ? parsedResponse.commentText 
-            : "分析未能生成完整評語。"
+          commentText: commentText || "分析未能生成完整評語。",
+          isMaleFeature: parsedResponse.objectType === 'other_rod' ? isMaleFeature : undefined
         };
       } catch (secondError) {
         // 所有JSON解析嘗試失敗，嘗試提取關鍵信息
@@ -535,6 +599,7 @@ function extractFallbackInfo(responseText: string): {
   freshnessScore: number;
   overallScore: number;
   commentText: string;
+  isMaleFeature?: boolean;
   error: string;
 } {
   // 初始化結果
@@ -547,6 +612,7 @@ function extractFallbackInfo(responseText: string): {
     freshnessScore: 5, // 默認平均值
     overallScore: 5,   // 默認平均值
     commentText: "AI無法正確分析此圖片，請嘗試上傳更清晰的照片或換一個角度。",
+    isMaleFeature: undefined as boolean | undefined,
     error: 'JSON解析錯誤，無法提取完整分析結果'
   };
   
@@ -560,6 +626,12 @@ function extractFallbackInfo(responseText: string): {
   } else if (responseText.toLowerCase().includes('other_rod') || 
              responseText.toLowerCase().includes('棒狀物')) {
     extractedInfo.objectType = 'other_rod';
+    
+    // 嘗試判斷是否為男性特徵
+    const maleFeatureKeywords = ['陰莖', '生殖器', '男性特徵', '男性器官', 'penis', 'male organ', '龜頭'];
+    extractedInfo.isMaleFeature = maleFeatureKeywords.some(keyword => 
+      responseText.toLowerCase().includes(keyword.toLowerCase())
+    );
   }
   
   // 提取可能的長度信息
@@ -611,89 +683,123 @@ function extractFallbackInfo(responseText: string): {
 }
 
 // 處理真實度檢測，整合TruthDetector模組
-function detectTruthfulness(
-  objectType: ObjectType, 
-  measuredLength: number,
-  measuredThickness: number,
-  enableDetection: boolean = true
-): {
-  isSuspicious: boolean;
-  truthScore: number;
-  adjustedLength: number;
-  adjustmentFactor: number;
-  suspiciousFeatures: string[];
-  funnyMessage: string;
-} {
-  // 如果不啟用檢測，返回默認值（高真實度）
-  if (!enableDetection) {
+async function detectTruthfulness(data: any) {
+  if (!data) {
     return {
       isSuspicious: false,
-      truthScore: 80, // 更新為0-100範圍值
-      adjustedLength: measuredLength,
+      truthScore: 75,
+      adjustedLength: 0,
       adjustmentFactor: 1,
-      suspiciousFeatures: ['真實度檢測已關閉'],
-      funnyMessage: "真實度檢測已關閉，無法判斷照片真實性。"
+      suspiciousFeatures: [],
+      funnyMessage: "我們無法確定此圖像的真實性。"
     };
   }
-  
-  // 處理無效數據情況
-  if (measuredLength <= 0 || measuredThickness <= 0) {
-    return {
-      isSuspicious: true,
-      truthScore: 50, // 更新為0-100範圍值
-      adjustedLength: Math.max(1, measuredLength),  // 至少給一個最小值
-      adjustmentFactor: 1,
-      suspiciousFeatures: ['測量數據異常'],
-      funnyMessage: "測量結果異常，無法進行有效的真實度分析。"
-    };
-  }
-  
+
   try {
-    // 使用TruthDetector模組的analyzeTruth函數進行分析
-    if (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) {
-      // 原始類型轉換
-      const objectTypeChecked = objectType as 'cucumber' | 'banana' | 'other_rod';
-      
-      // 執行真實度分析
-      const truthResult = analyzeTruth(
-        objectTypeChecked,
-        measuredLength,
-        measuredThickness
-      );
-      
-      // 確保返回的對象符合接口要求
+    // Get the image type and dimensions for truth analysis
+    const { type, length, thickness, isMaleFeature } = data;
+    
+    if (!type || !length || !thickness) {
       return {
-        isSuspicious: truthResult.isSuspicious,
-        truthScore: truthResult.truthScore,
-        adjustedLength: truthResult.adjustedLength,
-        adjustmentFactor: truthResult.adjustmentFactor,
-        suspiciousFeatures: truthResult.suspiciousFeatures,
-        funnyMessage: truthResult.funnyMessage
+        isSuspicious: false,
+        truthScore: 75,
+        adjustedLength: 0,
+        adjustmentFactor: 1,
+        suspiciousFeatures: [],
+        funnyMessage: "無法分析此圖像的真實性，缺少必要資訊。"
       };
     }
     
-    // 對於無法識別的類型，提供默認值
+    // Use our TruthDetector to analyze the truthfulness of the image
+    const truthAnalysis = analyzeTruth({ 
+      type, 
+      length: Number(length), 
+      thickness: Number(thickness),
+      isMaleFeature: Boolean(isMaleFeature)
+    });
+    
+    return truthAnalysis;
+  } catch (error) {
+    console.error("Error in truth detection:", error);
     return {
       isSuspicious: false,
-      truthScore: 80, // 更新為0-100範圍值
-      adjustedLength: measuredLength,
+      truthScore: 75,
+      adjustedLength: 0,
       adjustmentFactor: 1,
-      suspiciousFeatures: ['無法確定對象類型'],
-      funnyMessage: "無法確定對象類型，無法進行準確的真實度分析。"
-    };
-  } catch (error) {
-    // 處理分析過程中的異常
-    console.error('Error in truth analysis:', error);
-    return {
-      isSuspicious: true,
-      truthScore: 50, // 更新為0-100範圍值
-      adjustedLength: measuredLength,
-      adjustmentFactor: 1,
-      suspiciousFeatures: ['分析處理錯誤'],
-      funnyMessage: "真實度分析過程中發生錯誤，結果可能不準確。"
+      suspiciousFeatures: [],
+      funnyMessage: "分析真實性時發生錯誤。"
     };
   }
 }
+
+// 處理分析結果並生成最終響應
+async function processAnalysisResults(geminiResults: any, imageBase64?: string): Promise<NextResponse> {
+  // 默認初始資料
+  const defaultData = {
+    type: 'unknown',
+    length: 0,
+    thickness: 0,
+    quality: 0,
+    freshness: 0,
+    comment: '無法識別圖片內容。請確保圖片包含小黃瓜或香蕉，並且圖片清晰可見。',
+    color: '',
+    imageData: imageBase64 || '',
+    truthfulness: {
+      score: 75,
+      suspicious: false,
+      suspiciousFeatures: [],
+      message: '無法分析此圖像的真實性。'
+    },
+    processTime: new Date().toISOString(),
+    suggestion: '請上傳更清晰的圖片，確保物體完整可見。'
+  };
+  
+  try {
+    // 如果沒有有效的分析結果，使用默認響應
+    if (!geminiResults) {
+      return NextResponse.json(defaultData, { status: 200 });
+    }
+
+    // 使用結果或默認值構建響應
+    const data = geminiResults;
+    
+    // 檢測真實度（如果啟用）
+    const truthAnalysis = await detectTruthfulness(data);
+    
+    // 生成使用建議
+    const suggestion = getSuggestionMessage(
+      truthAnalysis,
+      data.type as ObjectType,
+      data.isMaleFeature
+    );
+    
+    // 整合所有數據到最終響應
+    const finalResponse = {
+      ...defaultData,
+      ...data,
+      imageData: imageBase64 || '',
+      truthfulness: {
+        score: truthAnalysis?.truthScore || 75,
+        suspicious: truthAnalysis?.isSuspicious || false,
+        suspiciousFeatures: truthAnalysis?.suspiciousFeatures || [],
+        message: truthAnalysis?.funnyMessage || '無法分析此圖像的真實性。'
+      },
+      processTime: new Date().toISOString(),
+      suggestion
+    };
+    
+    return NextResponse.json(finalResponse, { status: 200 });
+  } catch (error) {
+    console.error('Error processing results:', error);
+    return NextResponse.json({
+      ...defaultData,
+      comment: '處理分析結果時出錯。'
+    }, { status: 500 });
+  }
+}
+
+// 啟用或禁用真實度檢測
+const enableTruthDetection = true;
 
 // 主要處理函數
 export async function POST(req: NextRequest) {
@@ -829,12 +935,7 @@ export async function POST(req: NextRequest) {
     }
 
     // 添加真實度分析
-    const truthAnalysis = detectTruthfulness(
-      data.type, 
-      data.length, 
-      data.thickness, 
-      enableTruthDetection
-    );
+    const truthAnalysis = await detectTruthfulness(data);
     
     // 創建最終結果
     const result: AnalysisResult = {
