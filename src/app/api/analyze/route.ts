@@ -880,11 +880,9 @@ export async function POST(req: NextRequest) {
     
     // --- Prepare Data (Random or Real) ---
     let data: AnalysisResult;
-    let useRandomData = false;
-
+    
     // Use random data in development if flag is set
     if (process.env.NODE_ENV === 'development' && process.env.USE_RANDOM_DATA === 'true') {
-      useRandomData = true;
       const randomData = getRandomData(initialAnalysisResult.objectType as 'cucumber' | 'banana' | 'other_rod');
       data = {
         ...initialAnalysisResult, // Start with initial result structure

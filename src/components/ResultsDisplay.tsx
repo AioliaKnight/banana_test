@@ -16,7 +16,7 @@ import {
 import Image from 'next/image';
 import TruthfulnessIndicator from './utils/TruthfulnessIndicator';
 import StatCard from './utils/StatCard';
-import { AnalysisResult, ObjectType } from '@/types'; // Import shared type
+import { AnalysisResult } from '@/types'; // Import shared type
 
 // Comment out the local definition
 /* export interface AnalysisResult {
@@ -359,14 +359,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const commentText = result.comment || '暫無評語';
       const lineHeight = 24;
       const maxWidth = contentWidth - 40;
-      const commentLines = wrapTextChinese(
-        ctx, 
-        commentText, 
-        contentX + 20, 
-        commentY + 60, 
-        maxWidth,
-        lineHeight
-      );
+      const commentLines = wrapTextChinese(ctx, commentText, contentX + 20, commentY + 60, maxWidth, lineHeight);
       
       // 繪製所有評語行
       commentLines.forEach(line => {
@@ -383,11 +376,11 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const dataUrl = canvas.toDataURL('image/png');
       return dataUrl;
     } catch (error) {
-      console.error('生成分享圖片錯誤:', error);
+      console.error('無法生成分享圖片:', error);
       setIsGeneratingImage(false);
       return null;
     }
-  }, [isClient, preview, result, wrapTextChinese, getDisplayLength]);
+  }, [isClient, preview, result, getDisplayLength]);
 
   // 設定Open Graph元標籤（如果還未存在）
   useEffect(() => {
@@ -430,7 +423,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   }, [isClient, generateShareImage, shareImageUrl]);
 
   const downloadImage = useCallback((url: string) => {
-    if (!result) return; // Ensure result exists
+    if (!result?.type) return; // Ensure result type exists
     const typeLabel = result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體';
     const link = document.createElement('a');
     link.href = url;
@@ -438,7 +431,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [result?.type]); // Depend on result.type
+  }, [result?.type]); // Only depend on result.type since that's all we use
 
   const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     let shareUrl = '';

@@ -241,27 +241,6 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
- * Calculates the truth score based on dimensions and issues count.
- * (Note: This function seems unused after refactoring, potentially removable? Keeping for now.)
- * @param {ObjectType} objectType
- * @param {number} length
- * @param {number} thickness
- * @param {number} issueCount
- * @returns {number} Truth score (0-1).
- */
-function calculateTruthScore(objectType: ObjectType, length: number, thickness: number, issueCount: number): number {
-  // Base score - higher if dimensions are reasonable
-  const isReasonable = isReasonableDimension(length, thickness, objectType);
-  const score = isReasonable ? 0.85 : 0.65;
-  
-  // Deduct points based on issue count
-  const finalScore = Math.max(0, score - Math.min(0.5, issueCount * 0.1));
-  
-  // Ensure score is within 0-1 range
-  return Math.max(0, Math.min(1, finalScore));
-}
-
-/**
  * Calculates the credibility score specifically for male features using Gaussian distribution.
  * @param {number} length Length value (cm).
  * @returns {number} Credibility score (0-100).
@@ -348,7 +327,6 @@ export function analyzeTruth(
 
   if (isMaleFeature) {
     truthScore = calculateMaleCredibilityScore(length);
-    const percentileDesc = getMalePercentileDescription(length);
 
     if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
       suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見"); suspicionScore += 50;
@@ -520,9 +498,10 @@ export function getSuggestionMessage(
   rodSubtype?: 'male_feature' | 'regular_rod',
   lengthValue?: number
 ): string {
+  const isMaleFeature = objectType === 'other_rod' && rodSubtype === 'male_feature';
   const stats = TAIWAN_MALE_STATS;
-  const isMaleFeature = rodSubtype === 'male_feature';
-  let percentileDesc = (lengthValue && isMaleFeature) ? getMalePercentileDescription(lengthValue) : '';
+  
+  const percentileDesc = (lengthValue && isMaleFeature) ? getMalePercentileDescription(lengthValue) : '';
 
   if (truthScore >= 85) {
     if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
