@@ -8,7 +8,7 @@
 // =================================
 // Imports
 // =================================
-import { ObjectType, TruthAnalysisResult } from '@/types';
+import { ObjectType, TruthAnalysisResult, TruthDetectorConfig } from '@/types';
 
 // =================================
 // Constants
@@ -64,51 +64,10 @@ export const TAIWAN_MALE_STATS = {
 // =================================
 
 // Configuration Interface for TruthDetector settings
-export interface TruthDetectorConfig {
-  averageLengths: Record<string, number>;
-  reasonableRatios: Record<string, number>;
-  suspiciousThresholds: {
-    truthScoreThreshold: number;
-    lengthExceedRatio: number;
-    otherRodMaxLength: number;
-  };
-  suspicionWeights: {
-    lengthWeight: number;
-    ratioWeight: number;
-  };
-  adjustmentSettings: {
-    maxAdjustment: number;
-    minAdjustmentFactor: number;
-  };
-  responses: {
-    funnyResponses: string[];
-    suspiciousFeatures: string[];
-    suspicious: string[];
-    reasonable: string[];
-    general: string[];
-    unidentified: string[];
-  };
-  dimensionLimits: {
-    cucumber: { 
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-    banana: { 
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-    other_rod: { 
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-      maleFeatureMinLength: number; maleFeatureMaxLength: number; maleFeatureMinThickness: number;
-      nonMaleFeatureMaxLength: number; nonMaleFeatureMaxThickness: number;
-    };
-    default: { 
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-  };
-}
+// MOVED TO: src/types/index.ts
+/* export interface TruthDetectorConfig {
+  // ... interface definition ...
+} */
 
 // =================================
 // Global Configuration Object

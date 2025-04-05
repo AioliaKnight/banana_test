@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { analyzeTruth, adjustDimensions, calculateFinalScore, getSuggestionMessage, CONFIG } from '@/components/utils/TruthDetector';
-import { AnalysisResult, ObjectType, TruthAnalysisResult as SharedTruthAnalysisResult } from '@/types';
+import { AnalysisResult, ObjectType, TruthAnalysisResult as SharedTruthAnalysisResult, TruthDetectorConfig } from '@/types';
 
 // =================================
 // Interfaces & Types (Local)
@@ -20,6 +20,9 @@ interface RandomDataResult {
 // =================================
 // Constants & Configuration
 // =================================
+
+// Use imported type for CONFIG
+const typedConfig: TruthDetectorConfig = CONFIG;
 
 // Gemini Prompt Templates
 const promptTemplates = {
@@ -198,8 +201,8 @@ const promptTemplates = {
  * Uses dimension limits from the imported CONFIG.
  */
 function getRandomData(type: 'cucumber' | 'banana' | 'other_rod'): RandomDataResult {
-  // Use dimension limits from the imported CONFIG
-  const limits = CONFIG.dimensionLimits[type] || CONFIG.dimensionLimits.default;
+  // Use dimension limits from the typedConfig (which imports CONFIG and applies the type)
+  const limits = typedConfig.dimensionLimits[type] || typedConfig.dimensionLimits.default;
   const { reasonableMinLength, reasonableMaxLength, reasonableMinThickness, reasonableMaxThickness } = limits;
 
   // Expand score range for more differentiation (0.0-9.5 range)
