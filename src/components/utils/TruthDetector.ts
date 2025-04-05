@@ -406,8 +406,11 @@ export function analyzeTruth(
   // 計算真實性得分，範圍 0-1
   const truthScoreValue = calculateTruthScore(objectType, adjustedLength, adjustedThickness, suspiciousFeatures.length);
   
-  // 定義這張圖是否值得懷疑（真實度低於閾值）
-  const isSuspicious = truthScoreValue < 0.65 || suspiciousFeatures.length > 2;
+  // 將0-1範圍分數轉換為0-100範圍
+  const truthScore100 = Math.round(truthScoreValue * 100);
+  
+  // 定義這張圖是否值得懷疑（真實度低於閾值或有太多可疑特徵）
+  const isSuspicious = truthScore100 < 65 || suspiciousFeatures.length > 2;
   
   // 根據懷疑程度選擇不同的反饋訊息
   const messageCategory = isSuspicious ? "suspicious" : "reasonable";
@@ -415,7 +418,7 @@ export function analyzeTruth(
   const funnyMessage = messages[Math.floor(Math.random() * messages.length)];
   
   return {
-    truthScore: truthScoreValue,
+    truthScore: truthScore100, // 返回0-100範圍分數
     suspiciousFeatures,
     adjustedLength,
     adjustmentFactor,
@@ -645,7 +648,7 @@ export function getSuggestionMessage(
   }
   
   // 根據真實度和物體類型選擇適當建議
-  if (truthScore < 0.4) {
+  if (truthScore < 40) {
     return "這張圖片可能不適合精確測量。建議在良好光線下，從側面直接拍攝物體，確保整個物體都在畫面中，並放置一些參考物（如硬幣或尺）提高準確度。";
   } 
   
@@ -674,7 +677,7 @@ export function getSuggestionMessage(
   }
   
   // 對於準確度尚可的測量
-  if (truthScore >= 0.6 && truthScore < 0.8) {
+  if (truthScore >= 60 && truthScore < 80) {
     if (objectType === 'cucumber') {
       return "這次測量結果看起來合理。小黃瓜的測量通常在15-22公分之間較為準確，您可以使用直尺作為參考進一步提高準確度。";
     } else if (objectType === 'banana') {

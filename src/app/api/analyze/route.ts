@@ -628,7 +628,7 @@ function detectTruthfulness(
   if (!enableDetection) {
     return {
       isSuspicious: false,
-      truthScore: 1.0, // 使用0-1範圍值，遵循最新的TruthDetector接口
+      truthScore: 80, // 更新為0-100範圍值
       adjustedLength: measuredLength,
       adjustmentFactor: 1,
       suspiciousFeatures: ['真實度檢測已關閉'],
@@ -640,7 +640,7 @@ function detectTruthfulness(
   if (measuredLength <= 0 || measuredThickness <= 0) {
     return {
       isSuspicious: true,
-      truthScore: 0.5,
+      truthScore: 50, // 更新為0-100範圍值
       adjustedLength: Math.max(1, measuredLength),  // 至少給一個最小值
       adjustmentFactor: 1,
       suspiciousFeatures: ['測量數據異常'],
@@ -675,7 +675,7 @@ function detectTruthfulness(
     // 對於無法識別的類型，提供默認值
     return {
       isSuspicious: false,
-      truthScore: 0.8,
+      truthScore: 80, // 更新為0-100範圍值
       adjustedLength: measuredLength,
       adjustmentFactor: 1,
       suspiciousFeatures: ['無法確定對象類型'],
@@ -686,7 +686,7 @@ function detectTruthfulness(
     console.error('Error in truth analysis:', error);
     return {
       isSuspicious: true,
-      truthScore: 0.5,
+      truthScore: 50, // 更新為0-100範圍值
       adjustedLength: measuredLength,
       adjustmentFactor: 1,
       suspiciousFeatures: ['分析處理錯誤'],
