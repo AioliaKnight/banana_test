@@ -309,8 +309,20 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       },
       safetySettings: [
         {
+          category: "HARM_CATEGORY_HARASSMENT" as any, 
+          threshold: "BLOCK_NONE" as any 
+        },
+        {
+          category: "HARM_CATEGORY_HATE_SPEECH" as any, 
+          threshold: "BLOCK_NONE" as any 
+        },
+        {
           category: "HARM_CATEGORY_SEXUALLY_EXPLICIT" as any,
-          threshold: "BLOCK_ONLY_HIGH" as any
+          threshold: "BLOCK_NONE" as any
+        },
+        {
+          category: "HARM_CATEGORY_DANGEROUS_CONTENT" as any, 
+          threshold: "BLOCK_NONE" as any 
         }
       ]
     });
