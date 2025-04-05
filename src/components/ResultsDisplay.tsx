@@ -625,7 +625,7 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
     
     try {
       // 如果是 blob URL，需要先獲取 base64 數據
-      let base64Image = imageUrl;
+      const base64Image = imageUrl;
       
       if (imageUrl.startsWith('blob:')) {
         const response = await fetch(imageUrl);
@@ -719,7 +719,7 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
       setIsUploadingToImgur(false);
       
       let shareUrl = '';
-      const currentUrl = window.location.href;
+      const _currentUrl = window.location.href;
       
       switch (platform) {
         case 'facebook':
@@ -744,17 +744,17 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
       
       // 如果上傳失敗，使用原始分享方法
       let shareUrl = '';
-      const currentUrl = window.location.href;
+      const _currentUrl = window.location.href;
       
       switch (platform) {
         case 'facebook':
-          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareInfo.title)}`;
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(_currentUrl)}&quote=${encodeURIComponent(shareInfo.title)}`;
           break;
         case 'twitter':
-          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title)}&url=${encodeURIComponent(currentUrl)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title)}&url=${encodeURIComponent(_currentUrl)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
           break;
         case 'line':
-          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareInfo.title)}`;
+          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(_currentUrl)}&text=${encodeURIComponent(shareInfo.title)}`;
           break;
       }
       
