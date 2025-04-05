@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI } from '@google/generative-ai';
+import { analyzeTruth } from '@/components/utils/TruthDetector';
 
 // 類型定義
 type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
@@ -109,7 +110,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
     });
 
     // 準備提示詞
-    const promptText = `你是一位超級活潑、敢講敢說又專業的蔬果測量評論專家，擁有獨特的性格和風格。你對香蕉、小黃瓜和各種棒狀物的尺寸形狀有獨特品味，評論風格辛辣毒舌但又不失幽默。現在，請你像綜藝節目主持人一樣，分析這張圖片中的物體：
+    const promptText = `你是一位超級活潑、敢講敢說的女性蔬果測量評論專家，風格像是閨蜜間的私密對話。你對香蕉、小黃瓜和各種棒狀物的尺寸形狀有獨特品味，根據識別的物體類型調整你的評論風格：
 
 1. **物體類型判斷**：
    - 這是小黃瓜還是香蕉？如果都不是，但是棒狀或條狀物體，請標識為"other_rod"。
@@ -117,68 +118,73 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
    - 如果圖片質量太差（太暗、太模糊等），請將lowQuality設為true。
    - 若無法確定物體類型，objectType應為null。
 
-2. **尺寸估計與比喻**：
+2. **尺寸估計與風格評價**：
    - 用厘米估計物體的長度和粗細/直徑，例如18.5cm長，3.2cm粗
-   - 為了增加趣味性，請想一個有趣的生活物品來比喻這個尺寸，例如：
-     * 「這根香蕉長得像iPhone 15一樣長」
-     * 「這小黃瓜的粗細就像一個台灣滷蛋」
-     * 「這個尺寸，嗯...跟一支沐浴乳差不多粗細，應該能好好抓在手上」
+   - 針對不同物體類型採用不同評價風格：
+     * 小黃瓜和香蕉：專業幽默的評價風格，例如：
+       「這根香蕉有18cm，屬於標準尺寸，形狀彎度也剛好符合黃金比例，切成片後絕對能在水果沙拉裡成為主角」
+       「20cm長的小黃瓜！哇，這是超市精選級別的規格，絕對能做出完美的涼拌小黃瓜」
+     * other_rod：閨蜜間的私密評論風格，可以有曖昧的隱喻和比較，例如：
+       「這個...嗯...15cm長？跟我前男友一樣，總是誇下海口結果令人失望」
 
-3. **超級評分系統（評分標準）**：
-   - 新鮮度得分(0-10分)：從「已經臭酸掉」(0分)到「剛從仙境採摘」(10分)
+3. **評分系統（評分標準）**：
+   - 新鮮度得分(0-10分)：評價物體的狀態和品質
    - 總體品質評分(0-10分)：可以有小數點，讓評分更精確
-   - 每個分數都應該配上一個逗趣的評語，例如：
-     * 7.5分：「這位香蕉兄弟有點彎，但女生都說彎的比較會磨啊～」
-     * 3.2分：「我看這小黃瓜有點軟趴趴的，是不是天氣太熱了，需要加強鍛鍊」
-     * 9.1分：「哇塞～這根絕對是蔬果界的天菜等級！讓人忍不住想多摸幾下」
+   - 針對不同物體類型採用不同評分標準：
+     * 小黃瓜和香蕉：專業評價，例如：
+       - 「新鮮度9分：保存得宜，色澤飽滿，質地剛好」
+       - 「總體品質7.8分：形狀略微彎曲，但整體屬於市場上品質優良的範圍」
+     * other_rod：以台灣男性平均長度12.5cm為參考基準，給予私密評價：
+       - <10cm：「這長度...嗯...至少技巧重要啦～但老實說有點難滿足人」
+       - 10-12.5cm：「標準以下，但在台灣男性中算常見的，勉強及格啦」
+       - 12.5-15cm：「標準水準，不會讓人失望，但也不會特別驚艷」
+       - 15-18cm：「哇～這個尺寸已經很不錯了，女生們應該會滿意」
+       - >18cm：「天啊！這根超乎想像，不過太大也是種負擔，要看對象接受度～」
 
-   a) **總體品質評分等級（加入趣味等級名稱）**：
-      - 0-2.9分：「災難級」- 連黃瓜公主看了都想哭，這簡直是蔬果界的悲劇
-      - 3-4.9分：「路人級」- 勉強能見人，但絕對不會讓妳有想炫耀的衝動
-      - 5-6.9分：「普通級」- 很OK，但放在一堆裡面絕對不會特別被挑走
-      - 7-8.4分：「優質級」- 市場上少見的好貨色，一眼就能認出是精品
-      - 8.5-9.3分：「天菜級」- 讓人忍不住多看兩眼，值得拍照發IG炫耀的尤物
-      - 9.4-10分：「傳說級」- 蔬果界的天選之子，全台灣可能只有1%能達到
+   a) **總體品質評分等級**：
+      - 0-2.9分：「不合格級」- 這種等級建議不要購買或食用
+      - 3-4.9分：「將就級」- 只有在沒有其他選擇時才考慮的選項
+      - 5-6.9分：「一般般級」- 符合基本標準，但沒有特別出彩之處
+      - 7-8.4分：「優選級」- 超市精選區能看到的高品質水果
+      - 8.5-9.3分：「市場佳品級」- 值得專程去買的品質，朋友聚會的最佳選擇
+      - 9.4-10分：「頂級水果級」- 這種品質的水果值得擺在高級水果禮盒中
    
-   b) **新鮮度評分的風格化描述**：
-      - 0-1分：「讓人想報警」- 已完全變質，感覺能聞到螢幕外的臭味
-      - 2-3分：「急診室等級」- 食用後可能需要洗胃，不要輕易嘗試
-      - 4-5分：「將就型選手」- 有點老舊但還能將就，適合煮熟後食用
-      - 6-7分：「日常實用款」- 達到超市標準水平，可以安心食用
-      - 8-9分：「明星等級」- 非常新鮮，值得VIP客戶選購
-      - 10分：「仙境採摘」- 宛如剛剛從仙境採摘下來，達到食神級標準
+   b) **新鮮度評分描述**：
+      - 0-1分：「過期品級」- 應該直接丟棄的狀態
+      - 2-3分：「勉強可用級」- 只能用來做果醬或烘焙的狀態
+      - 4-5分：「普通級」- 路邊攤常見的普通品質
+      - 6-7分：「新鮮級」- 超市常見的良好品質
+      - 8-9分：「極致新鮮級」- 看起來像是今天早上剛採摘的
+      - 10分：「完美狀態級」- 就像是從植物上直接摘下來的絕佳狀態
 
-   c) **特殊加分項（增加趣味性）**：
-      - 「顏值加分」：外觀特別漂亮完美無瑕的+0.5分
-      - 「曲線加分」：擁有恰到好處彎度的香蕉+0.3分
-      - 「肌肉線條」：小黃瓜表面紋路分明+0.2分
-      - 「粗細均勻」：全長粗細一致不忽粗忽細+0.4分
-      - 「王者風範」：特別挺拔且形狀端正的+0.5分
+   c) **特殊評價項目**：
+      - 「完美比例」：長度和粗細的比例恰到好處，賞心悅目 +1.0分
+      - 「高密度」：看起來結實飽滿，不鬆軟 +0.8分
+      - 「外型優雅」：形狀漂亮，有藝術品的質感 +0.5分
+      - 「不均勻」：形狀不規則，影響美觀 -0.5分
+      - 「彎曲過度」：過於彎曲，外觀受影響 -0.7分
 
-   d) **特別減分項（增加趣味性）**：
-      - 「萎靡不振」：蔬果看起來無精打采的-0.5分
-      - 「彎曲過度」：彎到讓人懷疑人生的-0.3分
-      - 「粗細失衡」：頭粗尾巴細（或相反）的-0.4分
-      - 「不修邊幅」：外觀粗糙不精緻的-0.2分
-      - 「身材過度苗條」：太細長不夠結實的-0.3分
+4. **評論風格指南**：
+   - 小黃瓜和香蕉：專業、幽默但不過度暗示的評論
+     * 專注於果實的品質、形狀、尺寸和適用料理方式
+     * 幽默但適度，類似美食評論家的風格
+     * 例如：「這根20cm的黃瓜切片後絕對能成為沙拉的主角！彎度適中，粗細均勻，新鮮度給9分毫不誇張。這種品質的小黃瓜絕對是涼拌、醃漬的絕佳選擇，甚至可以考慮做成精緻的小黃瓜卷。皮色碧綠，質地緊實，是我見過最標準的小黃瓜典範之一。」
+   
+   - other_rod：維持閨蜜間的私密評論風格
+     * 像是在閨蜜團體聊天室分享約會對象的評價，毫無保留但不刻意惡意
+     * 使用女生之間才懂的梗和隱喻，例如「這根」「那話兒」「小兄弟」等含蓄表達
+     * 評論要有真誠建議+惡作劇吐槽的完美平衡，犀利中帶著姐妹情誼
+     * 例如：「天啊～這尺寸絕對是約會首選級別的！姐妹們，這種等級的，整個過程直接昇天～如果遇到這種，絕對要把握機會！不然被別人撿走後悔都來不及～」
 
-4. **超級專業+超級搞笑評語**：
-   - 創造自己獨特的評論風格和口吻，可以是毒舌評論家、資深鑑定師等任何角色
-   - 用台灣流行語、網路用語撰寫幽默評語，讓人忍不住想分享
-   - 口吻像是一位專業但不正經的評論家，敢說、敢評論、敢開玩笑
-   - 長度：香蕉和小黃瓜的評語150-200字之間；other_rod類型的評語要更詳細，200-250字
-   - 風格：想像你是綜藝節目主持人評論來賓，誇張、戲劇化但又不失專業
-   - 加入時下流行的網路用語如「OMG」、「瘋掉」、「直接社死」、「太可了吧」等
-   - 創造一個特色鮮明的句式或口頭禪，增加評論的辨識度和趣味性
+   a) **水果專業評語範例**：
+      - 「這根香蕉長度達到18.5cm，明顯高於市場平均水準。表皮呈現完美的金黃色，沒有任何瑕疵或黑斑，這意味著它處於最佳食用期。彎度恰到好處，方便握持，厚度均勻，估計口感極佳。新鮮度給9分，總體品質達到8.7分，屬於「市場佳品級」。這種香蕉適合直接食用、做冰沙或製作香蕉點心，絕對是挑剔的水果愛好者會選擇的等級！」
 
-   a) **標準水果評語範例**：
-      - 「天哪～這根香蕉有著8.7分的驚人曲線美，我評測過上千根都沒見過這麼完美的彎度，就像是上天特意設計給女生的愛心禮物！長度剛剛好18.3cm，粗細均勻，拿在手上一定超有感。獲得『天菜級』認證，姐妹們看到這種等級請立刻買單，否則下秒就會被別人搶走！」
-
-   b) **other_rod特別評語風格**：
-      - 如果是other_rod，評語要更加活潑生動，並加入更多暗示和玩笑
-      - 以「小親親」「親愛的」等稱呼開頭，讓人有遐想空間
-      - 大膽使用各種隱喻和雙關語，例如「握感絕佳」「讓人忍不住想多看幾眼」等
-      - 加入一些「專業」建議，如「可以考慮為它買個特製套套」「保養得宜可以使用更久」等
+   b) **other_rod閨蜜私密評語**：
+      - 如果是other_rod，維持現有的閨蜜私密對話風格：
+      - 參考台灣男性平均長度12.5cm給予客觀但帶著主觀喜好的評價
+      - 除了長度外，也評論形狀、曲度、粗細等維度，並提及這些對女性的重要性
+      - 用含蓄曖昧但明白人都懂的方式表達
+      - 加入一些「私房建議」
 
 你必須精確按照以下JSON格式回答：
 {
@@ -192,7 +198,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
   "commentText": "專業評語文本"
 }
 
-請記住：你是一位有獨特風格的蔬果評論專家！創造自己的風格和稱呼，不要拘泥於固定格式。請讓評語既專業又讓人忍不住笑出來，你的目標是讓用戶想把評語截圖分享給朋友！每個字段都必須存在，數值字段必須是數字而非字符串。`;
+請記住：如果是小黃瓜或香蕉，你是專業但幽默的水果評論專家；如果是other_rod，你是活潑敢說的閨蜜風格評論員。根據物體類型調整你的風格！每個字段都必須存在，數值字段必須是數字而非字符串。`;
 
     // 設定內容部分，包含文本和圖片
     const imageParts = [
@@ -296,7 +302,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
   }
 }
 
-// 將此函數整合到現有的分析流程中
+// 處理真實度檢測，整合TruthDetector模組
 function detectTruthfulness(
   objectType: ObjectType, 
   measuredLength: number,
@@ -322,97 +328,23 @@ function detectTruthfulness(
     };
   }
   
-  // 幽默回應庫
-  const funnyResponses = [
-    "這根蔬果看起來像是在「特定角度」拍攝的呢！畫面構圖很巧妙～",
-    "哎呀，AI偵測到「特殊的拍攝技巧」，這角度和距離很...有創意！",
-    "AI測謊儀發現此照片與標準蔬果比例有些「創造性差異」，您是攝影師嗎？",
-    "有趣！測謊儀偵測到此蔬果似乎借助了「光學魔法」顯得特別雄偉！",
-    "根據我們的「蕉學資料庫」，這根的尺寸宣稱有點像是被強化過。您是園藝專家？",
-    "您這個「獨特視角」拍攝的蔬果，讓AI測謊儀都忍不住發出了疑惑的笑聲！",
-    "測謊儀提醒：過度「慷慨」的測量值可能導致女性用戶嚴重失望，建議適度謙虛～",
-    "距離真是個奇妙的東西！靠近拍攝總是能讓事物看起來比實際更...壯觀！"
-  ];
-  
-  // 可疑特徵列表
-  const suspiciousFeatures = [
-    "不自然的透視效果",
-    "可疑的光線角度",
-    "異常的比例關係",
-    "與參考物尺寸不協調",
-    "拍攝距離過近",
-    "可能使用了廣角鏡",
-    "影像有輕微扭曲",
-    "邊緣有平滑處理痕跡",
-    "光影與尺寸不成比例",
-    "疑似進行了「戰略性裁剪」"
-  ];
-  
-  // 根據對象類型決定平均尺寸範圍
-  const averageLength = objectType === 'cucumber' 
-    ? 17.5 // 小黃瓜平均長度
-    : objectType === 'banana' 
-      ? 18 // 香蕉平均長度
-      : 12.5; // other_rod (台灣男性平均)
-      
-  // 計算合理的長度/粗細比率
-  const reasonableRatio = objectType === 'cucumber' 
-    ? 5.5 // 小黃瓜長度/粗細平均比率
-    : objectType === 'banana' 
-      ? 5 // 香蕉長度/粗細平均比率
-      : 4.5; // other_rod平均比率
-  
-  const actualRatio = measuredLength / measuredThickness;
-  
-  // 可疑因素1：長度明顯超過平均值
-  const lengthSuspicion = measuredLength > (averageLength * 1.3) ? 
-    (measuredLength - averageLength * 1.3) / (averageLength * 0.7) * 100 : 0;
-  
-  // 可疑因素2：長度/粗細比率異常
-  const ratioSuspicion = Math.abs(actualRatio - reasonableRatio) / reasonableRatio * 100;
-  
-  // 隨機添加一些浮動，使結果更自然
-  const randomFactor = (Math.random() * 20) - 10; // -10到10之間的隨機數
-  
-  // 綜合可疑度計算
-  let totalSuspicion = (lengthSuspicion * 0.6) + (ratioSuspicion * 0.4) + randomFactor;
-  totalSuspicion = Math.min(Math.max(totalSuspicion, 0), 100); // 確保在0-100範圍內
-  
-  // 真實度得分 (越高越真實)
-  const truthScore = Math.max(0, Math.min(100, 100 - totalSuspicion));
-  
-  // 是否判定為可疑
-  const isSuspicious = truthScore < 75 || 
-                      (objectType === 'other_rod' && measuredLength > 20) ||
-                      (measuredLength > averageLength * 1.5);
-  
-  // 選擇幽默回應
-  const funnyMessage = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
-  
-  // 選擇可疑特徵
-  const selectedSuspiciousFeatures: string[] = [];
-  if (isSuspicious) {
-    // 隨機選擇2-4個可疑特徵
-    const numFeatures = Math.floor(Math.random() * 3) + 2;
-    const shuffledFeatures = [...suspiciousFeatures].sort(() => 0.5 - Math.random());
-    selectedSuspiciousFeatures.push(...shuffledFeatures.slice(0, numFeatures));
+  // 使用TruthDetector模組的analyzeTruth函數
+  if (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) {
+    return analyzeTruth(
+      objectType as 'cucumber' | 'banana' | 'other_rod',
+      measuredLength,
+      measuredThickness
+    );
   }
   
-  // 計算調整因子 (真實度越低，調整幅度越大)
-  const maxAdjustment = 0.3; // 最大調整30%
-  const adjustmentFactor = isSuspicious ? 
-    Math.max(0.7, 1 - (maxAdjustment * (1 - truthScore / 100))) : 1;
-  
-  // 計算調整後的長度
-  const adjustedLength = Math.round(measuredLength * adjustmentFactor * 10) / 10;
-  
+  // 對於無法識別的類型，提供默認值
   return {
-    isSuspicious,
-    truthScore: Math.round(truthScore),
-    adjustedLength,
-    adjustmentFactor,
-    suspiciousFeatures: selectedSuspiciousFeatures,
-    funnyMessage
+    isSuspicious: false,
+    truthScore: 80,
+    adjustedLength: measuredLength,
+    adjustmentFactor: 1,
+    suspiciousFeatures: [],
+    funnyMessage: "無法確定對象類型，無法進行真實度分析。"
   };
 }
 
@@ -437,7 +369,7 @@ export async function POST(req: NextRequest) {
 
     if (!imageFile) {
       return NextResponse.json(
-        { error: { code: 'GENERAL_ERROR', message: '請上傳圖片檔案' } },
+        { error: { code: 'MISSING_IMAGE', message: '請上傳圖片檔案' } },
         { status: 400, headers }
       );
     }
@@ -446,7 +378,16 @@ export async function POST(req: NextRequest) {
     const maxSizeInBytes = 10 * 1024 * 1024; 
     if (imageFile.size > maxSizeInBytes) {
       return NextResponse.json(
-        { error: { code: 'GENERAL_ERROR', message: '圖片檔案大小超過限制 (最大10MB)' } },
+        { error: { code: 'IMAGE_TOO_LARGE', message: '圖片檔案大小超過限制 (最大10MB)' } },
+        { status: 400, headers }
+      );
+    }
+
+    // 檢查檔案類型
+    const validMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!validMimeTypes.includes(imageFile.type)) {
+      return NextResponse.json(
+        { error: { code: 'INVALID_FILE_TYPE', message: '請上傳有效的圖片檔案 (JPEG, PNG, GIF, WEBP)' } },
         { status: 400, headers }
       );
     }
@@ -455,6 +396,9 @@ export async function POST(req: NextRequest) {
     const imageBytes = await imageFile.arrayBuffer();
     const buffer = Buffer.from(imageBytes);
     const base64Image = buffer.toString('base64');
+
+    // 獲取是否啟用真實度檢測
+    const enableTruthDetection = formData.get('enableTruthDetection') === 'true';
 
     // 使用Gemini進行圖片分析
     const analysisResult = await analyzeImageWithGemini(base64Image);
@@ -490,9 +434,6 @@ export async function POST(req: NextRequest) {
         { status: 400, headers }
       );
     }
-
-    // 獲取是否啟用真實度檢測
-    const enableTruthDetection = formData.get('enableTruthDetection') === 'true';
     
     // 開發環境下的模擬數據生成
     let data: AnalysisResult;
@@ -502,90 +443,28 @@ export async function POST(req: NextRequest) {
       useRandomData = true;
       data = { ...getRandomData(analysisResult.objectType as 'cucumber' | 'banana' | 'other_rod'), comment: "" };
     } else {
-      // 使用真實AI分析數據，但是確保分數在合理範圍內
+      // 使用真實AI分析數據
       // 限制分數在0.0-9.5之間
       const calculatedScore = Math.max(0.0, Math.min(9.5, analysisResult.overallScore));
       
       // 新鮮度評分限制在0-10的整數範圍
       const freshness = Math.max(0, Math.min(10, Math.round(analysisResult.freshnessScore)));
       
-      // 根據物體類型調整長度和粗細估計的合理性
-      let adjustedLength = analysisResult.lengthEstimate;
-      let adjustedThickness = analysisResult.thicknessEstimate;
-
-      // 小黃瓜長度通常在10-30cm之間
-      if (analysisResult.objectType === 'cucumber') {
-        adjustedLength = Math.max(0, Math.min(30, adjustedLength));
-        adjustedThickness = Math.max(0, Math.min(6, adjustedThickness)); 
-      } 
-      // 香蕉長度通常在10-25cm之間
-      else if (analysisResult.objectType === 'banana') {
-        adjustedLength = Math.max(0, Math.min(25, adjustedLength));
-        adjustedThickness = Math.max(0, Math.min(5, adjustedThickness));
-      }
-      // 其他棒狀物體 - 可能涉及男性特徵時的特殊處理
-      else {
-        // 台灣男性平均水平參考標準（可能有誇張）
-        const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
-        const isLikelyMaleBodyPart = 
-          adjustedLength >= 8 && 
-          adjustedLength <= 30 && 
-          adjustedThickness >= 2.5;
-        
-        // 如果可能是男性特徵，則使用台灣平均值相關的評分邏輯
-        if (isLikelyMaleBodyPart) {
-          // 超過台灣平均+50%以上的長度可能不符合現實或誇大
-          if (adjustedLength > taiwanMaleAvgLength * 1.5 && adjustedLength <= 30) {
-            // 對於可能是誇大的長度給予警示或評分調整
-            console.log('Warning: Detected possible exaggerated dimensions');
-          }
-          // 非常超出常態的長度，可能是誇大或其他物體
-          else if (adjustedLength > 30) {
-            adjustedLength = 30; // 限制最大長度
-          }
-        } else {
-          // 如果不像人體特徵，則使用較寬鬆的範圍限制
-          adjustedLength = Math.max(0, Math.min(40, adjustedLength));
-          adjustedThickness = Math.max(0, Math.min(8, adjustedThickness));
-        }
-      }
+      // 處理尺寸估計，確保所有類型的物體都被正確限制
+      const { adjustedLength, adjustedThickness } = adjustDimensions(
+        analysisResult.lengthEstimate,
+        analysisResult.thicknessEstimate,
+        analysisResult.objectType
+      );
       
       // 最終評分計算 - 考慮不同因素的加權
-      // 1. 基礎分數
-      let finalScore = calculatedScore;
-      
-      // 2. 合理的尺寸應該有獎勵，不合理的尺寸應該降分
-      const isReasonableSize = isReasonableDimension(adjustedLength, adjustedThickness, analysisResult.objectType);
-      finalScore += isReasonableSize ? 0.2 : -0.5;
-      
-      // 3. 新鮮度對總分有影響
-      const freshnessImpact = (freshness - 5) * 0.1; // 新鮮度每高於5分加0.1分，低於則減分
-      finalScore += freshnessImpact;
-      
-      // 4. 對於other_rod類型，如果是男性特徵，根據台灣平均長度進行評分調整
-      if (analysisResult.objectType === 'other_rod') {
-        const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
-        if (adjustedLength > 0) {
-          // 計算與平均值的差異，作為評分調整依據
-          const lengthDiffRatio = adjustedLength / taiwanMaleAvgLength;
-          
-          // 接近平均值±20%的給予正面評價
-          if (lengthDiffRatio >= 0.8 && lengthDiffRatio <= 1.2) {
-            finalScore += 0.3; // 符合正常範圍加分
-          }
-          // 過小或稍大都有輕微減分
-          else if (lengthDiffRatio < 0.8 || lengthDiffRatio > 1.5) {
-            finalScore -= 0.2; // 不太符合台灣平均水平輕微減分
-          }
-          // 特別大的（但不是誇張的）給予特別評價
-          else if (lengthDiffRatio > 1.2 && lengthDiffRatio <= 1.5) {
-            finalScore += 0.1; // 稍微高於平均但不誇張
-          }
-        }
-      }
-      
-      // 確保最終分數在0.0-9.5的範圍內
-      finalScore = parseFloat((Math.max(0.0, Math.min(9.5, finalScore))).toFixed(1));
+      const finalScore = calculateFinalScore(
+        calculatedScore,
+        freshness,
+        adjustedLength,
+        adjustedThickness,
+        analysisResult.objectType
+      );
       
       data = {
         type: analysisResult.objectType,
@@ -593,16 +472,13 @@ export async function POST(req: NextRequest) {
         thickness: Math.round(adjustedThickness * 10) / 10,
         freshness: freshness,
         score: finalScore,
-        comment: analysisResult.commentText
+        comment: analysisResult.commentText || ""
       };
     }
 
     // 合併數據，確保有評語
-    if (useRandomData) {
-      data = {
-        ...data,
-        comment: analysisResult.commentText || generateComment(data)
-      };
+    if (!data.comment || data.comment.trim() === "") {
+      data.comment = useRandomData ? generateComment(data) : analysisResult.commentText || generateComment(data);
     }
 
     // 添加真實度分析
@@ -616,7 +492,6 @@ export async function POST(req: NextRequest) {
     // 創建最終結果
     const result: AnalysisResult = {
       ...data,
-      comment: data.comment,
       truthAnalysis: enableTruthDetection ? truthAnalysis : undefined
     };
 
@@ -624,11 +499,112 @@ export async function POST(req: NextRequest) {
     return NextResponse.json(result, { status: 200, headers });
   } catch (error: unknown) {
     console.error('Analysis error:', error);
+    // 更詳細的錯誤處理
+    const errorMessage = error instanceof Error ? error.message : '未知錯誤';
+    const errorCode = error instanceof Error && error.name === 'TimeoutError' ? 'TIMEOUT_ERROR' : 'GENERAL_ERROR';
+    
     return NextResponse.json(
-      { error: { code: 'GENERAL_ERROR', message: '分析過程中發生錯誤: ' + ((error instanceof Error) ? error.message : '未知錯誤') } },
+      { error: { code: errorCode, message: `分析過程中發生錯誤: ${errorMessage}` } },
       { status: 500, headers }
     );
   }
+}
+
+// 處理尺寸估計的新輔助函數
+function adjustDimensions(
+  lengthEstimate: number,
+  thicknessEstimate: number,
+  objectType: ObjectType
+): { adjustedLength: number; adjustedThickness: number } {
+  let adjustedLength = lengthEstimate;
+  let adjustedThickness = thicknessEstimate;
+
+  // 小黃瓜長度通常在10-30cm之間
+  if (objectType === 'cucumber') {
+    adjustedLength = Math.max(0, Math.min(30, adjustedLength));
+    adjustedThickness = Math.max(0, Math.min(6, adjustedThickness)); 
+  } 
+  // 香蕉長度通常在10-25cm之間
+  else if (objectType === 'banana') {
+    adjustedLength = Math.max(0, Math.min(25, adjustedLength));
+    adjustedThickness = Math.max(0, Math.min(5, adjustedThickness));
+  }
+  // 其他棒狀物體 - 可能涉及男性特徵時的特殊處理
+  else if (objectType === 'other_rod') {
+    // 台灣男性平均水平參考標準
+    const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
+    const isLikelyMaleBodyPart = 
+      adjustedLength >= 8 && 
+      adjustedLength <= 30 && 
+      adjustedThickness >= 2.5;
+    
+    // 如果可能是男性特徵，則使用台灣平均值相關的評分邏輯
+    if (isLikelyMaleBodyPart) {
+      // 超過台灣平均+50%以上的長度可能不符合現實或誇大
+      if (adjustedLength > taiwanMaleAvgLength * 1.5 && adjustedLength <= 30) {
+        // 對於可能是誇大的長度給予警示或評分調整
+        console.log('Warning: Detected possible exaggerated dimensions');
+      }
+      // 非常超出常態的長度，可能是誇大或其他物體
+      else if (adjustedLength > 30) {
+        adjustedLength = 30; // 限制最大長度
+      }
+      
+      // 限制thickness在合理範圍
+      adjustedThickness = Math.max(2.5, Math.min(5, adjustedThickness));
+    } else {
+      // 如果不像人體特徵，則使用較寬鬆的範圍限制
+      adjustedLength = Math.max(0, Math.min(40, adjustedLength));
+      adjustedThickness = Math.max(0, Math.min(8, adjustedThickness));
+    }
+  }
+
+  return { adjustedLength, adjustedThickness };
+}
+
+// 計算最終評分的新輔助函數
+function calculateFinalScore(
+  baseScore: number,
+  freshness: number,
+  length: number,
+  thickness: number,
+  objectType: ObjectType
+): number {
+  // 1. 基礎分數
+  let finalScore = baseScore;
+  
+  // 2. 合理的尺寸應該有獎勵，不合理的尺寸應該降分
+  const isReasonableSize = isReasonableDimension(length, thickness, objectType);
+  finalScore += isReasonableSize ? 0.2 : -0.5;
+  
+  // 3. 新鮮度對總分有影響
+  const freshnessImpact = (freshness - 5) * 0.1; // 新鮮度每高於5分加0.1分，低於則減分
+  finalScore += freshnessImpact;
+  
+  // 4. 對於other_rod類型，如果是男性特徵，根據台灣平均長度進行評分調整
+  if (objectType === 'other_rod') {
+    const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
+    if (length > 0) {
+      // 計算與平均值的差異，作為評分調整依據
+      const lengthDiffRatio = length / taiwanMaleAvgLength;
+      
+      // 接近平均值±20%的給予正面評價
+      if (lengthDiffRatio >= 0.8 && lengthDiffRatio <= 1.2) {
+        finalScore += 0.3; // 符合正常範圍加分
+      }
+      // 過小或過大都有輕微減分
+      else if (lengthDiffRatio < 0.8 || lengthDiffRatio > 1.5) {
+        finalScore -= 0.2; // 不太符合台灣平均水平輕微減分
+      }
+      // 特別大的（但不是誇張的）給予特別評價
+      else if (lengthDiffRatio > 1.2 && lengthDiffRatio <= 1.5) {
+        finalScore += 0.1; // 稍微高於平均但不誇張
+      }
+    }
+  }
+  
+  // 確保最終分數在0.0-9.5的範圍內
+  return parseFloat((Math.max(0.0, Math.min(9.5, finalScore))).toFixed(1));
 }
 
 // 判斷尺寸是否在合理範圍
