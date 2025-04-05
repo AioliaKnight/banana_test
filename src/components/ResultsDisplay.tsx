@@ -186,7 +186,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           try {
             new URL(url, window.location.origin);
             return true;
-          } catch (e) {
+          } catch (_) {
             return false;
           }
         };
@@ -217,16 +217,9 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           else if (preview) {
             imageSrc = preview;
           }
-          // 5. 類型特定的默認圖片
+          // 5. 默認結果圖片
           else {
-            // 按物體類型選擇默認圖片
-            if (result.type === 'cucumber') {
-              imageSrc = '/cucumber-default.jpg';
-            } else if (result.type === 'banana') {
-              imageSrc = '/banana-default.jpg';
-            } else {
-              imageSrc = '/result.jpg';
-            }
+            imageSrc = '/result.jpg';
           }
         }
         
