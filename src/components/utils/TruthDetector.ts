@@ -392,8 +392,27 @@ export function analyzeTruth(
       else { funnyMessage = `尺寸在台灣男性常見範圍內(${getMalePercentileDescription(length)})，數據可信度高。`; }
     }
   } else {
-    const responses = isSuspicious ? CONFIG.responses.suspicious : CONFIG.responses.reasonable;
-    funnyMessage = responses[Math.floor(Math.random() * responses.length)];
+    // 更有趣的非男性特徵評論
+    if (isSuspicious) {
+      const funnyResponses = [
+        `這${objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '物品'}看起來是在「特殊視角」下拍攝的呢～你的攝影技巧真是讓人嘆為觀止！`,
+        `哎呀！這${objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '棒狀物'}的尺寸讓AI都忍不住笑出聲～是不是用了什麼神奇的縮放濾鏡？`,
+        `哇塞，這測量結果比我前任對他自己的評價還要誇張，厲害了！`,
+        `這個尺寸聲明有點像政治人物的承諾，聽起來很棒但實際上...嗯...你懂的～`,
+        `這張照片的角度選得真巧妙，是那種「讓人想像空間更大」的藝術效果吧？`,
+        `這${objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '物品'}可能是用了那種「讓東西看起來特別驚人」的特效相機拍的吧？`
+      ];
+      funnyMessage = funnyResponses[Math.floor(Math.random() * funnyResponses.length)];
+    } else {
+      const truthfulResponses = [
+        `這${objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '棒狀物'}的尺寸相當真實可信！如實呈現，不誇張，這種誠實真是令人欣賞～`,
+        `這測量結果看起來非常合理！就像是一個不說謊的好朋友，值得信賴！`,
+        `數據顯示這是一個標準的${objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '棒狀物'}尺寸，很健康自然的比例～`,
+        `這個尺寸數據就像是剛出爐的統計報告，準確又可靠！`,
+        `哇！難得看到如此誠實的測量結果！這種不浮誇的態度值得鼓勵～`,
+      ];
+      funnyMessage = truthfulResponses[Math.floor(Math.random() * truthfulResponses.length)];
+    }
   }
 
   const suggestionMessage = getSuggestionMessage(truthScore, objectType, rodSubtype, length);
@@ -501,24 +520,40 @@ export function getSuggestionMessage(
   const isMaleFeature = objectType === 'other_rod' && rodSubtype === 'male_feature';
   const stats = TAIWAN_MALE_STATS;
   
+  // 只有當為男性特徵時才使用percentileDesc
   const percentileDesc = (lengthValue && isMaleFeature) ? getMalePercentileDescription(lengthValue) : '';
 
-  if (truthScore >= 85) {
-    if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
-    return "測量結果非常可信，尺寸數據符合常規。";
-  } else if (truthScore >= 65) {
-    if (isMaleFeature && lengthValue) return `測量結果基本可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
-    return "測量結果基本可信，可能存在輕微偏差。可嘗試更換角度重新拍攝。";
-  } else if (truthScore >= 40) {
-    if (isMaleFeature && lengthValue) return `測量結果可疑。您測得 ${lengthValue}cm (${percentileDesc})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
-    return "測量結果有些可疑。建議檢查拍攝角度，避免透視變形。";
-  } else {
-    if (isMaleFeature && lengthValue) {
-      if (lengthValue > stats.PERCENTILE_99) return `測量結果極不可信。您測得 ${lengthValue}cm 遠超台灣男性99%水平 (${stats.PERCENTILE_99}cm)。請勿使用誇張拍攝手法。`;
-      if (lengthValue < stats.REASONABLE_MIN) return `測量結果可能不準確。您測得 ${lengthValue}cm 低於常見範圍下限。請確保完整測量物體。`;
-      return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${percentileDesc})。建議使用標準測量方法。`;
+  // 男性特徵使用原有邏輯
+  if (isMaleFeature) {
+    if (truthScore >= 85) {
+      return `測量結果非常可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
+    } else if (truthScore >= 65) {
+      return `測量結果基本可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
+    } else if (truthScore >= 40) {
+      return `測量結果可疑。您測得 ${lengthValue}cm (${percentileDesc})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
+    } else {
+      if (lengthValue) {
+        if (lengthValue > stats.PERCENTILE_99) return `測量結果極不可信。您測得 ${lengthValue}cm 遠超台灣男性99%水平 (${stats.PERCENTILE_99}cm)。請勿使用誇張拍攝手法。`;
+        if (lengthValue < stats.REASONABLE_MIN) return `測量結果可能不準確。您測得 ${lengthValue}cm 低於常見範圍下限。請確保完整測量物體。`;
+        return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${percentileDesc})。建議使用標準測量方法。`;
+      }
+      return "測量結果極不可信。請確保拍攝角度正確，避免透視及裁剪。";
     }
-    return "測量結果極不可信。請確保拍攝角度正確，避免透視及裁剪。";
+  } 
+  
+  // 非男性特徵使用幽默文案
+  else {
+    const itemName = objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '棒狀物';
+    
+    if (truthScore >= 85) {
+      return `測量結果非常可信！這${itemName}看起來很標準，如果它去選美，肯定能得獎～`;
+    } else if (truthScore >= 65) {
+      return `測量結果基本可信。不過下次拍照時可以試試從正面角度拍攝，讓${itemName}展現最佳狀態！`;
+    } else if (truthScore >= 40) {
+      return `測量結果有點可疑...這個角度讓${itemName}看起來特別「有存在感」！建議換個角度重拍，別讓透視效果搞怪～`;
+    } else {
+      return `測量結果極不可信！這個${itemName}是去了特效健身房嗎？下次請別用廣角鏡頭近距離拍攝，這會讓物體看起來特別雄偉～`;
+    }
   }
 } 
 
