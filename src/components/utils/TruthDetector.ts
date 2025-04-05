@@ -8,7 +8,7 @@
 // =================================
 // Imports
 // =================================
-import { ObjectType, TruthAnalysisResult, TruthDetectorConfig } from '@/types';
+import { ObjectType, TruthAnalysisResult } from '@/types';
 
 // =================================
 // Constants
@@ -64,10 +64,51 @@ export const TAIWAN_MALE_STATS = {
 // =================================
 
 // Configuration Interface for TruthDetector settings
-// MOVED TO: src/types/index.ts
-/* export interface TruthDetectorConfig {
-  // ... interface definition ...
-} */
+export interface TruthDetectorConfig {
+  averageLengths: Record<string, number>;
+  reasonableRatios: Record<string, number>;
+  suspiciousThresholds: {
+    truthScoreThreshold: number;
+    lengthExceedRatio: number;
+    otherRodMaxLength: number;
+  };
+  suspicionWeights: {
+    lengthWeight: number;
+    ratioWeight: number;
+  };
+  adjustmentSettings: {
+    maxAdjustment: number;
+    minAdjustmentFactor: number;
+  };
+  responses: {
+    funnyResponses: string[];
+    suspiciousFeatures: string[];
+    suspicious: string[];
+    reasonable: string[];
+    general: string[];
+    unidentified: string[];
+  };
+  dimensionLimits: {
+    cucumber: { 
+      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
+      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
+    };
+    banana: { 
+      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
+      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
+    };
+    other_rod: { 
+      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
+      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
+      maleFeatureMinLength: number; maleFeatureMaxLength: number; maleFeatureMinThickness: number;
+      nonMaleFeatureMaxLength: number; nonMaleFeatureMaxThickness: number;
+    };
+    default: { 
+      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
+      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
+    };
+  };
+}
 
 // =================================
 // Global Configuration Object
@@ -200,6 +241,27 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
+ * Calculates the truth score based on dimensions and issues count.
+ * (Note: This function seems unused after refactoring, potentially removable? Keeping for now.)
+ * @param {ObjectType} objectType
+ * @param {number} length
+ * @param {number} thickness
+ * @param {number} issueCount
+ * @returns {number} Truth score (0-1).
+ */
+function calculateTruthScore(objectType: ObjectType, length: number, thickness: number, issueCount: number): number {
+  // Base score - higher if dimensions are reasonable
+  const isReasonable = isReasonableDimension(length, thickness, objectType);
+  const score = isReasonable ? 0.85 : 0.65;
+  
+  // Deduct points based on issue count
+  const finalScore = Math.max(0, score - Math.min(0.5, issueCount * 0.1));
+  
+  // Ensure score is within 0-1 range
+  return Math.max(0, Math.min(1, finalScore));
+}
+
+/**
  * Calculates the credibility score specifically for male features using Gaussian distribution.
  * @param {number} length Length value (cm).
  * @returns {number} Credibility score (0-100).
@@ -268,21 +330,15 @@ export function analyzeTruth(
   thickness: number,
   rodSubtype?: 'male_feature' | 'regular_rod'
 ): TruthAnalysisResult {
-  // Check if it's a male feature by the rodSubtype OR the objectType is other_rod
   const isMaleFeature = objectType === 'other_rod' && rodSubtype === 'male_feature';
   const validObjectType = (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) ? objectType : 'cucumber'; // Default if invalid
 
   if (!length || !thickness || length <= 0 || thickness <= 0) {
     return {
-      truthScore: 75, 
-      isSuspicious: false, 
-      suspiciousFeatures: [],
-      isMaleFeature: isMaleFeature,
-      percentile: isMaleFeature ? getMalePercentileDescription(length) : undefined,
+      truthScore: 75, isSuspicious: false, suspiciousFeatures: [],
       funnyMessage: "無法確定真偽，缺少有效尺寸信息...",
       suggestionMessage: "請提供有效的長度和寬度進行分析。",
-      adjustedLength: length, 
-      adjustmentFactor: 1
+      adjustedLength: length, adjustmentFactor: 1
     };
   }
 
@@ -290,146 +346,87 @@ export function analyzeTruth(
   let suspicionScore = 0; // Used for adjustment factor
   let truthScore = 100; // Final score reflecting credibility
 
-  // Calculate credibility score based on object type
   if (isMaleFeature) {
-    // For male features, use the specialized credibility score calculation
     truthScore = calculateMaleCredibilityScore(length);
+    const percentileDesc = getMalePercentileDescription(length);
 
-    // Add suspicious features based on thresholds
     if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
-      suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見"); 
-      suspicionScore += 50;
+      suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見"); suspicionScore += 50;
     } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
-      suspiciousFeatures.push("尺寸超過95%台灣男性，相當罕見"); 
-      suspicionScore += 30;
+      suspiciousFeatures.push("尺寸超過95%台灣男性，相當罕見"); suspicionScore += 30;
     } else if (length > TAIWAN_MALE_STATS.PERCENTILE_90) {
-      suspiciousFeatures.push("尺寸超過90%台灣男性，少見"); 
-      suspicionScore += 15;
+      suspiciousFeatures.push("尺寸超過90%台灣男性，少見"); suspicionScore += 15;
     } else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) {
-      suspiciousFeatures.push("尺寸低於一般統計下限，可能測量不準確"); 
-      suspicionScore += 20;
+      suspiciousFeatures.push("尺寸低於一般統計下限，可能測量不準確"); suspicionScore += 20;
     }
 
-    // Check thickness reasonableness
-    if (thickness > 5.0) {
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); 
-      suspicionScore += 30;
+    // Check thickness reasonableness for male features
+    if (thickness > 5.0) { // Use a slightly higher max threshold for thickness suspicion
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); suspicionScore += 30;
     } else if (thickness < 2.5) {
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); 
-      suspicionScore += 20;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); suspicionScore += 20;
     }
 
-    // Check ratio
+    // Check length-to-thickness ratio
     const lengthToThicknessRatio = length / thickness;
-    if (lengthToThicknessRatio > 6.0 || lengthToThicknessRatio < 3.0) {
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); 
-      suspicionScore += 25;
+    if (lengthToThicknessRatio > 6.0 || lengthToThicknessRatio < 3.0) { // Wider reasonable ratio for male features
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); suspicionScore += 25;
     }
+
   } else {
-    // For regular objects (cucumber, banana, regular rod)
+    // Logic for non-male features (cucumber, banana, regular rod)
     const avgLength = CONFIG.averageLengths[validObjectType] || CONFIG.averageLengths.cucumber;
-    const avgThickness = (validObjectType === 'cucumber' ? 3.5 : validObjectType === 'banana' ? 3.8 : 4.0);
+    const avgThickness = (validObjectType === 'cucumber' ? 3.5 : validObjectType === 'banana' ? 3.8 : 4.0); // Simplified avg thickness
     const idealRatio = CONFIG.reasonableRatios[validObjectType] || CONFIG.reasonableRatios.cucumber;
 
-    // Check length ratio
     const lengthRatio = length / avgLength;
-    if (lengthRatio > 1.6) { 
-      suspicionScore += 25; 
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_LONG); 
-      truthScore -= 20; 
-    } else if (lengthRatio < 0.5) { 
-      suspicionScore += 10; 
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_SHORT); 
-      truthScore -= 8; 
-    }
+    if (lengthRatio > 1.6) { suspicionScore += 25; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_LONG); truthScore -= 20; }
+    else if (lengthRatio < 0.5) { suspicionScore += 10; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_SHORT); truthScore -= 8; }
 
-    // Check thickness ratio
     const thicknessRatio = thickness / avgThickness;
-    if (thicknessRatio > 1.7) { 
-      suspicionScore += 30; 
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); 
-      truthScore -= 25; 
-    } else if (thicknessRatio < 0.5) { 
-      suspicionScore += 15; 
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); 
-      truthScore -= 12; 
-    }
+    if (thicknessRatio > 1.7) { suspicionScore += 30; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); truthScore -= 25; }
+    else if (thicknessRatio < 0.5) { suspicionScore += 15; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); truthScore -= 12; }
 
-    // Check ratio deviation
     const lengthToThicknessRatio = length / thickness;
     const ratioDeviation = Math.abs(lengthToThicknessRatio - idealRatio) / idealRatio;
-    if (ratioDeviation > 0.6) { 
-      suspicionScore += 20; 
-      suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); 
-      truthScore -= 15; 
-    }
+    if (ratioDeviation > 0.6) { suspicionScore += 20; suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); truthScore -= 15; }
   }
 
-  // Clamp the truth score to 0-100 range
   truthScore = Math.max(0, Math.min(100, truthScore));
-  
-  // Use a consistent suspicion threshold for all types
-  // For male features: score < 65, for others: suspicionScore >= 40
-  const isSuspicious = isMaleFeature 
-    ? (truthScore < 65) 
-    : (suspicionScore >= 40);
+  const isSuspicious = isMaleFeature ? (truthScore < 60) : (suspicionScore >= 40); // Adjusted suspicion threshold for non-male
 
-  // Calculate the adjustment factor (lower for more suspicious results)
-  const adjustmentFactor = Math.max(
-    CONFIG.adjustmentSettings.minAdjustmentFactor, 
-    1 - (suspicionScore / 140)
-  );
-  
-  // Calculate the adjusted length
-  const adjustedLength = Math.round((length * adjustmentFactor) * 10) / 10;
+  // Calculate adjustment factor based on suspicion score (more suspicion = smaller factor)
+  const adjustmentFactor = Math.max(CONFIG.adjustmentSettings.minAdjustmentFactor, 1 - (suspicionScore / 150)); // Adjusted divisor for less aggressive adjustment
+  const adjustedLength = Math.round((length * adjustmentFactor) * 10) / 10; // Apply adjustment and round
 
-  // Generate appropriate funny message based on object type and suspicion level
   let funnyMessage = "";
-  const percentileDesc = isMaleFeature ? getMalePercentileDescription(length) : undefined;
-  
   if (isMaleFeature) {
     if (isSuspicious) {
-      if (length > TAIWAN_MALE_STATS.REASONABLE_MAX * 1.1) { 
-        funnyMessage = "統計學表示：這種尺寸是千萬分之一的機率，比中樂透還難！"; 
-      } else if (length > TAIWAN_MALE_STATS.PERCENTILE_99) { 
-        funnyMessage = `這尺寸聲稱超過了99%的台灣男性，統計學上的可能性極低...`; 
-      } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) { 
-        funnyMessage = `聲稱的數據位於前5%，非常罕見，可能有測量誤差。`; 
-      } else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) { 
-        funnyMessage = "測量值似乎偏小，可能測量方式有誤。正確測量應從恥骨開始到頂端。"; 
-      } else { 
-        funnyMessage = SUSPICIOUS_RESPONSES[Math.floor(Math.random() * SUSPICIOUS_RESPONSES.length)]; 
-      }
+      if (length > TAIWAN_MALE_STATS.REASONABLE_MAX * 1.1) { funnyMessage = "統計學表示：這種尺寸是千萬分之一的機率，比中樂透還難！"; }
+      else if (length > TAIWAN_MALE_STATS.PERCENTILE_99) { funnyMessage = `這尺寸聲稱超過了99%的台灣男性，統計學上的可能性極低...`; }
+      else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) { funnyMessage = `聲稱的數據位於前5%，非常罕見，可能有測量誤差。`; }
+      else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) { funnyMessage = "測量值似乎偏小，可能測量方式有誤。正確測量應從恥骨開始到頂端。"; }
+      else { funnyMessage = SUSPICIOUS_RESPONSES[Math.floor(Math.random() * SUSPICIOUS_RESPONSES.length)]; }
     } else {
-      if (length > TAIWAN_MALE_STATS.PERCENTILE_90) { 
-        funnyMessage = `數據顯示這個尺寸高於絕大多數台灣男性，但仍在統計學可信範圍內。恭喜！`; 
-      } else if (length > TAIWAN_MALE_STATS.PERCENTILE_75) { 
-        funnyMessage = `數據顯示這個尺寸高於多數台灣男性(${percentileDesc})，屬於優良範圍。`; 
-      } else if (length >= TAIWAN_MALE_STATS.PERCENTILE_25) { 
-        funnyMessage = `這個尺寸非常接近台灣男性平均值${TAIWAN_MALE_STATS.AVG_LENGTH}cm，數據看起來很誠實(${percentileDesc})。`; 
-      } else { 
-        funnyMessage = `尺寸在台灣男性常見範圍內(${percentileDesc})，數據可信度高。`; 
-      }
+      if (length > TAIWAN_MALE_STATS.PERCENTILE_90) { funnyMessage = `數據顯示這個尺寸高於絕大多數台灣男性，但仍在統計學可信範圍內。恭喜！`; } 
+      else if (length > TAIWAN_MALE_STATS.PERCENTILE_75) { funnyMessage = `數據顯示這個尺寸高於多數台灣男性(${getMalePercentileDescription(length)})，屬於優良範圍。`; }
+      else if (length >= TAIWAN_MALE_STATS.PERCENTILE_25) { funnyMessage = `這個尺寸非常接近台灣男性平均值${TAIWAN_MALE_STATS.AVG_LENGTH}cm，數據看起來很誠實(${getMalePercentileDescription(length)})。`; }
+      else { funnyMessage = `尺寸在台灣男性常見範圍內(${getMalePercentileDescription(length)})，數據可信度高。`; }
     }
   } else {
-    // For regular objects, use the responses from config
     const responses = isSuspicious ? CONFIG.responses.suspicious : CONFIG.responses.reasonable;
     funnyMessage = responses[Math.floor(Math.random() * responses.length)];
   }
 
-  // Get suggestion message
   const suggestionMessage = getSuggestionMessage(truthScore, objectType, rodSubtype, length);
 
-  // Return the complete analysis result with all fields
   return {
     truthScore: Math.round(truthScore),
     isSuspicious,
     suspiciousFeatures,
-    isMaleFeature,
-    percentile: percentileDesc,
     funnyMessage,
     suggestionMessage,
-    adjustedLength: isSuspicious ? adjustedLength : length,
+    adjustedLength: isSuspicious ? adjustedLength : length, // Only return adjusted length if suspicious
     adjustmentFactor: isSuspicious ? adjustmentFactor : 1
   };
 }
@@ -525,21 +522,22 @@ export function getSuggestionMessage(
 ): string {
   const stats = TAIWAN_MALE_STATS;
   const isMaleFeature = rodSubtype === 'male_feature';
-  
+  let percentileDesc = (lengthValue && isMaleFeature) ? getMalePercentileDescription(lengthValue) : '';
+
   if (truthScore >= 85) {
-    if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${lengthValue ? getMalePercentileDescription(lengthValue) : ''}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
+    if (isMaleFeature && lengthValue) return `測量結果非常可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm。`;
     return "測量結果非常可信，尺寸數據符合常規。";
   } else if (truthScore >= 65) {
-    if (isMaleFeature && lengthValue) return `測量結果基本可信。您的長度 ${lengthValue}cm ${lengthValue ? getMalePercentileDescription(lengthValue) : ''}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
+    if (isMaleFeature && lengthValue) return `測量結果基本可信。您的長度 ${lengthValue}cm ${percentileDesc}。台灣男性平均約 ${stats.AVG_LENGTH}cm，標準差 ${stats.STD_DEVIATION}cm。`;
     return "測量結果基本可信，可能存在輕微偏差。可嘗試更換角度重新拍攝。";
   } else if (truthScore >= 40) {
-    if (isMaleFeature && lengthValue) return `測量結果可疑。您測得 ${lengthValue}cm (${lengthValue ? getMalePercentileDescription(lengthValue) : ''})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
+    if (isMaleFeature && lengthValue) return `測量結果可疑。您測得 ${lengthValue}cm (${percentileDesc})，與平均 ${stats.AVG_LENGTH}cm 相差較大。建議重新測量，保持直角拍攝，避免使用廣角。`;
     return "測量結果有些可疑。建議檢查拍攝角度，避免透視變形。";
   } else {
     if (isMaleFeature && lengthValue) {
       if (lengthValue > stats.PERCENTILE_99) return `測量結果極不可信。您測得 ${lengthValue}cm 遠超台灣男性99%水平 (${stats.PERCENTILE_99}cm)。請勿使用誇張拍攝手法。`;
       if (lengthValue < stats.REASONABLE_MIN) return `測量結果可能不準確。您測得 ${lengthValue}cm 低於常見範圍下限。請確保完整測量物體。`;
-      return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${lengthValue ? getMalePercentileDescription(lengthValue) : ''})。建議使用標準測量方法。`;
+      return `測量結果不可信。台灣男性95%介於 ${stats.PERCENTILE_5}cm 至 ${stats.PERCENTILE_95}cm (${percentileDesc})。建議使用標準測量方法。`;
     }
     return "測量結果極不可信。請確保拍攝角度正確，避免透視及裁剪。";
   }

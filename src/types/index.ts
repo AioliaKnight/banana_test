@@ -1,7 +1,3 @@
-// =================================
-// Core Object & Analysis Types
-// =================================
-
 export type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
 
 // Represents the result from the truth analysis utility
@@ -11,10 +7,8 @@ export interface TruthAnalysisResult {
   suspiciousFeatures: string[];
   adjustedLength?: number;      // Adjusted length if suspicious
   adjustmentFactor?: number;    // Factor used for adjustment
-  funnyMessage: string;         // Humorous message based on truth score
-  suggestionMessage?: string;   // Suggestion based on analysis
-  isMaleFeature?: boolean;      // Indicates if it's a male feature
-  percentile?: string;          // Percentile description for male features
+  funnyMessage: string;       // Humorous message based on truth score
+  suggestionMessage?: string;  // Suggestion based on analysis
 }
 
 // Represents the final analysis result sent to the client
@@ -46,65 +40,4 @@ export interface AnalysisResult {
 
   // Allow additional properties for flexibility (like during random data generation)
   [key: string]: unknown;
-}
-
-// =================================
-// Utility Configuration Types
-// =================================
-
-// Configuration Interface for TruthDetector settings
-export interface TruthDetectorConfig {
-  averageLengths: Record<string, number>;
-  reasonableRatios: Record<string, number>;
-  suspiciousThresholds: {
-    truthScoreThreshold: number;
-    lengthExceedRatio: number;
-    otherRodMaxLength: number;
-  };
-  suspicionWeights: {
-    lengthWeight: number;
-    ratioWeight: number;
-  };
-  adjustmentSettings: {
-    maxAdjustment: number;
-    minAdjustmentFactor: number;
-  };
-  responses: {
-    funnyResponses: string[];
-    suspiciousFeatures: string[];
-    suspicious: string[];
-    reasonable: string[];
-    general: string[];
-    unidentified: string[];
-  };
-  dimensionLimits: {
-    cucumber: {
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-    banana: {
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-    other_rod: {
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-      maleFeatureMinLength: number; maleFeatureMaxLength: number; maleFeatureMinThickness: number;
-      nonMaleFeatureMaxLength: number; nonMaleFeatureMaxThickness: number;
-    };
-    default: {
-      minLength: number; maxLength: number; minThickness: number; maxThickness: number;
-      reasonableMinLength: number; reasonableMaxLength: number; reasonableMinThickness: number; reasonableMaxThickness: number;
-    };
-  };
-}
-
-// Options for CanvasImageGenerator class
-export interface CanvasImageOptions {
-  canvas: HTMLCanvasElement;
-  width: number;
-  height: number;
-  isMobile: boolean;
-  devicePixelRatio?: number;
-  debug?: boolean;
 } 

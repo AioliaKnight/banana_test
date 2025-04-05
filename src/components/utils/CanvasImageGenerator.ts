@@ -1,21 +1,18 @@
-import { CanvasImageOptions } from '@/types'; // Import from shared types
-
-// MOVED TO: src/types/index.ts
-/* interface CanvasImageOptions {
+interface CanvasImageOptions {
   canvas: HTMLCanvasElement;
   width: number;
   height: number;
   isMobile: boolean;
   devicePixelRatio?: number;
   debug?: boolean;
-} */
+}
 
 export class CanvasImageGenerator {
   canvas: HTMLCanvasElement;
   ctx: CanvasRenderingContext2D;
-  options: CanvasImageOptions; // Use imported type
+  options: CanvasImageOptions;
   
-  constructor(options: CanvasImageOptions) { // Use imported type
+  constructor(options: CanvasImageOptions) {
     this.canvas = options.canvas;
     const ctx = this.canvas.getContext('2d', { willReadFrequently: true });
     if (!ctx) throw new Error('無法獲取畫布上下文');
