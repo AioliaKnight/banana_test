@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { analyzeTruth, adjustDimensions, calculateFinalScore, getSuggestionMessage, CONFIG } from '@/components/utils/TruthDetector';
+import { analyzeTruth, adjustDimensions, calculateFinalScore, CONFIG } from '@/components/utils/TruthDetector';
 import { AnalysisResult, ObjectType, TruthDetectorConfig } from '@/types';
 
 // =================================
@@ -737,81 +737,99 @@ function extractFallbackInfo(responseText: string): AnalysisResult {
  * Process the analysis results from the API or random data
  * Performs various calculations on the data and prepares it for the client
  */
-export function processAnalysisResults(
-  data: Record<string, unknown>,
+function processAnalysisResults(
+  data: Record<string, unknown>,  // Use Record<string, unknown> instead of any
   imagePath: string | null = null
 ): AnalysisResult {
-  // Process the subtype information from the comment text
-  let subtype: 'male_feature' | 'regular_rod' | null = null;
-  let commentText = data.commentText || '';
-  
-  // Extract the subtype tag and remove it from the comment
-  if (data.objectType === 'other_rod' && commentText) {
-    const maleFeaturePrefix = '[male_feature]';
-    const regularRodPrefix = '[regular_rod]';
+  try {
+    // Process the subtype information from the comment text
+    let subtype: 'male_feature' | 'regular_rod' | undefined = undefined;
+    let commentText = typeof data.commentText === 'string' ? data.commentText : '';
     
-    if (commentText.startsWith(maleFeaturePrefix)) {
-      subtype = 'male_feature';
-      commentText = commentText.replace(maleFeaturePrefix, '').trim();
-    } else if (commentText.startsWith(regularRodPrefix)) {
-      subtype = 'regular_rod';
-      commentText = commentText.replace(regularRodPrefix, '').trim();
+    // Extract the subtype tag and remove it from the comment
+    if (data.objectType === 'other_rod' && commentText) {
+      const maleFeaturePrefix = '[male_feature]';
+      const regularRodPrefix = '[regular_rod]';
+      
+      if (commentText.startsWith(maleFeaturePrefix)) {
+        subtype = 'male_feature';
+        commentText = commentText.replace(maleFeaturePrefix, '').trim();
+      } else if (commentText.startsWith(regularRodPrefix)) {
+        subtype = 'regular_rod';
+        commentText = commentText.replace(regularRodPrefix, '').trim();
+      }
     }
+    
+    // Ensure all values are proper types
+    const lengthEstimate = typeof data.lengthEstimate === 'number' ? data.lengthEstimate : 0;
+    const thicknessEstimate = typeof data.thicknessEstimate === 'number' ? data.thicknessEstimate : 0;
+    const freshnessScore = typeof data.freshnessScore === 'number' ? data.freshnessScore : 0;
+    const overallScore = typeof data.overallScore === 'number' ? data.overallScore : 0;
+    const objectType = data.objectType as ObjectType;
+    
+    // Use the existing helper functions
+    const { adjustedLength, adjustedThickness } = adjustDimensions(lengthEstimate, thicknessEstimate, objectType);
+    const score = calculateFinalScore(overallScore, freshnessScore, adjustedLength, adjustedThickness, objectType);
+    
+    // Determine share image path based on object type
+    let shareImagePath = imagePath;
+    const isMaleFeature = objectType === 'other_rod' && subtype === 'male_feature';
+    
+    if (objectType === 'other_rod' && subtype === 'male_feature') {
+      // For male features, use a default image for sharing
+      shareImagePath = '/result.jpg';
+    }
+    
+    // Get truth analysis
+    const truthAnalysis = analyzeTruth(objectType, adjustedLength, adjustedThickness, subtype);
+    
+    // Return a properly formatted AnalysisResult
+    return {
+      objectType,
+      rodSubtype: subtype,
+      multipleObjects: Boolean(data.multipleObjects),
+      lowQuality: Boolean(data.lowQuality),
+      lengthEstimate,
+      thicknessEstimate,
+      freshnessScore,
+      overallScore,
+      commentText,
+      isMaleFeature,
+      
+      // Processed values
+      type: objectType,
+      length: adjustedLength,
+      thickness: adjustedThickness,
+      freshness: freshnessScore,
+      score,
+      comment: commentText,
+      
+      // Optional fields
+      truthAnalysis,
+      originalImagePath: imagePath || undefined,
+      shareImagePath: shareImagePath || undefined
+    };
+  } catch (error) {
+    console.error("Error processing analysis results:", error);
+    
+    // Return a minimal valid AnalysisResult in case of errors
+    return {
+      objectType: null,
+      multipleObjects: false,
+      lowQuality: false,
+      lengthEstimate: 0,
+      thicknessEstimate: 0,
+      freshnessScore: 0,
+      overallScore: 0,
+      commentText: "Error processing results",
+      type: null,
+      length: 0,
+      thickness: 0,
+      freshness: 0,
+      score: 0,
+      comment: "Error processing results"
+    };
   }
-  
-  // Create dimensions object, ensuring values are numbers (not strings)
-  const dimensions = adjustDimensions({
-    length: typeof data.lengthEstimate === 'number' ? data.lengthEstimate : 0,
-    thickness: typeof data.thicknessEstimate === 'number' ? data.thicknessEstimate : 0
-  }, data.objectType as ObjectType);
-  
-  // Calculate final score
-  const finalScore = calculateFinalScore({
-    freshnessScore: typeof data.freshnessScore === 'number' ? data.freshnessScore : 0,
-    overallScore: typeof data.overallScore === 'number' ? data.overallScore : 0,
-    dimensions,
-    objectType: data.objectType as ObjectType
-  });
-  
-  // Get truthfulness analysis
-  const truthfulness = analyzeTruth(dimensions, data.objectType as ObjectType, subtype, finalScore.credibilityScore);
-  
-  // Get suggestion message
-  const suggestion = getSuggestionMessage(
-    dimensions, 
-    data.objectType as ObjectType, 
-    subtype, 
-    truthfulness.percentile
-  );
-  
-  // Determine share image path based on object type and subtypes
-  let shareImagePath = imagePath;
-  if (data.objectType === 'other_rod' && (subtype === 'male_feature' || truthfulness.isMaleFeature)) {
-    // For male features, use a default image for sharing instead of the uploaded one
-    shareImagePath = '/result.jpg';
-  }
-  
-  // Return results with all processed data
-  return {
-    multipleObjects: data.multipleObjects || false,
-    lowQuality: data.lowQuality || false,
-    objectType: data.objectType as ObjectType,
-    subtype,
-    dimensions,
-    scores: {
-      freshness: typeof data.freshnessScore === 'number' ? data.freshnessScore : 0,
-      overall: typeof data.overallScore === 'number' ? data.overallScore : 0,
-      final: finalScore.score
-    },
-    comments: {
-      main: commentText,
-      suggestion
-    },
-    credibilityScore: finalScore.credibilityScore,
-    truth: truthfulness,
-    imagePath,
-    shareImagePath
-  };
 }
 
 // =================================
@@ -943,7 +961,7 @@ export async function POST(req: NextRequest) {
 
     // --- Final Processing (Truth Analysis) ---
     // Process results further (adds truth analysis and share image path)
-    const truthAnalysisResult = await processAnalysisResults(data);
+    const truthAnalysisResult = processAnalysisResults(data);
     
     // --- Construct Final Response ---
     // Create the final result object sent to the client
@@ -969,13 +987,21 @@ export async function POST(req: NextRequest) {
       
       // Add truth analysis info if enabled
       truthAnalysis: enableTruthDetection ? {
-        truthScore: truthAnalysisResult.truthScore,
-        isSuspicious: truthAnalysisResult.isSuspicious,
-        suspiciousFeatures: truthAnalysisResult.suspiciousFeatures,
-        adjustedLength: truthAnalysisResult.adjustedLength,
-        adjustmentFactor: truthAnalysisResult.adjustmentFactor,
-        funnyMessage: truthAnalysisResult.funnyMessage,
-        suggestionMessage: truthAnalysisResult.suggestionMessage
+        truthScore: Number(truthAnalysisResult.truthScore),
+        isSuspicious: Boolean(truthAnalysisResult.isSuspicious),
+        suspiciousFeatures: Array.isArray(truthAnalysisResult.suspiciousFeatures) 
+          ? truthAnalysisResult.suspiciousFeatures 
+          : [],
+        adjustedLength: typeof truthAnalysisResult.adjustedLength === 'number' 
+          ? truthAnalysisResult.adjustedLength 
+          : undefined,
+        adjustmentFactor: typeof truthAnalysisResult.adjustmentFactor === 'number' 
+          ? truthAnalysisResult.adjustmentFactor 
+          : undefined,
+        funnyMessage: String(truthAnalysisResult.funnyMessage || ""),
+        suggestionMessage: typeof truthAnalysisResult.suggestionMessage === 'string' 
+          ? truthAnalysisResult.suggestionMessage 
+          : undefined
       } : undefined,
       
       // Add the final share image path
