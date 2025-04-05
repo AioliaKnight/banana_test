@@ -428,7 +428,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     document.body.removeChild(link);
   }, [result.type]);
 
-  const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line', imageUrl: string) => {
+  const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     let shareUrl = '';
     const currentUrl = window.location.href;
     
@@ -455,12 +455,12 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         if (url) {
           setShareImageUrl(url);
           // 等待圖片生成後再分享
-          openShareWindow(platform, url);
+          openShareWindow(platform);
         }
         setIsGeneratingImage(false);
       });
     } else {
-      openShareWindow(platform, shareImageUrl);
+      openShareWindow(platform);
     }
   }, [generateShareImage, shareImageUrl, openShareWindow]);
 

@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { useDropzone, FileRejection, DropEvent } from 'react-dropzone';
+import { useDropzone, FileRejection } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUpload, FiCheck, FiAlertCircle, FiCamera, FiRefreshCw } from 'react-icons/fi';
 
@@ -37,7 +37,7 @@ export default function ImageUploader({
     }
   }, [preview]);
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[], event: DropEvent) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[]) => {
     // Handle rejected files
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0];

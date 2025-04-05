@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
-import { analyzeTruth, isReasonableDimension, adjustDimensions, calculateFinalScore, ObjectType } from '@/components/utils/TruthDetector';
+import { analyzeTruth, adjustDimensions, calculateFinalScore, ObjectType } from '@/components/utils/TruthDetector';
 
 // 分析結果類型
 type AnalysisResult = {
