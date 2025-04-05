@@ -120,6 +120,59 @@ export function analyzeTruth(
 }
 
 /**
+ * 計算最終評分
+ * @param baseScore 基礎分數
+ * @param freshness 新鮮度
+ * @param length 長度
+ * @param thickness 粗細
+ * @param objectType 物件類型
+ * @returns 最終評分
+ */
+export function calculateFinalScore(
+  baseScore: number,
+  freshness: number,
+  length: number,
+  thickness: number,
+  objectType: ObjectType
+): number {
+  // 1. 基礎分數
+  let finalScore = baseScore;
+  
+  // 2. 合理的尺寸應該有獎勵，不合理的尺寸應該降分
+  const isReasonableSize = objectType ? isReasonableDimension(length, thickness, objectType) : false;
+  finalScore += isReasonableSize ? 0.2 : -0.5;
+  
+  // 3. 新鮮度對總分有影響
+  const freshnessImpact = (freshness - 5) * 0.1; // 新鮮度每高於5分加0.1分，低於則減分
+  finalScore += freshnessImpact;
+  
+  // 4. 對於other_rod類型，如果是男性特徵，根據台灣平均長度進行評分調整
+  if (objectType === 'other_rod') {
+    const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
+    if (length > 0) {
+      // 計算與平均值的差異，作為評分調整依據
+      const lengthDiffRatio = length / taiwanMaleAvgLength;
+      
+      // 接近平均值±20%的給予正面評價
+      if (lengthDiffRatio >= 0.8 && lengthDiffRatio <= 1.2) {
+        finalScore += 0.3; // 符合正常範圍加分
+      }
+      // 過小或過大都有輕微減分
+      else if (lengthDiffRatio < 0.8 || lengthDiffRatio > 1.5) {
+        finalScore -= 0.2; // 不太符合台灣平均水平輕微減分
+      }
+      // 特別大的（但不是誇張的）給予特別評價
+      else if (lengthDiffRatio > 1.2 && lengthDiffRatio <= 1.5) {
+        finalScore += 0.1; // 稍微高於平均但不誇張
+      }
+    }
+  }
+  
+  // 確保最終分數在0.0-9.5的範圍內
+  return parseFloat((Math.max(0.0, Math.min(9.5, finalScore))).toFixed(1));
+}
+
+/**
  * 處理尺寸估計
  * @param lengthEstimate 長度估計值
  * @param thicknessEstimate 粗細估計值
