@@ -16,8 +16,10 @@ import {
 import Image from 'next/image';
 import TruthfulnessIndicator from './utils/TruthfulnessIndicator';
 import StatCard from './utils/StatCard';
+import { AnalysisResult, ObjectType } from '@/types'; // Import shared type
 
-export interface AnalysisResult {
+// Comment out the local definition
+/* export interface AnalysisResult {
   type: 'cucumber' | 'banana' | 'other_rod';
   length: number;
   thickness: number;
@@ -35,13 +37,57 @@ export interface AnalysisResult {
   };
   // 新增分享图片路径
   shareImagePath?: string;
-}
+} */
 
 export interface ResultsDisplayProps {
+  // Use the imported type
   result: AnalysisResult;
   preview: string;
   onReset: () => void;
 }
+
+/**
+ * Wraps Chinese text onto multiple lines within a canvas context.
+ * @param ctx CanvasRenderingContext2D
+ * @param text Text to wrap
+ * @param x Starting X coordinate
+ * @param y Starting Y coordinate
+ * @param maxWidth Maximum line width
+ * @param lineHeight Line height
+ * @returns Array of lines with text and coordinates.
+ */
+const wrapTextChinese = (
+  ctx: CanvasRenderingContext2D,
+  text: string,
+  x: number,
+  y: number,
+  maxWidth: number,
+  lineHeight: number
+): { text: string; x: number; y: number }[] => {
+  const chars = text.split('');
+  let line = '';
+  const lineArray = [];
+  let currentY = y;
+
+  for(let i = 0; i < chars.length; i++) {
+    const testLine = line + chars[i];
+    const metrics = ctx.measureText(testLine);
+    const testWidth = metrics.width;
+
+    if (testWidth > maxWidth && line.length > 0) {
+      lineArray.push({text: line, x, y: currentY });
+      line = chars[i];
+      currentY += lineHeight;
+    } else {
+      line = testLine;
+    }
+  }
+
+  if (line.length > 0) {
+    lineArray.push({text: line, x, y: currentY });
+  }
+  return lineArray;
+};
 
 export default function ResultsDisplay({ result, preview, onReset }: ResultsDisplayProps) {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
@@ -58,8 +104,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
 
   // 使用useMemo緩存分享信息
   const shareInfo = useMemo(() => {
-    const title = `這根${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}獲得了 ${result.score.toFixed(1)}/10 的評分！`;
-    const description = `長度: ${result.length}cm, 粗細: ${result.thickness}cm, 新鮮度: ${result.freshness}/10\n${result.comment}`;
+    // Add default values to handle potential undefined result properties
+    const typeLabel = result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體';
+    const scoreValue = result.score ?? 0;
+    const lengthValue = result.length ?? 0;
+    const thicknessValue = result.thickness ?? 0;
+    const freshnessValue = result.freshness ?? 0;
+    const commentValue = result.comment || '暫無評語';
+
+    const title = `這根${typeLabel}獲得了 ${scoreValue.toFixed(1)}/10 的評分！`;
+    const description = `長度: ${lengthValue}cm, 粗細: ${thicknessValue}cm, 新鮮度: ${freshnessValue}/10\n${commentValue}`;
     const hashtag = "#AI蔬果分析";
     
     return { title, description, hashtag };
@@ -67,48 +121,17 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   
   // 決定顯示的長度（考慮測謊儀調整）
   const getDisplayLength = useCallback(() => {
-    // 如果有真實度分析且被判定為可疑，顯示調整後的長度
-    if (result.truthAnalysis?.isSuspicious) {
+    // Add checks for result and truthAnalysis existence
+    if (result?.truthAnalysis?.isSuspicious && result.truthAnalysis.adjustedLength !== undefined) {
       return result.truthAnalysis.adjustedLength;
     }
-    // 否則顯示原始長度
-    return result.length;
-  }, [result.length, result.truthAnalysis?.isSuspicious, result.truthAnalysis?.adjustedLength]);
+    // Return default length if truthAnalysis is not applicable or adjustedLength is missing
+    return result?.length ?? 0;
+  }, [result?.length, result?.truthAnalysis?.isSuspicious, result?.truthAnalysis?.adjustedLength]);
 
-  const wrapTextChinese = useCallback((
-    ctx: CanvasRenderingContext2D, 
-    text: string, 
-    x: number, 
-    y: number, 
-    maxWidth: number, 
-    lineHeight: number
-  ) => {
-    // 為中文處理優化換行
-    const chars = text.split('');
-    let line = '';
-    const lineArray = [];
-    
-    for(let i = 0; i < chars.length; i++) {
-      const testLine = line + chars[i];
-      const metrics = ctx.measureText(testLine);
-      const testWidth = metrics.width;
-      
-      if (testWidth > maxWidth && line.length > 0) {
-        lineArray.push({text: line, x, y});
-        line = chars[i];
-        y += lineHeight;
-      }
-      else {
-        line = testLine;
-      }
-    }
-    
-    lineArray.push({text: line, x, y});
-    return lineArray;
-  }, []);
-    
   const generateShareImage = useCallback(async () => {
-    if (!isClient || !canvasRef.current) return null;
+    // Add checks for result properties before accessing them
+    if (!isClient || !canvasRef.current || !result) return null;
     
     setIsGeneratingImage(true);
     try {
@@ -138,54 +161,22 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       ctx.fillRect(20, 20, canvasWidth - 40, canvasHeight - 40);
       ctx.shadowColor = 'transparent';
 
-      // 左側圖片區域 - 使用用戶上傳的圖片或預設圖片
+      // Left side image area
       try {
-        // 判斷內容是否可能敏感或是否使用服務器指定的分享圖片
-        const isSensitiveContent = (): boolean => {
-          // 如果API已經明確提供了分享圖片路徑（男性特徵），則直接返回true使用該路徑
-          if (result.shareImagePath === '/result.jpg') {
-            return true;
-          }
-          
-          // 如果不是other_rod類型，則不是敏感內容
-          if (result.type !== 'other_rod') {
-            return false;
-          }
-          
-          // 檢查評語中是否包含可能暗示敏感內容的關鍵詞
-          const sensitiveKeywords = [
-            '男性特徵', '私密', '敏感', '性', '親愛的', '姐妹', 
-            '尺寸適中', '尺寸還不錯', '遐想', '有趣的棒狀物', '棒狀物體'
-          ];
-          
-          // 評語中包含敏感詞，或評分特別高（超過8.5分）且為other_rod類型
-          const hasSensitiveWords = sensitiveKeywords.some(keyword => 
-            result.comment.toLowerCase().includes(keyword.toLowerCase())
-          );
-          
-          // 如果是other_rod並且評分很高或包含敏感詞，則視為敏感內容
-          return hasSensitiveWords || (result.type === 'other_rod' && result.score > 8.5);
-        };
+        // SIMPLIFY image source determination logic:
+        // Use API-provided share image path if available, otherwise use preview.
+        const imageSrc = result.shareImagePath || preview;
         
-        // 決定使用哪個圖片來源
-        // 1. 如果API提供了shareImagePath且有效，优先使用
-        // 2. 如果是敏感內容，則使用替代圖片
-        // 3. 否則使用用戶原始圖片
-        let imageSrc = preview; // 默认用户上传的图片
-        
-        if (result.shareImagePath && result.shareImagePath !== '') {
-          // 如果API提供了有效的分享图片路径，优先使用
-          imageSrc = result.shareImagePath;
-        } else if (isSensitiveContent()) {
-          // 否则根据内容敏感性判断
-          imageSrc = '/result.jpg';
+        // Ensure imageSrc is not null or empty before proceeding
+        if (!imageSrc) {
+          throw new Error('Image source is unavailable.');
         }
-        
+
         const userImage = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new window.Image();
           img.onload = () => resolve(img);
           img.onerror = reject;
-          img.src = imageSrc;
+          img.src = imageSrc; // Use the determined image source
           // 加入超時處理，防止圖片加載永久阻塞
           setTimeout(() => reject(new Error('圖片加載超時')), 5000);
         });
@@ -236,7 +227,14 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.textAlign = 'center';
         ctx.fillText(typeLabel, imageX + 50, imageY + imageSize - 20);
       } catch (error) {
-        console.error('無法加載圖片:', error);
+        console.error('無法加載或繪製圖片:', error);
+        // Optionally draw a placeholder or error message on the canvas
+        ctx.fillStyle = '#fecaca'; // Light red background
+        ctx.fillRect(50, (canvasHeight - 100) / 2, canvasHeight - 100, canvasHeight - 100);
+        ctx.fillStyle = '#991b1b'; // Dark red text
+        ctx.font = 'bold 20px sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('無法加載圖片', 50 + (canvasHeight - 100) / 2, canvasHeight / 2);
       }
 
       // 右側內容區域
@@ -358,7 +356,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       ctx.font = '16px sans-serif';
       
       // 使用完整評語而不截斷
-      const commentText = result.comment;
+      const commentText = result.comment || '暫無評語';
       const lineHeight = 24;
       const maxWidth = contentWidth - 40;
       const commentLines = wrapTextChinese(
@@ -432,13 +430,15 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   }, [isClient, generateShareImage, shareImageUrl]);
 
   const downloadImage = useCallback((url: string) => {
+    if (!result) return; // Ensure result exists
+    const typeLabel = result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體';
     const link = document.createElement('a');
     link.href = url;
-    link.download = `${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}_分析結果.png`;
+    link.download = `${typeLabel}_分析結果.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  }, [result.type]);
+  }, [result?.type]); // Depend on result.type
 
   const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     let shareUrl = '';
@@ -505,6 +505,12 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     };
   }, [showShareOptions]);
 
+  // Add check for result before rendering
+  if (!result) {
+    // Optionally render a loading state or null
+    return null; 
+  }
+
   return (
     <div className="w-full">
       <div className="mb-4 pb-4 border-b border-slate-100 flex items-center justify-between">
@@ -538,7 +544,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         <div className="grid grid-cols-2 gap-3 mb-6 sm:grid-cols-4">
           <StatCard
             title="長度"
-            value={`${getDisplayLength()} cm`}
+            value={`${getDisplayLength()} cm`} // Already handles undefined
             icon={<FaRuler className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-blue-50"
             iconColor="text-blue-600"
@@ -546,7 +552,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           />
           <StatCard
             title="粗細"
-            value={`${result.thickness} cm`}
+            value={`${result.thickness ?? 0} cm`} // Add default value
             icon={<FaCircle className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-purple-50"
             iconColor="text-purple-600"
@@ -554,7 +560,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           />
           <StatCard
             title="新鮮度"
-            value={`${result.freshness}/10`}
+            value={`${result.freshness ?? 0}/10`} // Add default value
             icon={<FaRegLightbulb className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-green-50"
             iconColor="text-green-600"
@@ -562,7 +568,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           />
           <StatCard
             title="總評分"
-            value={`${result.score.toFixed(1)}/10`}
+            value={`${(result.score ?? 0).toFixed(1)}/10`} // Add default value and fix toFixed call
             icon={<FaStar className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-amber-50"
             iconColor="text-amber-600"
@@ -574,14 +580,15 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         {result.truthAnalysis && (
           <TruthfulnessIndicator
             truthAnalysis={result.truthAnalysis}
-            objectType={result.type}
-            originalLength={result.length}
+            // Ensure type is one of the expected values or default
+            objectType={result.type ?? 'other_rod'} 
+            originalLength={result.length ?? 0}
           />
         )}
 
         <div className="bg-slate-50 p-4 sm:p-5 rounded-lg mb-8 shadow-sm border border-slate-100">
           <div className="text-slate-700 text-sm sm:text-base leading-relaxed font-medium">
-            <p>{result.comment}</p>
+            <p>{result.comment || '暫無評語'}</p> {/* Add default value */}
           </div>
         </div>
         

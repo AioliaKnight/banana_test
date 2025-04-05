@@ -1,10 +1,10 @@
 import { motion } from 'framer-motion';
-import { TruthAnalysisResult } from './TruthDetector';
+import { TruthAnalysisResult, ObjectType } from '@/types';
 import { FiAward, FiAlertTriangle, FiInfo } from 'react-icons/fi';
 
 interface TruthfulnessIndicatorProps {
   truthAnalysis: TruthAnalysisResult;
-  objectType: 'cucumber' | 'banana' | 'other_rod';
+  objectType: ObjectType;
   originalLength: number;
 }
 
@@ -51,7 +51,7 @@ export default function TruthfulnessIndicator({
   
   // 格式化調整後的長度顯示
   const getLengthAdjustment = () => {
-    if (!truthAnalysis.isSuspicious) return null;
+    if (!truthAnalysis.isSuspicious || truthAnalysis.adjustedLength === undefined) return null;
     
     const difference = originalLength - truthAnalysis.adjustedLength;
     const percentChange = Math.round((difference / originalLength) * 100);
@@ -75,7 +75,7 @@ export default function TruthfulnessIndicator({
       <div className="mt-3 space-y-1">
         <p className="text-xs font-medium">偵測到的可疑特徵:</p>
         <div className="flex flex-wrap gap-1.5">
-          {truthAnalysis.suspiciousFeatures.map((feature, index) => (
+          {truthAnalysis.suspiciousFeatures.map((feature: string, index: number) => (
             <span 
               key={index} 
               className="px-2 py-0.5 text-xs rounded-full bg-white/80 border border-current/10 shadow-sm"

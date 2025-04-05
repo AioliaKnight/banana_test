@@ -8,6 +8,7 @@ import { HiOutlineChevronDown } from "react-icons/hi";
 import Link from "next/link";
 import Script from "next/script";
 import TruthScanAnimation from "@/components/utils/TruthScanAnimation";
+import { AnalysisResult } from "@/types"; // Import shared type
 
 // 上傳限制常數
 const DAILY_UPLOAD_LIMIT = 10;
@@ -18,31 +19,11 @@ interface ApiError {
   message: string;
 }
 
-interface AnalysisResult {
-  type: 'cucumber' | 'banana' | 'other_rod';
-  length: number;
-  thickness: number;
-  freshness: number;
-  score: number;
-  comment: string;
-  // 添加真實度分析結構
-  truthAnalysis?: {
-    truthScore: number;
-    suspiciousFeatures: string[];
-    adjustedLength: number;
-    adjustmentFactor: number;
-    funnyMessage: string;
-    isSuspicious: boolean;
-  };
-  // 添加分享图片路径
-  shareImagePath?: string;
-  originalImagePath?: string;
-}
-
 export default function Home() {
   const [image, setImage] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  // Use the imported type for the state
   const [analysisResult, setAnalysisResult] = useState<AnalysisResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   // 剩餘上傳次數
