@@ -242,14 +242,25 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash",
       generationConfig: {
-        temperature: 0.4,  // 調高溫度增加創意性
+        temperature: 0.4,  // 溫度調整為平衡創意性和一致性
         maxOutputTokens: 800,
-      }
+        // 添加更多嚴格的響應格式參數
+        topK: 40,
+        topP: 0.95,
+      },
+      safetySettings: [
+        {
+          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT" as any,
+          threshold: "BLOCK_ONLY_HIGH" as any
+        }
+      ]
     });
 
-    // 設置超時處理
+    // 設置更長的超時時間，解決網絡延遲問題
     const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('API request timeout')), 15000);
+      const timeoutError = new Error('API request timeout');
+      timeoutError.name = 'TimeoutError';
+      setTimeout(() => reject(timeoutError), 25000); // 增加到25秒
     });
 
     // 獲取優化後的提示詞
@@ -265,11 +276,29 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       }
     ];
 
+    // 記錄API請求開始時間（用於性能監控）
+    const requestStartTime = Date.now();
+
     try {
       // 使用指數退避重試機制發送請求
       const geminiResponsePromise = fetchWithRetry(
-        () => model.generateContent([promptText, ...imageParts]),
-        3  // 最大重試次數
+        async () => {
+          try {
+            return await model.generateContent([promptText, ...imageParts]);
+          } catch (err: any) {
+            // 針對特定API錯誤進行處理
+            if (err.message?.includes('safety')) {
+              throw new Error('圖片內容可能違反安全政策，請上傳適當的圖片');
+            }
+            // 區分網絡錯誤和其他錯誤
+            if (err.message?.includes('network') || err.message?.includes('timeout')) {
+              throw new Error('網絡連接問題，請稍後重試');
+            }
+            throw err; // 重新拋出其他錯誤
+          }
+        },
+        3,  // 最大重試次數
+        2000 // 初始延遲增加到2秒
       );
       
       // 競速處理API請求
@@ -278,93 +307,32 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
         timeoutPromise
       ]);
       
+      // 記錄API響應時間（用於性能監控）
+      const responseTime = Date.now() - requestStartTime;
+      console.log(`Gemini API response time: ${responseTime}ms`);
+      
       const responseText = geminiResponse.response.text();
       
-      try {
-        // 嘗試從文本中提取JSON部分
-        let jsonStr = responseText;
-        
-        // 如果回應包含多餘內容，嘗試找出並提取JSON部分
-        if (responseText.includes('{') && responseText.includes('}')) {
-          const startIndex = responseText.indexOf('{');
-          const endIndex = responseText.lastIndexOf('}') + 1;
-          if (startIndex >= 0 && endIndex > startIndex) {
-            jsonStr = responseText.substring(startIndex, endIndex);
-          }
-        }
-        
-        // 增強的JSON解析 - 清理異常字符
-        try {
-          const cleaned = jsonStr.replace(/[\u0000-\u001F]+/g, ' ')
-                                .replace(/[\r\n]+/g, ' ');
-          const parsedResponse = JSON.parse(cleaned);
-          
-          // 確保需要的所有屬性都存在，並轉換類型確保符合預期
-          return {
-            objectType: parsedResponse.objectType || null,
-            multipleObjects: Boolean(parsedResponse.multipleObjects),
-            lowQuality: Boolean(parsedResponse.lowQuality),
-            lengthEstimate: Number(parsedResponse.lengthEstimate) || 0,
-            thicknessEstimate: Number(parsedResponse.thicknessEstimate) || 0,
-            freshnessScore: Number(parsedResponse.freshnessScore) || 0,
-            overallScore: Number(parsedResponse.overallScore) || 0,
-            commentText: parsedResponse.commentText || "分析未能生成完整評語。"
-          };
-        } catch (cleaningError) {
-          // 如果清理後仍無法解析，嘗試原始解析
-          const parsedResponse = JSON.parse(jsonStr);
-          
-          // 確保需要的所有屬性都存在，並轉換類型確保符合預期
-          return {
-            objectType: parsedResponse.objectType || null,
-            multipleObjects: Boolean(parsedResponse.multipleObjects),
-            lowQuality: Boolean(parsedResponse.lowQuality),
-            lengthEstimate: Number(parsedResponse.lengthEstimate) || 0,
-            thicknessEstimate: Number(parsedResponse.thicknessEstimate) || 0,
-            freshnessScore: Number(parsedResponse.freshnessScore) || 0,
-            overallScore: Number(parsedResponse.overallScore) || 0,
-            commentText: parsedResponse.commentText || "分析未能生成完整評語。"
-          };
-        }
-      } catch (parseError) {
-        console.error('Error parsing Gemini response:', parseError);
-        console.log('Raw response:', responseText);
-        // 嘗試手動提取部分信息
-        const extractedInfo = {
-          objectType: null as ObjectType,
-          multipleObjects: false,
-          lowQuality: false,
-          lengthEstimate: 0,
-          thicknessEstimate: 0,
-          freshnessScore: 0,
-          overallScore: 0,
-          commentText: ""
-        };
-        
-        // 嘗試從文本中提取關鍵信息
-        if (responseText.toLowerCase().includes('cucumber') || responseText.toLowerCase().includes('小黃瓜')) {
-          extractedInfo.objectType = 'cucumber';
-        } else if (responseText.toLowerCase().includes('banana') || responseText.toLowerCase().includes('香蕉')) {
-          extractedInfo.objectType = 'banana';
-        } else if (responseText.toLowerCase().includes('other_rod') || responseText.toLowerCase().includes('棒狀物')) {
-          extractedInfo.objectType = 'other_rod';
-        }
-        
-        // 嘗試提取評語
-        if (responseText.length > 30) {
-          extractedInfo.commentText = "AI評語解析錯誤，無法提供完整分析。";
-        }
-        
-        // 如果無法解析，回傳部分信息並標記解析錯誤
-        console.log('Extracted partial info:', extractedInfo);
-        return {
-          ...extractedInfo,
-          error: 'JSON解析錯誤，API返回的格式不符合預期'
-        };
+      // 異常響應長度檢查
+      if (!responseText || responseText.length < 10) {
+        throw new Error('API返回空響應或無效內容');
       }
-    } catch (geminiError) {
+      
+      return parseGeminiResponse(responseText);
+    } catch (geminiError: any) {
       console.error('Gemini API error:', geminiError);
-      throw geminiError;
+      
+      // 友好的錯誤消息處理
+      let errorMessage = '分析處理過程中發生錯誤';
+      if (geminiError.name === 'TimeoutError') {
+        errorMessage = 'API響應超時，請稍後重試';
+      } else if (geminiError.message?.includes('quota')) {
+        errorMessage = 'API配額已用盡，請稍後重試';
+      } else if (geminiError.message?.includes('safety')) {
+        errorMessage = '圖片內容可能不適合分析，請上傳合適的水果照片';
+      }
+      
+      throw new Error(errorMessage);
     }
   } catch (error) {
     console.error('Error in Gemini analysis:', error);
@@ -380,6 +348,192 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       error: error instanceof Error ? error.message : '未知錯誤'
     };
   }
+}
+
+/**
+ * 智能解析Gemini API響應
+ * @param responseText API返回的原始文本
+ * @returns 解析後的結構化數據
+ */
+function parseGeminiResponse(responseText: string): {
+  objectType: ObjectType;
+  multipleObjects: boolean;
+  lowQuality: boolean;
+  lengthEstimate: number;
+  thicknessEstimate: number;
+  freshnessScore: number;
+  overallScore: number;
+  commentText: string;
+  error?: string;
+} {
+  try {
+    // 嘗試從文本中提取JSON部分
+    let jsonStr = responseText;
+    
+    // 智能JSON識別 - 尋找最完整的JSON部分
+    if (responseText.includes('{') && responseText.includes('}')) {
+      const jsonMatches = responseText.match(/\{(?:[^{}]|(?:\{[^{}]*\}))*\}/g) || [];
+      
+      if (jsonMatches.length > 0) {
+        // 選擇最長的JSON字符串（可能是最完整的）
+        jsonStr = jsonMatches.reduce((longest, current) => 
+          current.length > longest.length ? current : longest, "");
+      } else {
+        // 使用標準起止位置提取
+        const startIndex = responseText.indexOf('{');
+        const endIndex = responseText.lastIndexOf('}') + 1;
+        if (startIndex >= 0 && endIndex > startIndex) {
+          jsonStr = responseText.substring(startIndex, endIndex);
+        }
+      }
+    }
+    
+    // 增強的JSON解析與清理
+    try {
+      // 移除可能導致解析錯誤的字符
+      const cleaned = jsonStr
+        .replace(/[\u0000-\u001F]+/g, ' ')  // 控制字符
+        .replace(/[\r\n]+/g, ' ')           // 換行
+        .replace(/,\s*}/g, '}')             // 尾隨逗號
+        .replace(/,\s*,/g, ',')             // 重複逗號
+        .replace(/:\s*,/g, ': null,')       // 空值修復
+        .replace(/"\s*:\s*"/g, '": "')      // 格式修復
+        .replace(/\\+"/g, '\\"');           // 轉義引號修復
+      
+      const parsedResponse = JSON.parse(cleaned);
+      
+      // 確保所有屬性都存在並有正確類型
+      return {
+        objectType: ['cucumber', 'banana', 'other_rod'].includes(parsedResponse.objectType) 
+          ? parsedResponse.objectType : null,
+        multipleObjects: Boolean(parsedResponse.multipleObjects),
+        lowQuality: Boolean(parsedResponse.lowQuality),
+        lengthEstimate: parseFloat(parsedResponse.lengthEstimate) || 0,
+        thicknessEstimate: parseFloat(parsedResponse.thicknessEstimate) || 0,
+        freshnessScore: parseFloat(parsedResponse.freshnessScore) || 0,
+        overallScore: parseFloat(parsedResponse.overallScore) || 0,
+        commentText: typeof parsedResponse.commentText === 'string' 
+          ? parsedResponse.commentText 
+          : "分析未能生成完整評語。"
+      };
+    } catch (firstError) {
+      // 如果清理後仍無法解析，嘗試直接解析原始響應
+      try {
+        const parsedResponse = JSON.parse(jsonStr);
+        
+        return {
+          objectType: ['cucumber', 'banana', 'other_rod'].includes(parsedResponse.objectType) 
+            ? parsedResponse.objectType : null,
+          multipleObjects: Boolean(parsedResponse.multipleObjects),
+          lowQuality: Boolean(parsedResponse.lowQuality),
+          lengthEstimate: parseFloat(parsedResponse.lengthEstimate) || 0,
+          thicknessEstimate: parseFloat(parsedResponse.thicknessEstimate) || 0,
+          freshnessScore: parseFloat(parsedResponse.freshnessScore) || 0,
+          overallScore: parseFloat(parsedResponse.overallScore) || 0,
+          commentText: typeof parsedResponse.commentText === 'string' 
+            ? parsedResponse.commentText 
+            : "分析未能生成完整評語。"
+        };
+      } catch (secondError) {
+        // 所有JSON解析嘗試失敗，嘗試提取關鍵信息
+        console.error('All JSON parsing attempts failed:', secondError);
+        console.log('Raw response:', responseText);
+        return extractFallbackInfo(responseText);
+      }
+    }
+  } catch (error) {
+    console.error('Error in response parsing:', error);
+    return extractFallbackInfo(responseText);
+  }
+}
+
+/**
+ * 從文本中提取關鍵信息作為備用
+ * @param responseText API返回的原始文本
+ * @returns 提取出的基本信息
+ */
+function extractFallbackInfo(responseText: string): {
+  objectType: ObjectType;
+  multipleObjects: boolean;
+  lowQuality: boolean;
+  lengthEstimate: number;
+  thicknessEstimate: number;
+  freshnessScore: number;
+  overallScore: number;
+  commentText: string;
+  error: string;
+} {
+  // 初始化結果
+  const extractedInfo = {
+    objectType: null as ObjectType,
+    multipleObjects: false,
+    lowQuality: false,
+    lengthEstimate: 0,
+    thicknessEstimate: 0,
+    freshnessScore: 5, // 默認平均值
+    overallScore: 5,   // 默認平均值
+    commentText: "AI無法正確分析此圖片，請嘗試上傳更清晰的照片或換一個角度。",
+    error: 'JSON解析錯誤，無法提取完整分析結果'
+  };
+  
+  // 智能物體類型識別
+  if (responseText.toLowerCase().includes('cucumber') || 
+      responseText.toLowerCase().includes('小黃瓜')) {
+    extractedInfo.objectType = 'cucumber';
+  } else if (responseText.toLowerCase().includes('banana') || 
+             responseText.toLowerCase().includes('香蕉')) {
+    extractedInfo.objectType = 'banana';
+  } else if (responseText.toLowerCase().includes('other_rod') || 
+             responseText.toLowerCase().includes('棒狀物')) {
+    extractedInfo.objectType = 'other_rod';
+  }
+  
+  // 提取可能的長度信息
+  const lengthMatch = responseText.match(/長度[^\d]*(\d+\.?\d*)/i) || 
+                      responseText.match(/length[^\d]*(\d+\.?\d*)/i);
+  if (lengthMatch && lengthMatch[1]) {
+    extractedInfo.lengthEstimate = parseFloat(lengthMatch[1]);
+  }
+  
+  // 提取可能的粗細信息
+  const thicknessMatch = responseText.match(/粗細[^\d]*(\d+\.?\d*)/i) || 
+                         responseText.match(/thickness[^\d]*(\d+\.?\d*)/i);
+  if (thicknessMatch && thicknessMatch[1]) {
+    extractedInfo.thicknessEstimate = parseFloat(thicknessMatch[1]);
+  }
+  
+  // 提取評論文本（選擇最長的句子作為評論）
+  const sentences = responseText.split(/[.!?。！？]/);
+  if (sentences.length > 0) {
+    // 選擇最長的有意義句子
+    const meaningfulSentences = sentences
+      .map(s => s.trim())
+      .filter(s => s.length > 15); // 過濾過短的句子
+    
+    if (meaningfulSentences.length > 0) {
+      const longestSentence = meaningfulSentences.reduce((longest, current) => 
+        current.length > longest.length ? current : longest, "");
+      extractedInfo.commentText = longestSentence;
+    }
+  }
+  
+  // 檢測圖像質量問題
+  if (responseText.toLowerCase().includes('模糊') || 
+      responseText.toLowerCase().includes('不清晰') ||
+      responseText.toLowerCase().includes('blur') ||
+      responseText.toLowerCase().includes('unclear')) {
+    extractedInfo.lowQuality = true;
+  }
+  
+  // 檢測多物體問題
+  if (responseText.toLowerCase().includes('多個') || 
+      responseText.toLowerCase().includes('幾個') ||
+      responseText.toLowerCase().includes('multiple') ||
+      responseText.toLowerCase().includes('several')) {
+    extractedInfo.multipleObjects = true;
+  }
+  
+  return extractedInfo;
 }
 
 // 處理真實度檢測，整合TruthDetector模組
