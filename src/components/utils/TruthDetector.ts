@@ -14,6 +14,9 @@ export interface TruthAnalysisResult {
   isSuspicious: boolean;     // 是否可疑
 }
 
+// 物件類型定義
+export type ObjectType = 'cucumber' | 'banana' | 'other_rod' | null;
+
 // 用於生成隨機結果的常量
 const FUNNY_RESPONSES = [
   "這根香蕉看起來像是在「特定角度」拍攝的呢！畫面構圖很巧妙～",
@@ -117,6 +120,108 @@ export function analyzeTruth(
 }
 
 /**
+ * 處理尺寸估計
+ * @param lengthEstimate 長度估計值
+ * @param thicknessEstimate 粗細估計值
+ * @param objectType 物件類型
+ * @returns 調整後的尺寸
+ */
+export function adjustDimensions(
+  lengthEstimate: number,
+  thicknessEstimate: number,
+  objectType: ObjectType | null
+): { adjustedLength: number; adjustedThickness: number } {
+  let adjustedLength = lengthEstimate;
+  let adjustedThickness = thicknessEstimate;
+
+  // 小黃瓜長度通常在10-30cm之間
+  if (objectType === 'cucumber') {
+    adjustedLength = Math.max(0, Math.min(30, adjustedLength));
+    adjustedThickness = Math.max(0, Math.min(6, adjustedThickness)); 
+  } 
+  // 香蕉長度通常在10-25cm之間
+  else if (objectType === 'banana') {
+    adjustedLength = Math.max(0, Math.min(25, adjustedLength));
+    adjustedThickness = Math.max(0, Math.min(5, adjustedThickness));
+  }
+  // 其他棒狀物體 - 可能涉及男性特徵時的特殊處理
+  else if (objectType === 'other_rod') {
+    // 台灣男性平均水平參考標準
+    const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
+    const isLikelyMaleBodyPart = 
+      adjustedLength >= 8 && 
+      adjustedLength <= 30 && 
+      adjustedThickness >= 2.5;
+    
+    // 如果可能是男性特徵，則使用台灣平均值相關的評分邏輯
+    if (isLikelyMaleBodyPart) {
+      // 超過台灣平均+50%以上的長度可能不符合現實或誇大
+      if (adjustedLength > taiwanMaleAvgLength * 1.5 && adjustedLength <= 30) {
+        // 對於可能是誇大的長度給予警示或評分調整
+        console.log('Warning: Detected possible exaggerated dimensions');
+      }
+      // 非常超出常態的長度，可能是誇大或其他物體
+      else if (adjustedLength > 30) {
+        adjustedLength = 30; // 限制最大長度
+      }
+      
+      // 限制thickness在合理範圍
+      adjustedThickness = Math.max(2.5, Math.min(5, adjustedThickness));
+    } else {
+      // 如果不像人體特徵，則使用較寬鬆的範圍限制
+      adjustedLength = Math.max(0, Math.min(40, adjustedLength));
+      adjustedThickness = Math.max(0, Math.min(8, adjustedThickness));
+    }
+  }
+
+  return { adjustedLength, adjustedThickness };
+}
+
+/**
+ * 判斷尺寸是否在合理範圍
+ * @param length 長度
+ * @param thickness 粗細
+ * @param type 物件類型
+ * @returns 是否在合理範圍內
+ */
+export function isReasonableDimension(length: number, thickness: number, type: ObjectType): boolean {
+  if (type === 'cucumber') {
+    // 小黃瓜理想尺寸約15-22cm長，2.5-4cm粗
+    return (length >= 15 && length <= 22) && (thickness >= 2.5 && thickness <= 4);
+  } 
+  else if (type === 'banana') {
+    // 香蕉理想尺寸約15-20cm長，3-4cm粗
+    return (length >= 15 && length <= 20) && (thickness >= 3 && thickness <= 4);
+  }
+  // other_rod的合理性評估
+  else if (type === 'other_rod') {
+    // 判斷是否符合男性特徵的尺寸範圍
+    const isMaleFeature = length >= 8 && length <= 30 && thickness >= 2.5;
+    
+    if (isMaleFeature) {
+      // 台灣男性平均長度參考值
+      const taiwanMaleAvgLength = 12.5;
+      
+      // 正常範圍: 平均值的80%-150%之間
+      const minReasonableLength = taiwanMaleAvgLength * 0.8;  // 約10cm
+      const maxReasonableLength = taiwanMaleAvgLength * 1.5;  // 約18.75cm
+      
+      // 考慮合理的厚度範圍
+      const isReasonableThickness = thickness >= 2.5 && thickness <= 5;
+      
+      // 長度在合理範圍內，且厚度也合理
+      return (length >= minReasonableLength && length <= maxReasonableLength) && isReasonableThickness;
+    }
+    
+    // 如果不是男性特徵，使用寬鬆標準
+    return length > 0 && thickness > 0;
+  }
+  
+  // 未識別類型
+  return false;
+}
+
+/**
  * 獲取建議訊息
  * @param result 真實度分析結果
  * @param objectType 對象類型
@@ -124,7 +229,7 @@ export function analyzeTruth(
  */
 export function getSuggestionMessage(
   result: TruthAnalysisResult, 
-  objectType: 'cucumber' | 'banana' | 'other_rod'
+  objectType: ObjectType
 ): string {
   if (!result.isSuspicious) {
     return "恭喜！您的照片通過了真實性測試，測量結果非常可信。";
