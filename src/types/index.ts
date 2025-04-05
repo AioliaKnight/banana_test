@@ -11,8 +11,10 @@ export interface TruthAnalysisResult {
   suspiciousFeatures: string[];
   adjustedLength?: number;      // Adjusted length if suspicious
   adjustmentFactor?: number;    // Factor used for adjustment
-  funnyMessage: string;       // Humorous message based on truth score
-  suggestionMessage?: string;  // Suggestion based on analysis
+  funnyMessage: string;         // Humorous message based on truth score
+  suggestionMessage?: string;   // Suggestion based on analysis
+  isMaleFeature?: boolean;      // Indicates if it's a male feature
+  percentile?: string;          // Percentile description for male features
 }
 
 // Represents the final analysis result sent to the client

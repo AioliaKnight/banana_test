@@ -163,22 +163,36 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
 
       // Left side image area
       try {
-        // SIMPLIFY image source determination logic:
-        // Use API-provided share image path if available, otherwise use preview.
-        const imageSrc = result.shareImagePath || preview;
+        // Properly handle image sources with full paths
+        let imageSrc = preview; // Default to the preview image
+        
+        // Use shareImagePath if available, but ensure it's a full URL or has proper path
+        if (result.shareImagePath) {
+          // If it starts with '/' make it a full path from the base URL
+          if (result.shareImagePath.startsWith('/')) {
+            imageSrc = window.location.origin + result.shareImagePath;
+          } else {
+            imageSrc = result.shareImagePath;
+          }
+        }
         
         // Ensure imageSrc is not null or empty before proceeding
         if (!imageSrc) {
           throw new Error('Image source is unavailable.');
         }
+        
+        console.log('Loading image from:', imageSrc); // Add logging for debugging
 
         const userImage = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new window.Image();
           img.onload = () => resolve(img);
-          img.onerror = reject;
+          img.onerror = (err) => {
+            console.error('Image load error:', err);
+            reject(new Error(`Failed to load image from ${imageSrc}`));
+          };
           img.src = imageSrc; // Use the determined image source
           // 加入超時處理，防止圖片加載永久阻塞
-          setTimeout(() => reject(new Error('圖片加載超時')), 5000);
+          setTimeout(() => reject(new Error('圖片加載超時')), 10000); // Increase timeout to 10 seconds
         });
         
         // 圖片區域
@@ -463,14 +477,24 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   const handleShare = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     if (!shareImageUrl) {
       setIsGeneratingImage(true);
-      generateShareImage().then(url => {
-        if (url) {
-          setShareImageUrl(url);
-          // 等待圖片生成後再分享
-          openShareWindow(platform);
-        }
-        setIsGeneratingImage(false);
-      });
+      generateShareImage()
+        .then(url => {
+          if (url) {
+            setShareImageUrl(url);
+            // 等待圖片生成後再分享
+            openShareWindow(platform);
+          } else {
+            // Show a user-friendly error message
+            alert('無法生成分享圖片，請稍後再試。');
+          }
+        })
+        .catch(error => {
+          console.error('生成分享圖片失敗:', error);
+          alert('無法生成分享圖片，請稍後再試。');
+        })
+        .finally(() => {
+          setIsGeneratingImage(false);
+        });
     } else {
       openShareWindow(platform);
     }
@@ -479,15 +503,30 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
   const handleDownload = useCallback(() => {
     if (!shareImageUrl) {
       setIsGeneratingImage(true);
-      generateShareImage().then(url => {
-        if (url) {
-          setShareImageUrl(url);
-          downloadImage(url);
-        }
-        setIsGeneratingImage(false);
-      });
+      generateShareImage()
+        .then(url => {
+          if (url) {
+            setShareImageUrl(url);
+            downloadImage(url);
+          } else {
+            // Show a user-friendly error message
+            alert('無法生成分享圖片，請稍後再試。');
+          }
+        })
+        .catch(error => {
+          console.error('下載圖片失敗:', error);
+          alert('無法下載圖片，請稍後再試。');
+        })
+        .finally(() => {
+          setIsGeneratingImage(false);
+        });
     } else {
-      downloadImage(shareImageUrl);
+      try {
+        downloadImage(shareImageUrl);
+      } catch (error) {
+        console.error('下載圖片失敗:', error);
+        alert('無法下載圖片，請稍後再試。');
+      }
     }
   }, [generateShareImage, shareImageUrl, downloadImage]);
 
