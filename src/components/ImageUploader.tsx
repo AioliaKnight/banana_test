@@ -1,5 +1,5 @@
 import { useCallback, useRef, useState, useEffect } from 'react';
-import { useDropzone } from 'react-dropzone';
+import { useDropzone, FileRejection, DropEvent } from 'react-dropzone';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiUpload, FiCheck, FiAlertCircle, FiCamera, FiRefreshCw } from 'react-icons/fi';
 
@@ -37,7 +37,7 @@ export default function ImageUploader({
     }
   }, [preview]);
 
-  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: any[]) => {
+  const onDrop = useCallback((acceptedFiles: File[], rejectedFiles: FileRejection[], event: DropEvent) => {
     // Handle rejected files
     if (rejectedFiles.length > 0) {
       const rejection = rejectedFiles[0];
@@ -46,7 +46,7 @@ export default function ImageUploader({
         return;
       }
       
-      if (rejection.errors?.some((e: any) => e.code === 'file-invalid-type')) {
+      if (rejection.errors?.some((e) => e.code === 'file-invalid-type')) {
         setFileRejected('檔案類型不支援');
         return;
       }

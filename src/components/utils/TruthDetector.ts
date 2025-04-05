@@ -295,7 +295,7 @@ export function analyzeTruth(
       
       // 計算長度的合理性得分（0-1之間，1為最合理）
       // 基於距離平均值的遠近
-      const lengthReasonableScore = 1 - Math.min(1, Math.abs(lengthRatio - 1) / 0.5);
+      // const lengthReasonableScore = 1 - Math.min(1, Math.abs(lengthRatio - 1) / 0.5);
       
       // 長度明顯超過平均太多
       if (lengthRatio > 1.5) {
@@ -404,10 +404,10 @@ export function analyzeTruth(
   }
 
   // 計算真實性得分，範圍 0-1
-  let truthScore = calculateTruthScore(objectType, adjustedLength, adjustedThickness, suspiciousFeatures.length);
+  const truthScoreValue = calculateTruthScore(objectType, adjustedLength, adjustedThickness, suspiciousFeatures.length);
   
   // 定義這張圖是否值得懷疑（真實度低於閾值）
-  const isSuspicious = truthScore < 0.65 || suspiciousFeatures.length > 2;
+  const isSuspicious = truthScoreValue < 0.65 || suspiciousFeatures.length > 2;
   
   // 根據懷疑程度選擇不同的反饋訊息
   const messageCategory = isSuspicious ? "suspicious" : "reasonable";
@@ -415,7 +415,7 @@ export function analyzeTruth(
   const funnyMessage = messages[Math.floor(Math.random() * messages.length)];
   
   return {
-    truthScore,
+    truthScore: truthScoreValue,
     suspiciousFeatures,
     adjustedLength,
     adjustmentFactor,
@@ -440,13 +440,13 @@ function calculateTruthScore(
 ): number {
   // 基本分數 - 如果尺寸合理則給予較高的初始分數
   const isReasonable = isReasonableDimension(length, thickness, objectType);
-  let score = isReasonable ? 0.85 : 0.65;
+  const score = isReasonable ? 0.85 : 0.65;
   
   // 依據問題數量減分
-  score -= Math.min(0.5, issueCount * 0.1);
+  const finalScore = Math.max(0, score - Math.min(0.5, issueCount * 0.1));
   
   // 確保真實度分數在0-1範圍內
-  return Math.max(0, Math.min(1, score));
+  return Math.max(0, Math.min(1, finalScore));
 }
 
 /**

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from '@google/generative-ai';
 import { analyzeTruth, isReasonableDimension, adjustDimensions, calculateFinalScore, ObjectType } from '@/components/utils/TruthDetector';
 
 // 分析結果類型
@@ -178,7 +178,7 @@ const promptTemplates = {
 };
 
 // 根據物體類型獲取優化的提示詞
-function getPromptForObjectType(objectType: ObjectType | null): string {
+function getPromptForObjectType(/* objectType: ObjectType | null */): string {
   // 組合基本提示詞模板
   const basePrompt = [
     promptTemplates.baseRoleAndGoal,
@@ -198,10 +198,10 @@ async function fetchWithRetry<T>(
   fetchFn: () => Promise<T>, 
   maxAttempts = 3, 
   initialDelay = 1000,
-  retryableErrorCheck?: (error: any) => boolean
+  retryableErrorCheck?: (error: unknown) => boolean
 ): Promise<T> {
   let attempt = 1;
-  let lastError: any = null;
+  let lastError: unknown = null;
   
   while (attempt <= maxAttempts) {
     try {
@@ -253,11 +253,11 @@ async function fetchWithRetry<T>(
 }
 
 // 一些常見可重試的網絡錯誤類型
-function isRetryableNetworkError(error: any): boolean {
+function isRetryableNetworkError(error: unknown): boolean {
   if (!error) return false;
   
   // 檢查錯誤消息中的關鍵詞
-  const errorMessage = error.message?.toLowerCase() || '';
+  const errorMessage = (error instanceof Error ? error.message : String(error)).toLowerCase();
   const retryableErrorKeys = [
     'timeout', 
     'network', 
@@ -309,20 +309,20 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       },
       safetySettings: [
         {
-          category: "HARM_CATEGORY_HARASSMENT" as any, 
-          threshold: "BLOCK_NONE" as any 
+          category: HarmCategory.HARM_CATEGORY_HARASSMENT, 
+          threshold: HarmBlockThreshold.BLOCK_NONE 
         },
         {
-          category: "HARM_CATEGORY_HATE_SPEECH" as any, 
-          threshold: "BLOCK_NONE" as any 
+          category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, 
+          threshold: HarmBlockThreshold.BLOCK_NONE 
         },
         {
-          category: "HARM_CATEGORY_SEXUALLY_EXPLICIT" as any,
-          threshold: "BLOCK_NONE" as any
+          category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT,
+          threshold: HarmBlockThreshold.BLOCK_NONE
         },
         {
-          category: "HARM_CATEGORY_DANGEROUS_CONTENT" as any, 
-          threshold: "BLOCK_NONE" as any 
+          category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, 
+          threshold: HarmBlockThreshold.BLOCK_NONE 
         }
       ]
     });
@@ -335,7 +335,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
     });
 
     // 獲取優化後的提示詞
-    const promptText = getPromptForObjectType(null);
+    const promptText = getPromptForObjectType(/* null */);
 
     // 設定內容部分，包含文本和圖片
     const imageParts = [
@@ -356,9 +356,9 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
         async () => {
           try {
             return await model.generateContent([promptText, ...imageParts]);
-          } catch (err: any) {
+          } catch (err) {
             // 針對特定API錯誤進行處理
-            if (err.message?.includes('safety')) {
+            if (err instanceof Error && err.message?.includes('safety')) {
               throw new Error('圖片內容可能違反安全政策，請上傳適當的圖片');
             }
             // 其他錯誤將由fetchWithRetry的retryable檢查處理
@@ -388,19 +388,21 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       }
       
       return parseGeminiResponse(responseText);
-    } catch (geminiError: any) {
+    } catch (geminiError) {
       console.error('Gemini API error:', geminiError);
       
       // 友好的錯誤消息處理
       let errorMessage = '分析處理過程中發生錯誤';
-      if (geminiError.name === 'TimeoutError') {
-        errorMessage = 'API響應超時，請稍後重試';
-      } else if (geminiError.message?.includes('quota')) {
-        errorMessage = 'API配額已用盡，請稍後重試';
-      } else if (geminiError.message?.includes('safety')) {
-        errorMessage = '圖片內容可能不適合分析，請上傳合適的水果照片';
-      } else if (geminiError.message?.includes('rate limit')) {
-        errorMessage = '請求頻率過高，請稍後重試';
+      if (geminiError instanceof Error) {
+          if (geminiError.name === 'TimeoutError') {
+            errorMessage = 'API響應超時，請稍後重試';
+          } else if (geminiError.message?.includes('quota')) {
+            errorMessage = 'API配額已用盡，請稍後重試';
+          } else if (geminiError.message?.includes('safety')) {
+            errorMessage = '圖片內容可能不適合分析，請上傳合適的水果照片';
+          } else if (geminiError.message?.includes('rate limit')) {
+            errorMessage = '請求頻率過高，請稍後重試';
+          }
       }
       
       throw new Error(errorMessage);
@@ -487,8 +489,9 @@ function parseGeminiResponse(responseText: string): {
           ? parsedResponse.commentText 
           : "分析未能生成完整評語。"
       };
-    } catch (firstError) {
+    } catch (/* firstError */ error) {
       // 如果清理後仍無法解析，嘗試直接解析原始響應
+      console.error('Cleaned JSON parsing failed:', error);
       try {
         const parsedResponse = JSON.parse(jsonStr);
         

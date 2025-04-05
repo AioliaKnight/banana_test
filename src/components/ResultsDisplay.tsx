@@ -63,48 +63,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     return { title, description, hashtag };
   }, [result.type, result.score, result.length, result.thickness, result.freshness, result.comment]);
   
-  // 設定Open Graph元標籤（如果還未存在）
-  useEffect(() => {
-    if (!isClient) return;
-    
-    // 生成預設分享圖片
-    if (!shareImageUrl) {
-      // 使用requestIdleCallback來生成圖片，避免阻塞UI
-      if ('requestIdleCallback' in window) {
-        window.requestIdleCallback(() => {
-          generateShareImage().then(url => {
-            if (url) {
-              setShareImageUrl(url);
-            }
-          });
-        });
-      } else {
-        // 如果瀏覽器不支援requestIdleCallback，使用setTimeout
-        setTimeout(() => {
-          generateShareImage().then(url => {
-            if (url) {
-              setShareImageUrl(url);
-            }
-          });
-        }, 200);
-      }
+  // 決定顯示的長度（考慮測謊儀調整）
+  const getDisplayLength = useCallback(() => {
+    // 如果有真實度分析且被判定為可疑，顯示調整後的長度
+    if (result.truthAnalysis?.isSuspicious) {
+      return result.truthAnalysis.adjustedLength;
     }
-    
-    // 動態更新meta標籤
-    let ogImage = document.querySelector('meta[property="og:image"]');
-    if (!ogImage && shareImageUrl) {
-      ogImage = document.createElement('meta');
-      ogImage.setAttribute('property', 'og:image');
-      document.head.appendChild(ogImage);
-    }
-    
-    if (ogImage && shareImageUrl) {
-      ogImage.setAttribute('content', shareImageUrl);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [shareImageUrl, isClient]);
+    // 否則顯示原始長度
+    return result.length;
+  }, [result.length, result.truthAnalysis?.isSuspicious, result.truthAnalysis?.adjustedLength]);
 
-  // 優化的中文文字換行函數
   const wrapTextChinese = useCallback((
     ctx: CanvasRenderingContext2D, 
     text: string, 
@@ -136,7 +104,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     lineArray.push({text: line, x, y});
     return lineArray;
   }, []);
-      
+    
   const generateShareImage = useCallback(async () => {
     if (!isClient || !canvasRef.current) return null;
     
@@ -317,15 +285,13 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const paramWidth = (contentWidth - 20) / 3;
       
       // 繪製長度參數 - 使用調整後的長度（如果有真實度分析）
-      const displayLength = result.truthAnalysis?.isSuspicious 
-        ? result.truthAnalysis.adjustedLength 
-        : result.length;
+      const displayLengthValue = getDisplayLength();
         
       ctx.fillStyle = '#1e293b';
       ctx.font = 'bold 16px sans-serif';
       ctx.fillText('長度', contentX, paramsY);
       ctx.font = 'bold 30px sans-serif';
-      ctx.fillText(`${displayLength}`, contentX, paramsY + 40);
+      ctx.fillText(`${displayLengthValue}`, contentX, paramsY + 40);
       ctx.font = '16px sans-serif';
       ctx.fillStyle = '#64748b';
       ctx.fillText('厘米', contentX + 50, paramsY + 40);
@@ -411,43 +377,93 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     } finally {
       setIsGeneratingImage(false);
     }
-  }, [isClient, preview, result, wrapTextChinese]);
+  }, [isClient, preview, result, wrapTextChinese, getDisplayLength]);
 
-  // 處理分享動作
+  // 設定Open Graph元標籤（如果還未存在）
+  useEffect(() => {
+    if (!isClient || !shareImageUrl) return;
+    
+    // 動態更新meta標籤
+    let ogImage = document.querySelector('meta[property="og:image"]');
+    if (!ogImage) {
+      ogImage = document.createElement('meta');
+      ogImage.setAttribute('property', 'og:image');
+      document.head.appendChild(ogImage);
+    }
+    
+    ogImage.setAttribute('content', shareImageUrl);
+  }, [shareImageUrl, isClient]);
+
+  // 初始生成分享圖片
+  useEffect(() => {
+    if (!isClient || shareImageUrl) return;
+    
+    // 使用requestIdleCallback來生成圖片，避免阻塞UI
+    if ('requestIdleCallback' in window) {
+      window.requestIdleCallback(() => {
+        generateShareImage().then(url => {
+          if (url) {
+            setShareImageUrl(url);
+          }
+        });
+      });
+    } else {
+      // 如果瀏覽器不支援requestIdleCallback，使用setTimeout
+      setTimeout(() => {
+        generateShareImage().then(url => {
+          if (url) {
+            setShareImageUrl(url);
+          }
+        });
+      }, 200);
+    }
+  }, [isClient, generateShareImage, shareImageUrl]);
+
+  const downloadImage = useCallback((url: string) => {
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}_分析結果.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  }, [result.type]);
+
+  const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line', imageUrl: string) => {
+    let shareUrl = '';
+    const currentUrl = window.location.href;
+    
+    switch (platform) {
+      case 'facebook':
+        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareInfo.title)}`;
+        break;
+      case 'twitter':
+        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}&url=${encodeURIComponent(currentUrl)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
+        break;
+      case 'line':
+        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}`;
+        break;
+    }
+    
+    // 開啟分享視窗
+    window.open(shareUrl, '_blank', 'width=600,height=600');
+  }, [shareInfo]);
+
   const handleShare = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     if (!shareImageUrl) {
       setIsGeneratingImage(true);
       generateShareImage().then(url => {
         if (url) {
           setShareImageUrl(url);
+          // 等待圖片生成後再分享
+          openShareWindow(platform, url);
         }
-        setShowImagePreview(true);
         setIsGeneratingImage(false);
       });
     } else {
-      setShowImagePreview(true);
+      openShareWindow(platform, shareImageUrl);
     }
-    
-    // 直接開啟分享視窗
-    let shareUrl = '';
-    
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(window.location.href)}&quote=${encodeURIComponent(shareInfo.title)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}&url=${encodeURIComponent(window.location.href)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
-        break;
-      case 'line':
-        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(window.location.href)}&text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}`;
-        break;
-    }
-    
-    // 開啟分享視窗
-    window.open(shareUrl, '_blank', 'width=600,height=600');
-  }, [generateShareImage, shareImageUrl, shareInfo]);
-  
-  // 處理下載圖片
+  }, [generateShareImage, shareImageUrl, openShareWindow]);
+
   const handleDownload = useCallback(() => {
     if (!shareImageUrl) {
       setIsGeneratingImage(true);
@@ -461,31 +477,11 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     } else {
       downloadImage(shareImageUrl);
     }
-  }, [generateShareImage, shareImageUrl]);
-  
-  // 下載圖片
-  const downloadImage = useCallback((url: string) => {
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}_分析結果.png`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-  }, [result.type]);
-  
-  // 決定顯示的長度（考慮測謊儀調整）
-  const getDisplayLength = () => {
-    // 如果有真實度分析且被判定為可疑，顯示調整後的長度
-    if (result.truthAnalysis?.isSuspicious) {
-      return result.truthAnalysis.adjustedLength;
-    }
-    // 否則顯示原始長度
-    return result.length;
-  };
+  }, [generateShareImage, shareImageUrl, downloadImage]);
 
   // 關閉分享選項當點擊外部區域
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
+    const handleClickOutside = (/* event: MouseEvent */) => {
       if (showShareOptions) {
         setShowShareOptions(false);
       }
