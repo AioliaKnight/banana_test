@@ -193,31 +193,90 @@ function getPromptForObjectType(objectType: ObjectType | null): string {
   return basePrompt;
 }
 
-// 帶指數退避的請求重試函數
+// 帶指數退避和高級錯誤處理的請求重試函數
 async function fetchWithRetry<T>(
   fetchFn: () => Promise<T>, 
   maxAttempts = 3, 
-  initialDelay = 1000
+  initialDelay = 1000,
+  retryableErrorCheck?: (error: any) => boolean
 ): Promise<T> {
   let attempt = 1;
+  let lastError: any = null;
   
-  while (true) {
+  while (attempt <= maxAttempts) {
     try {
-      return await fetchFn();
-    } catch (error) {
-      if (attempt >= maxAttempts) {
-        throw error;
+      // 計時執行時間（用於監控）
+      const startTime = Date.now();
+      
+      // 嘗試執行請求
+      const result = await fetchFn();
+      
+      // 計算並記錄執行時間
+      const executionTime = Date.now() - startTime;
+      if (attempt > 1) {
+        console.log(`Request succeeded on attempt ${attempt}/${maxAttempts} after ${executionTime}ms`);
       }
       
-      // 計算指數退避延遲時間
-      const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 10000);
-      console.log(`Retry attempt ${attempt} after ${delay}ms`);
+      return result;
+    } catch (error) {
+      lastError = error;
+      
+      // 檢查是否已達最大重試次數
+      if (attempt >= maxAttempts) {
+        console.error(`All ${maxAttempts} retry attempts failed:`, error);
+        break;
+      }
+      
+      // 檢查錯誤是否可重試
+      if (retryableErrorCheck && !retryableErrorCheck(error)) {
+        console.log(`Non-retryable error detected, aborting retries:`, error);
+        break;
+      }
+      
+      // 計算指數退避延遲時間，加入隨機抖動避免多請求同時重試
+      const jitter = Math.random() * 0.3 + 0.85; // 0.85-1.15之間的隨機值
+      const delay = Math.min(initialDelay * Math.pow(2, attempt - 1) * jitter, 15000);
+      
+      console.log(`Retry attempt ${attempt}/${maxAttempts} failed. Retrying after ${Math.round(delay)}ms...`);
+      if (error instanceof Error) {
+        console.log(`Retry reason: ${error.message}`);
+      }
       
       // 等待後重試
       await new Promise(resolve => setTimeout(resolve, delay));
       attempt++;
     }
   }
+  
+  // 所有重試失敗，拋出最後一個錯誤
+  throw lastError;
+}
+
+// 一些常見可重試的網絡錯誤類型
+function isRetryableNetworkError(error: any): boolean {
+  if (!error) return false;
+  
+  // 檢查錯誤消息中的關鍵詞
+  const errorMessage = error.message?.toLowerCase() || '';
+  const retryableErrorKeys = [
+    'timeout', 
+    'network', 
+    'connection',
+    'econnreset',
+    'econnrefused',
+    'socket',
+    'epipe',
+    'rate limit',
+    'throttle',
+    'too many requests',
+    '429',
+    '500',
+    '502',
+    '503',
+    '504'
+  ];
+  
+  return retryableErrorKeys.some(key => errorMessage.includes(key));
 }
 
 // 利用Gemini圖片分析能力直接檢測圖片內容
@@ -280,7 +339,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
     const requestStartTime = Date.now();
 
     try {
-      // 使用指數退避重試機制發送請求
+      // 使用增強的指數退避重試機制發送請求
       const geminiResponsePromise = fetchWithRetry(
         async () => {
           try {
@@ -290,15 +349,13 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
             if (err.message?.includes('safety')) {
               throw new Error('圖片內容可能違反安全政策，請上傳適當的圖片');
             }
-            // 區分網絡錯誤和其他錯誤
-            if (err.message?.includes('network') || err.message?.includes('timeout')) {
-              throw new Error('網絡連接問題，請稍後重試');
-            }
-            throw err; // 重新拋出其他錯誤
+            // 其他錯誤將由fetchWithRetry的retryable檢查處理
+            throw err;
           }
         },
         3,  // 最大重試次數
-        2000 // 初始延遲增加到2秒
+        2000, // 初始延遲增加到2秒
+        isRetryableNetworkError // 使用可重試錯誤檢查
       );
       
       // 競速處理API請求
@@ -330,6 +387,8 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
         errorMessage = 'API配額已用盡，請稍後重試';
       } else if (geminiError.message?.includes('safety')) {
         errorMessage = '圖片內容可能不適合分析，請上傳合適的水果照片';
+      } else if (geminiError.message?.includes('rate limit')) {
+        errorMessage = '請求頻率過高，請稍後重試';
       }
       
       throw new Error(errorMessage);
