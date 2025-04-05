@@ -95,10 +95,10 @@ const promptTemplates = {
      
      * other_rod (男性特徵) - 帶有評價性的評分：
        → 根據尺寸相對於"期望值"的表現評分
-       → <10cm："尺寸過小，功能性令人懷疑，僅適合特定場合使用"
-       → 10-15cm："基本標準尺寸，但對經驗豐富者可能略顯不足"
-       → 15-20cm："尺寸令人滿意，但仍有提升空間，技巧可彌補"
-       → >20cm："規格優異，但實用性需考慮，配合度是關鍵"
+       → <5cm："尺寸過小，功能性令人懷疑，僅適合特定場合使用"
+       → 6-12cm："基本標準尺寸，但對經驗豐富者可能略顯不足"
+       → 12-15cm："尺寸令人滿意，但仍有提升空間，技巧可彌補"
+       → >15cm："規格優異，但實用性需考慮，配合度是關鍵"
      
      * other_rod (一般棒狀物) - 幽默客觀的評分：
        → <10cm："這個尺寸...嗯...小巧玲瓏，適合初學者或特定場合使用"
@@ -736,6 +736,9 @@ function extractFallbackInfo(responseText: string): AnalysisResult {
  * @returns {Promise<AnalysisResult & SharedTruthAnalysisResult>} The fully processed analysis result.
  */
 async function processAnalysisResults(analysisResults: AnalysisResult): Promise<AnalysisResult & SharedTruthAnalysisResult> {
+  // 檢查是否為 Blob URL 的通用函數
+  const isBlobUrl = (url: string) => url && typeof url === 'string' && url.startsWith('blob:');
+  
   try {
     // Define default truth analysis structure and share image path for error cases
     const defaultTruthAnalysis: SharedTruthAnalysisResult = {
@@ -744,7 +747,11 @@ async function processAnalysisResults(analysisResults: AnalysisResult): Promise<
         suggestionMessage: "請確保照片清晰且只包含一個物體。"
         // adjustedLength and adjustmentFactor are optional
     };
-    const defaultShareImagePath = analysisResults.originalImagePath || "/uploads/default.jpg";
+    
+    // 設置默認分享圖片路徑，不使用 Blob URL
+    const defaultShareImagePath = (analysisResults.originalImagePath && !isBlobUrl(analysisResults.originalImagePath)) 
+        ? analysisResults.originalImagePath 
+        : "/uploads/default.jpg";
 
     // If there's an error in the initial analysis, return immediately with defaults
     if (analysisResults.error) {
@@ -767,10 +774,17 @@ async function processAnalysisResults(analysisResults: AnalysisResult): Promise<
     const suggestionMessage = getSuggestionMessage( truthAnalysisCore.truthScore, objectType, rodSubtype, lengthEstimate );
     
     // 3. Determine the appropriate share image path
-    let shareImagePath = originalImagePath || ""; // Default to original image
+    let shareImagePath = "/uploads/default.jpg"; // 預設使用服務器上的默認圖片
+    
+    // 對於男性特徵，始終使用默認圖片
     if (objectType === 'other_rod' && (rodSubtype === 'male_feature' || isMaleFeature === true)) {
-      shareImagePath = "/result.jpg"; // Use default image for male features
+      shareImagePath = "/result.jpg"; // 使用預設男性特徵圖片
+    } 
+    // 對於其他類型，如果原始圖片路徑不是 Blob URL，則使用原始圖片
+    else if (originalImagePath && !isBlobUrl(originalImagePath)) {
+      shareImagePath = originalImagePath;
     }
+    // 其他情況使用默認圖片路徑 (/uploads/default.jpg)
     
     // --- Construct Final Result ---
 
@@ -800,7 +814,11 @@ async function processAnalysisResults(analysisResults: AnalysisResult): Promise<
         funnyMessage: "處理結果時發生錯誤，無法提供完整分析。",
         suggestionMessage: "請稍後再試或嘗試上傳其他照片。"
     };
-    const defaultShareImagePathOnError = analysisResults.originalImagePath || "/uploads/default.jpg";
+    
+    // 設置錯誤情況下的默認分享圖片路徑，不使用 Blob URL
+    const defaultShareImagePathOnError = (analysisResults.originalImagePath && !isBlobUrl(analysisResults.originalImagePath)) 
+        ? analysisResults.originalImagePath 
+        : "/uploads/default.jpg";
     
     return {
       ...analysisResults,

@@ -134,6 +134,13 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     if (!isClient || !canvasRef.current || !result) return null;
     
     setIsGeneratingImage(true);
+    
+    // 設置超時計時器，確保即使圖片加載失敗也能退出生成狀態
+    const timeoutId = setTimeout(() => {
+      console.warn('圖片生成超時，強制退出生成狀態');
+      setIsGeneratingImage(false);
+    }, 8000); // 8秒後強制超時
+    
     try {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext('2d');
@@ -164,19 +171,39 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       // Left side image area
       try {
         // SIMPLIFY image source determination logic:
-        // Use API-provided share image path if available, otherwise use preview.
-        const imageSrc = result.shareImagePath || preview;
+        // 1. 使用 API 提供的 shareImagePath (如果存在且不是 Blob URL)
+        // 2. 否則使用 preview
+        // 3. 如果 preview 也無效，使用默認圖片
+        let imageSrc = '';
         
-        // Ensure imageSrc is not null or empty before proceeding
+        // 檢查 URL 是否為 Blob URL
+        const isBlobUrl = (url: string) => url.startsWith('blob:');
+        
+        if (result.shareImagePath && !isBlobUrl(result.shareImagePath)) {
+          // 使用 API 提供的非 Blob 圖片路徑
+          imageSrc = result.shareImagePath;
+        } else if (preview) {
+          // 使用本地預覽圖
+          imageSrc = preview;
+        } else {
+          // 使用默認圖片
+          imageSrc = '/result.jpg';
+        }
+        
+        // 檢查 imageSrc 是否有效
         if (!imageSrc) {
-          throw new Error('Image source is unavailable.');
+          throw new Error('無有效的圖片來源');
         }
 
         const userImage = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new window.Image();
+          img.crossOrigin = 'anonymous'; // 嘗試解決跨域問題
           img.onload = () => resolve(img);
-          img.onerror = reject;
-          img.src = imageSrc; // Use the determined image source
+          img.onerror = (e) => {
+            console.error('圖片加載錯誤:', e);
+            reject(new Error(`圖片加載失敗: ${imageSrc}`));
+          };
+          img.src = imageSrc;
           // 加入超時處理，防止圖片加載永久阻塞
           setTimeout(() => reject(new Error('圖片加載超時')), 5000);
         });
@@ -228,13 +255,28 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         ctx.fillText(typeLabel, imageX + 50, imageY + imageSize - 20);
       } catch (error) {
         console.error('無法加載或繪製圖片:', error);
-        // Optionally draw a placeholder or error message on the canvas
-        ctx.fillStyle = '#fecaca'; // Light red background
-        ctx.fillRect(50, (canvasHeight - 100) / 2, canvasHeight - 100, canvasHeight - 100);
-        ctx.fillStyle = '#991b1b'; // Dark red text
-        ctx.font = 'bold 20px sans-serif';
+        // 圖片加載失敗時，繪製預設背景
+        const imageSize = canvasHeight - 100;
+        const imageX = 50;
+        const imageY = (canvasHeight - imageSize) / 2;
+        
+        // 繪製預設背景
+        ctx.fillStyle = '#f1f5f9';
+        ctx.beginPath();
+        ctx.roundRect(imageX, imageY, imageSize, imageSize, 10);
+        ctx.fill();
+        
+        // 繪製圖示
+        ctx.fillStyle = '#94a3b8';
+        ctx.beginPath();
+        ctx.arc(imageX + imageSize/2, imageY + imageSize/2, 40, 0, Math.PI * 2);
+        ctx.fill();
+        
+        // 繪製提示文字
+        ctx.fillStyle = '#64748b';
+        ctx.font = '16px sans-serif';
         ctx.textAlign = 'center';
-        ctx.fillText('無法加載圖片', 50 + (canvasHeight - 100) / 2, canvasHeight / 2);
+        ctx.fillText('圖片無法加載', imageX + imageSize/2, imageY + imageSize/2 + 70);
       }
 
       // 右側內容區域
@@ -374,9 +416,17 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
 
       // 生成圖片URL
       const dataUrl = canvas.toDataURL('image/png');
+      
+      // 清除超時計時器
+      clearTimeout(timeoutId);
+      
+      setIsGeneratingImage(false);
       return dataUrl;
     } catch (error) {
       console.error('無法生成分享圖片:', error);
+      // 清除超時計時器
+      clearTimeout(timeoutId);
+      
       setIsGeneratingImage(false);
       return null;
     }
