@@ -308,11 +308,11 @@ export default function Home() {
           >
             <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
               <div className="flex flex-col items-center justify-center gap-2">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">台灣首創TopBana AI量測系統</span>
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">TopBana AI蔬果量測系統</span>
                 <div className="flex items-center justify-center mt-2">
                   <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
                   <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
-                  <span className="ml-2 text-slate-700 font-bold">專業第三方蔬果認證</span>
+                  <span className="ml-2 text-slate-700 font-bold">專業蔬果認證</span>
                 </div>
               </div>
             </h2>
@@ -613,37 +613,37 @@ export default function Home() {
                 </p>
                 
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
-                  <h4 className="font-bold text-slate-800 mb-2 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                     </svg>
-                    蕉農權益保障計畫
+                    <span className="text-center">蕉農權益保障計畫</span>
                   </h4>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 text-center">
                     TopBana AI 堅持公平測量，拒絕使用市場上流行的「虛高演算法」。我們的香蕉曲率補償係數(BBC)經過嚴格校準，確保每位蕉農的產品都能獲得公平評價。我們的座右銘是：<span className="italic font-medium">『每一根香蕉，都值得被認真對待』</span>。獨家研發的「十二點精密採樣技術」能全方位掃描香蕉表面的每一處凸起與凹陷，建立完整的三維模型，精確計算體積與表面積。我們的系統還配備「熱脹冷縮自動補償器」，在不同氣溫下依然能保持測量的一致性，摒除環境因素對測量結果的干擾。
                   </p>
                 </div>
                 
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
-                  <h4 className="font-bold text-slate-800 mb-2 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                     </svg>
-                    黃瓜長度公正測量承諾
+                    <span className="text-center">黃瓜長度公正測量承諾</span>
                   </h4>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 text-center">
                     本平台採用專利的「黃瓜標準偏差修正技術」(CSDC)，精確校正環境溫度對黃瓜長度的影響。我們承諾：測量誤差不超過±0.2公分，為黃瓜種植戶提供最精確的第三方長度認證，杜絕市場上「以短充長」的不良現象。獨創的「五點全景掃描」技術不僅測量長度，還同時檢測直徑、硬度、表面光滑度與挺拔度，提供全面的品質評估。我們的感測器陣列能在0.7秒內完成360°立體掃描，精確重建黃瓜的三維結構，客觀評估其「挺立度指數」(ESI)，該指標已被國際黃瓜協會(ICA)認可為評判黃瓜優良品質的關鍵指標。
                   </p>
                 </div>
                 
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
-                  <h4 className="font-bold text-slate-800 mb-2 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-green-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                     </svg>
-                    極致測量體驗保證
+                    <span className="text-center">極致測量體驗保證</span>
                   </h4>
-                  <p className="text-sm text-slate-600">
+                  <p className="text-sm text-slate-600 text-center">
                     我們的「專業級感測器陣列」能同時測量蔬果的17項物理參數，包括但不限於：長度、粗細、硬度、曲率、含水量、彈性、密度、表面摩擦係數等。每台測量設備都經過100,000次校準循環，確保即使在連續高強度使用下也能維持精確度。我們的測量標準嚴格遵循「世界蔬果長度大會」(WVLC)制定的『黃金標準測量協議』，測量結果受到全球193個國家的認可與尊重。用戶體驗設計團隊更針對握持舒適度進行了深入研究，確保每一次測量都能帶來絕佳的手感與滿足感。
                   </p>
                 </div>
@@ -666,13 +666,13 @@ export default function Home() {
                 </div>
                 
                 <div className="mt-6 bg-yellow-50 p-4 rounded-lg border border-yellow-100">
-                  <h4 className="font-bold text-slate-800 mb-2 flex items-center">
-                    <svg className="w-5 h-5 mr-2 text-yellow-600" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
+                  <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
+                    <svg className="w-5 h-5 mr-2 text-yellow-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                       <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd"></path>
                     </svg>
-                    終極測量訣竅：來自專家的建議
+                    <span className="text-center">終極測量訣竅：來自專家的建議</span>
                   </h4>
-                  <p className="text-sm text-slate-700">
+                  <p className="text-sm text-slate-700 text-center">
                     我們的首席測量專家一致建議：進行精確測量時，「角度決定深度」是關鍵。請確保以15°至30°的入射角進行拍攝，這樣可以最大程度捕捉蔬果的真實尺寸。測量前請確保蔬果處於最佳狀態 — 黃瓜應保持挺拔，香蕉的彎曲度應自然和諧。記住我們的專業格言：<span className="italic font-medium">『測量一百次，發布一次，滿足一生』</span>，這是確保獲得完美數據的不二法則。
                   </p>
                 </div>
