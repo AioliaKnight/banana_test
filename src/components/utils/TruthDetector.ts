@@ -49,6 +49,55 @@ export interface TruthDetectorConfig {
     funnyResponses: string[];      // 幽默回應列表
     suspiciousFeatures: string[];  // 可疑特徵列表
   };
+  
+  // 添加各物體類型的尺寸限制
+  dimensionLimits: {
+    cucumber: { 
+      minLength: number;
+      maxLength: number;
+      minThickness: number;
+      maxThickness: number;
+      reasonableMinLength: number;
+      reasonableMaxLength: number;
+      reasonableMinThickness: number;
+      reasonableMaxThickness: number;
+    };
+    banana: { 
+      minLength: number;
+      maxLength: number;
+      minThickness: number;
+      maxThickness: number;
+      reasonableMinLength: number;
+      reasonableMaxLength: number;
+      reasonableMinThickness: number;
+      reasonableMaxThickness: number;
+    };
+    other_rod: { 
+      minLength: number;
+      maxLength: number;
+      minThickness: number;
+      maxThickness: number;
+      reasonableMinLength: number;
+      reasonableMaxLength: number;
+      reasonableMinThickness: number;
+      reasonableMaxThickness: number;
+      maleFeatureMinLength: number;
+      maleFeatureMaxLength: number;
+      maleFeatureMinThickness: number;
+      nonMaleFeatureMaxLength: number;
+      nonMaleFeatureMaxThickness: number;
+    };
+    default: { 
+      minLength: number;
+      maxLength: number;
+      minThickness: number;
+      maxThickness: number;
+      reasonableMinLength: number;
+      reasonableMaxLength: number;
+      reasonableMinThickness: number;
+      reasonableMaxThickness: number;
+    };
+  };
 }
 
 // 全域配置
@@ -105,6 +154,54 @@ const CONFIG: TruthDetectorConfig = {
       "光影與尺寸不成比例",
       "疑似進行了「戰略性裁剪」"
     ]
+  },
+  
+  dimensionLimits: {
+    cucumber: { 
+      minLength: 0, 
+      maxLength: 30, 
+      minThickness: 0, 
+      maxThickness: 6,
+      reasonableMinLength: 15,
+      reasonableMaxLength: 22,
+      reasonableMinThickness: 2.5,
+      reasonableMaxThickness: 4
+    },
+    banana: { 
+      minLength: 0, 
+      maxLength: 25, 
+      minThickness: 0, 
+      maxThickness: 5,
+      reasonableMinLength: 15,
+      reasonableMaxLength: 20,
+      reasonableMinThickness: 3,
+      reasonableMaxThickness: 4
+    },
+    other_rod: { 
+      minLength: 0, 
+      maxLength: 30, 
+      minThickness: 2.5, 
+      maxThickness: 5,
+      reasonableMinLength: 10,    // 約台灣男性平均的80%
+      reasonableMaxLength: 18.75, // 約台灣男性平均的150%
+      reasonableMinThickness: 2.5,
+      reasonableMaxThickness: 5,
+      maleFeatureMinLength: 8,
+      maleFeatureMaxLength: 30,
+      maleFeatureMinThickness: 2.5,
+      nonMaleFeatureMaxLength: 40,
+      nonMaleFeatureMaxThickness: 8
+    },
+    default: { 
+      minLength: 0, 
+      maxLength: 40, 
+      minThickness: 0, 
+      maxThickness: 8,
+      reasonableMinLength: 0,
+      reasonableMaxLength: 40,
+      reasonableMinThickness: 0,
+      reasonableMaxThickness: 8
+    }
   }
 };
 
@@ -316,48 +413,72 @@ export function adjustDimensions(
   thicknessEstimate: number,
   objectType: ObjectType | null
 ): { adjustedLength: number; adjustedThickness: number } {
+  // 獲取適用的尺寸限制
+  const limits = objectType 
+    ? CONFIG.dimensionLimits[objectType] 
+    : CONFIG.dimensionLimits.default;
+  
   let adjustedLength = lengthEstimate;
   let adjustedThickness = thicknessEstimate;
 
-  // 小黃瓜長度通常在10-30cm之間
-  if (objectType === 'cucumber') {
-    adjustedLength = Math.max(0, Math.min(30, adjustedLength));
-    adjustedThickness = Math.max(0, Math.min(6, adjustedThickness)); 
-  } 
-  // 香蕉長度通常在10-25cm之間
-  else if (objectType === 'banana') {
-    adjustedLength = Math.max(0, Math.min(25, adjustedLength));
-    adjustedThickness = Math.max(0, Math.min(5, adjustedThickness));
-  }
-  // 其他棒狀物體 - 可能涉及男性特徵時的特殊處理
-  else if (objectType === 'other_rod') {
-    // 台灣男性平均水平參考標準
-    const taiwanMaleAvgLength = 12.5; // 台灣男性平均長度（參考值）
-    const isLikelyMaleBodyPart = 
-      adjustedLength >= 8 && 
-      adjustedLength <= 30 && 
-      adjustedThickness >= 2.5;
+  // 特殊處理 other_rod 類型
+  if (objectType === 'other_rod') {
+    const otherRodLimits = CONFIG.dimensionLimits.other_rod;
+    const taiwanMaleAvgLength = CONFIG.averageLengths.other_rod; // 使用配置中的平均長度
     
-    // 如果可能是男性特徵，則使用台灣平均值相關的評分邏輯
+    // 判斷是否可能是男性特徵
+    const isLikelyMaleBodyPart = 
+      adjustedLength >= otherRodLimits.maleFeatureMinLength && 
+      adjustedLength <= otherRodLimits.maleFeatureMaxLength && 
+      adjustedThickness >= otherRodLimits.maleFeatureMinThickness;
+    
     if (isLikelyMaleBodyPart) {
       // 超過台灣平均+50%以上的長度可能不符合現實或誇大
-      if (adjustedLength > taiwanMaleAvgLength * 1.5 && adjustedLength <= 30) {
-        // 對於可能是誇大的長度給予警示或評分調整
-        console.log('Warning: Detected possible exaggerated dimensions');
-      }
-      // 非常超出常態的長度，可能是誇大或其他物體
-      else if (adjustedLength > 30) {
-        adjustedLength = 30; // 限制最大長度
+      if (adjustedLength > taiwanMaleAvgLength * 1.5 && adjustedLength <= otherRodLimits.maleFeatureMaxLength) {
+        // 對於可能是誇大的長度給予警示 (僅在開發環境輸出)
+        if (process.env.NODE_ENV === 'development') {
+          console.log('Warning: Detected possible exaggerated dimensions');
+        }
       }
       
-      // 限制thickness在合理範圍
-      adjustedThickness = Math.max(2.5, Math.min(5, adjustedThickness));
+      // 應用男性特徵的限制
+      adjustedLength = Math.max(
+        otherRodLimits.minLength, 
+        Math.min(otherRodLimits.maxLength, adjustedLength)
+      );
+      
+      adjustedThickness = Math.max(
+        otherRodLimits.minThickness, 
+        Math.min(otherRodLimits.maxThickness, adjustedThickness)
+      );
     } else {
-      // 如果不像人體特徵，則使用較寬鬆的範圍限制
-      adjustedLength = Math.max(0, Math.min(40, adjustedLength));
-      adjustedThickness = Math.max(0, Math.min(8, adjustedThickness));
+      // 應用非男性特徵的寬鬆限制
+      adjustedLength = Math.max(
+        otherRodLimits.minLength, 
+        Math.min(otherRodLimits.nonMaleFeatureMaxLength, adjustedLength)
+      );
+      
+      adjustedThickness = Math.max(
+        limits.minThickness, 
+        Math.min(otherRodLimits.nonMaleFeatureMaxThickness, adjustedThickness)
+      );
     }
+  } else {
+    // 標準處理：應用基本限制
+    adjustedLength = Math.max(
+      limits.minLength, 
+      Math.min(limits.maxLength, adjustedLength)
+    );
+    
+    adjustedThickness = Math.max(
+      limits.minThickness, 
+      Math.min(limits.maxThickness, adjustedThickness)
+    );
   }
+
+  // 保留一位小數
+  adjustedLength = Math.round(adjustedLength * 10) / 10;
+  adjustedThickness = Math.round(adjustedThickness * 10) / 10;
 
   return { adjustedLength, adjustedThickness };
 }
@@ -370,40 +491,40 @@ export function adjustDimensions(
  * @returns 是否在合理範圍內
  */
 export function isReasonableDimension(length: number, thickness: number, type: ObjectType): boolean {
-  if (type === 'cucumber') {
-    // 小黃瓜理想尺寸約15-22cm長，2.5-4cm粗
-    return (length >= 15 && length <= 22) && (thickness >= 2.5 && thickness <= 4);
-  } 
-  else if (type === 'banana') {
-    // 香蕉理想尺寸約15-20cm長，3-4cm粗
-    return (length >= 15 && length <= 20) && (thickness >= 3 && thickness <= 4);
-  }
-  // other_rod的合理性評估
-  else if (type === 'other_rod') {
+  if (!type) return false;
+  
+  // 從配置中獲取合理尺寸範圍
+  const limits = CONFIG.dimensionLimits[type];
+  
+  // 特殊處理 other_rod 類型
+  if (type === 'other_rod') {
+    const otherRodLimits = CONFIG.dimensionLimits.other_rod;
+    
     // 判斷是否符合男性特徵的尺寸範圍
-    const isMaleFeature = length >= 8 && length <= 30 && thickness >= 2.5;
+    const isMaleFeature = length >= otherRodLimits.maleFeatureMinLength && 
+                         length <= otherRodLimits.maleFeatureMaxLength && 
+                         thickness >= otherRodLimits.maleFeatureMinThickness;
     
     if (isMaleFeature) {
-      // 台灣男性平均長度參考值
-      const taiwanMaleAvgLength = 12.5;
-      
-      // 正常範圍: 平均值的80%-150%之間
-      const minReasonableLength = taiwanMaleAvgLength * 0.8;  // 約10cm
-      const maxReasonableLength = taiwanMaleAvgLength * 1.5;  // 約18.75cm
+      // 使用合理長度範圍判斷
+      const isReasonableLength = length >= otherRodLimits.reasonableMinLength && 
+                                length <= otherRodLimits.reasonableMaxLength;
       
       // 考慮合理的厚度範圍
-      const isReasonableThickness = thickness >= 2.5 && thickness <= 5;
+      const isReasonableThickness = thickness >= otherRodLimits.reasonableMinThickness && 
+                                   thickness <= otherRodLimits.reasonableMaxThickness;
       
-      // 長度在合理範圍內，且厚度也合理
-      return (length >= minReasonableLength && length <= maxReasonableLength) && isReasonableThickness;
+      // 長度和厚度都在合理範圍內
+      return isReasonableLength && isReasonableThickness;
     }
     
     // 如果不是男性特徵，使用寬鬆標準
     return length > 0 && thickness > 0;
   }
   
-  // 未識別類型
-  return false;
+  // 標準物體類型的合理性判斷
+  return (length >= limits.reasonableMinLength && length <= limits.reasonableMaxLength) && 
+         (thickness >= limits.reasonableMinThickness && thickness <= limits.reasonableMaxThickness);
 }
 
 /**
