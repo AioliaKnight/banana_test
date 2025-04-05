@@ -5,13 +5,60 @@
  * 並以幽默方式提供反饋。
  */
 
+// 常量定義
+export const SUSPICIOUS_FEATURES = {
+  LENGTH_TOO_LONG: "長度過長，超出正常範圍",
+  LENGTH_TOO_SHORT: "長度過短，不符合典型尺寸",
+  TOO_THICK: "粗細超出正常物品範圍",
+  TOO_THIN: "粗細過細，不符合典型比例",
+  ABNORMAL_RATIO: "長度與粗細比例異常",
+};
+
+// 可疑時的有趣回應
+export const SUSPICIOUS_RESPONSES = [
+  "這尺寸...恐怕只存在於你的想像中。",
+  "哈哈！真有創意的「測量方式」！",
+  "這數字比我前男友的謊言還要誇張...",
+  "嗯～我有理由相信這是經過「藝術加工」的數據。",
+  "這照片是不是用了那種「增大濾鏡」啊？",
+  "看來有人很懂得如何「取景」嘛～"
+];
+
+// 真實時的有趣回應
+export const REASONABLE_RESPONSES = [
+  "看起來是真實的測量結果，值得信賴！",
+  "這數據相當合理，應該是實際尺寸無誤。",
+  "嗯，這個尺寸很符合現實，沒有誇大。",
+  "數據看起來很真實，不像是吹噓的結果。",
+  "我相信這是誠實測量的結果。"
+];
+
+// 添加更多台灣男性相關統計數據常量
+export const TAIWAN_MALE_STATS = {
+  AVG_LENGTH: 12.5,       // 台灣男性平均長度(cm)
+  MEDIAN_LENGTH: 12.2,    // 台灣男性中位數長度(cm)
+  STD_DEVIATION: 1.5,     // 標準差(cm)
+  PERCENTILE_5: 10.0,     // 第5百分位長度(cm)
+  PERCENTILE_25: 11.4,    // 第25百分位長度(cm)
+  PERCENTILE_75: 13.6,    // 第75百分位長度(cm)
+  PERCENTILE_90: 14.5,    // 第90百分位長度(cm)
+  PERCENTILE_95: 15.0,    // 第95百分位長度(cm)
+  PERCENTILE_99: 16.5,    // 第99百分位長度(cm)
+  GLOBAL_AVG: 13.1,        // 全球平均長度(cm)
+  ASIAN_AVG: 12.6,         // 亞洲平均長度(cm)
+  REASONABLE_MIN: 10.0,    // 合理下限(cm)
+  REASONABLE_MAX: 18.75,   // 合理上限(cm)
+};
+
+// 定義真實性分析結果接口
 export interface TruthAnalysisResult {
-  truthScore: number;        // 0-100的真實度分數
-  suspiciousFeatures: string[]; // 可疑特徵列表
-  adjustedLength: number;    // 調整後的長度
-  adjustmentFactor: number;  // 調整因子
-  funnyMessage: string;      // 幽默回應
+  truthScore: number;        // 真實度評分 0-100
   isSuspicious: boolean;     // 是否可疑
+  suspiciousFeatures: string[]; // 可疑特徵列表
+  funnyMessage: string;      // 幽默回應訊息
+  suggestionMessage?: string; // 建議訊息
+  adjustedLength?: number;   // 調整後的長度
+  adjustmentFactor?: number; // 調整因子
 }
 
 // 物件類型定義
@@ -109,7 +156,7 @@ const CONFIG: TruthDetectorConfig = {
   averageLengths: {
     cucumber: 17.5, // 小黃瓜平均長度
     banana: 18,     // 香蕉平均長度
-    other_rod: 12.5 // other_rod (台灣男性平均)
+    other_rod: TAIWAN_MALE_STATS.AVG_LENGTH // 使用台灣男性平均常量
   },
   
   reasonableRatios: {
@@ -121,7 +168,7 @@ const CONFIG: TruthDetectorConfig = {
   suspiciousThresholds: {
     truthScoreThreshold: 75,
     lengthExceedRatio: 1.5,
-    otherRodMaxLength: 20
+    otherRodMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX
   },
   
   suspicionWeights: {
@@ -212,12 +259,12 @@ const CONFIG: TruthDetectorConfig = {
       maxLength: 30, 
       minThickness: 2.5, 
       maxThickness: 5,
-      reasonableMinLength: 10,    // 約台灣男性平均的80%
-      reasonableMaxLength: 18.75, // 約台灣男性平均的150%
+      reasonableMinLength: TAIWAN_MALE_STATS.REASONABLE_MIN,    // 使用統計常量
+      reasonableMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX,    // 使用統計常量
       reasonableMinThickness: 2.5,
       reasonableMaxThickness: 5,
-      maleFeatureMinLength: 8,
-      maleFeatureMaxLength: 30,
+      maleFeatureMinLength: TAIWAN_MALE_STATS.REASONABLE_MIN,   // 使用統計常量
+      maleFeatureMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX,   // 使用統計常量
       maleFeatureMinThickness: 2.5,
       nonMaleFeatureMaxLength: 40,
       nonMaleFeatureMaxThickness: 8
@@ -236,126 +283,207 @@ const CONFIG: TruthDetectorConfig = {
 };
 
 /**
- * 分析對象真實度
- * @param options 包含對象類型、長度、粗細和是否為男性特徵的選項
- * @returns 分析結果對象
+ * 分析真實度並提供相關信息
+ * @param objectType 物體類型
+ * @param length 長度
+ * @param thickness 粗細
+ * @param rodSubtype 棒狀物子類型
+ * @returns 分析結果
  */
-export function analyzeTruth(options: { 
-  type: ObjectType; 
-  length: number; 
-  thickness: number;
-  isMaleFeature?: boolean;
-}): TruthAnalysisResult {
-  const { type, length, thickness, isMaleFeature = false } = options;
+export function analyzeTruth(
+  objectType: ObjectType,
+  length: number,
+  thickness: number,
+  rodSubtype?: 'male_feature' | 'regular_rod'
+): TruthAnalysisResult {
+  // 判斷是否為男性特徵
+  const isMaleFeature = objectType === 'other_rod' && 
+                         (rodSubtype === 'male_feature');
   
-  if (!type) {
+  // 確保物體類型有效
+  const validObjectType = (objectType && ['cucumber', 'banana', 'other_rod'].includes(objectType)) 
+    ? objectType 
+    : 'cucumber'; // 預設為黃瓜
+  
+  // 檢查是否有長度和粗細數據
+  if (!length || !thickness) {
     return {
       truthScore: 75,
-      suspiciousFeatures: ['無法識別的物體類型'],
+      isSuspicious: false,
+      suspiciousFeatures: [],
+      funnyMessage: "無法確定真偽，缺少完整尺寸信息...",
+      suggestionMessage: undefined,
       adjustedLength: length,
-      adjustmentFactor: 1,
-      funnyMessage: CONFIG.responses.unidentified[Math.floor(Math.random() * CONFIG.responses.unidentified.length)],
-      isSuspicious: false
+      adjustmentFactor: 1
     };
   }
 
-  // 檢查物體長度是否合理
-  const averageLength = CONFIG.averageLengths[type] || CONFIG.averageLengths.cucumber;
-  const averageRatio = CONFIG.reasonableRatios[type] || CONFIG.reasonableRatios.cucumber;
+  // 初始化可疑特徵列表
+  const suspiciousFeatures: string[] = [];
   
-  // 計算實際比率和關鍵指標
-  const actualRatio = length / thickness;
-  const lengthRatio = length / averageLength;
-  const ratioDifference = Math.abs(actualRatio - averageRatio) / averageRatio;
-  
-  // 計算可疑程度分數
+  // 可疑特徵判斷條件
   let suspicionScore = 0;
+  let truthScore = 100; // 從100分開始，越可疑越低
   
-  // 針對other_rod特別處理 - 依據是否為男性特徵採用不同標準
-  if (type === 'other_rod') {
-    if (isMaleFeature) {
-      // 男性特徵的標準
-      const { maleFeatureMinLength, maleFeatureMaxLength, maleFeatureMinThickness } = CONFIG.dimensionLimits.other_rod;
-      
-      // 如果長度超出合理範圍，增加懷疑分數
-      if (length > maleFeatureMaxLength) {
-        suspicionScore += (length - maleFeatureMaxLength) / maleFeatureMaxLength * CONFIG.suspicionWeights.lengthWeight;
-      }
-      
-      // 如果尺寸不符合男性特徵的特性，增加懷疑分數
-      if (length < maleFeatureMinLength || thickness < maleFeatureMinThickness) {
-        suspicionScore += 0.3;
-      }
-    } else {
-      // 一般棒狀物的標準
-      const { nonMaleFeatureMaxLength, nonMaleFeatureMaxThickness } = CONFIG.dimensionLimits.other_rod;
-      
-      // 如果長度/粗細與一般物品不符，增加懷疑分數
-      if (length > nonMaleFeatureMaxLength || thickness > nonMaleFeatureMaxThickness) {
-        suspicionScore += 0.4;
-      }
+  // 對於男性特徵，使用新的評估方法
+  if (isMaleFeature) {
+    // 使用統計學方法直接計算可信度分數
+    truthScore = calculateMaleCredibilityScore(length);
+    
+    // 獲取百分位描述
+    const percentileDesc = getMalePercentileDescription(length);
+    
+    // 根據百分位添加相應的特徵描述
+    if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
+      suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見");
+      suspicionScore += 50;
+    } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
+      suspiciousFeatures.push("尺寸超過95%台灣男性，相當罕見");
+      suspicionScore += 30;
+    } else if (length > TAIWAN_MALE_STATS.PERCENTILE_90) {
+      suspiciousFeatures.push("尺寸超過90%台灣男性，少見");
+      suspicionScore += 15;
+    } else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) {
+      suspiciousFeatures.push("尺寸低於一般統計下限，可能測量不準確");
+      suspicionScore += 20;
+    }
+    
+    // 計算粗細是否合理
+    if (thickness > 4.5) {
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK);
+      suspicionScore += 30;
+    } else if (thickness < 2.5) {
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN);
+      suspicionScore += 20;
+    }
+    
+    // 計算長寬比是否合理
+    const lengthToThicknessRatio = length / thickness;
+    if (lengthToThicknessRatio > 5.0 || lengthToThicknessRatio < 2.5) {
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO);
+      suspicionScore += 25;
     }
   } else {
-    // 針對蔬果類型的標準處理
+    // 非男性特徵的一般物品評估邏輯
+    // 根據物體類型計算平均值和比例
+    const avgLengths = {
+      cucumber: 15, // 黃瓜平均15cm
+      banana: 18,   // 香蕉平均18cm
+      other_rod: 20 // 一般棒狀物20cm
+    };
     
-    // 檢查長度超過平均值的程度
-    if (lengthRatio > CONFIG.suspiciousThresholds.lengthExceedRatio) {
-      suspicionScore += (lengthRatio - 1) * CONFIG.suspicionWeights.lengthWeight;
+    const avgThickness = {
+      cucumber: 3.5, // 黃瓜平均直徑3.5cm
+      banana: 3.8,   // 香蕉平均直徑3.8cm
+      other_rod: 4.0 // 一般棒狀物4cm
+    };
+    
+    // 計算長度是否可疑
+    const avgLength = avgLengths[validObjectType];
+    const lengthRatio = length / avgLength;
+    
+    if (lengthRatio > 1.5) {
+      suspicionScore += 25;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_LONG);
+      truthScore -= 20;
+    } else if (lengthRatio < 0.6) {
+      suspicionScore += 10;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_SHORT);
+      truthScore -= 8;
     }
     
-    // 檢查長度/粗細比率的異常程度
-    if (ratioDifference > 0.3) {
-      suspicionScore += ratioDifference * CONFIG.suspicionWeights.ratioWeight;
+    // 計算粗細是否可疑
+    const avgThick = avgThickness[validObjectType];
+    const thicknessRatio = thickness / avgThick;
+    
+    if (thicknessRatio > 1.6) {
+      suspicionScore += 30;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK);
+      truthScore -= 25;
+    } else if (thicknessRatio < 0.6) {
+      suspicionScore += 15;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN);
+      truthScore -= 12;
+    }
+    
+    // 計算長寬比是否合理
+    const lengthToThicknessRatio = length / thickness;
+    const idealRatios = {
+      cucumber: 4.5, // 理想的黃瓜長寬比
+      banana: 5.0,   // 理想的香蕉長寬比
+      other_rod: 5.0 // 一般棒狀物長寬比
+    };
+    
+    const idealRatio = idealRatios[validObjectType];
+    const ratioDeviation = Math.abs(lengthToThicknessRatio - idealRatio) / idealRatio;
+    
+    if (ratioDeviation > 0.5) {
+      suspicionScore += 20;
+      suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO);
+      truthScore -= 15;
     }
   }
   
+  // 防止真實度分數超出範圍
+  truthScore = Math.max(0, Math.min(100, truthScore));
+  
+  // 判斷是否可疑 (對於男性特徵，使用統計學標準；對於其他物品，使用一般標準)
+  const isSuspicious = isMaleFeature 
+    ? (truthScore < 60) 
+    : (suspicionScore >= 30);
+  
   // 計算調整因子
-  const adjustmentFactor = Math.max(
-    CONFIG.adjustmentSettings.minAdjustmentFactor,
-    1 - Math.min(suspicionScore, CONFIG.adjustmentSettings.maxAdjustment)
-  );
+  const adjustmentFactor = Math.max(0.7, 1 - (suspicionScore / 100));
   
   // 計算調整後的長度
   const adjustedLength = length * adjustmentFactor;
   
-  // 計算最終真實度分數 - 從0-1轉換為0-100分
-  const truthScoreValue = Math.max(0, Math.min(1, 1 - suspicionScore));
-  
-  // 決定是否標記為可疑
-  const isSuspicious = truthScoreValue * 100 < CONFIG.suspiciousThresholds.truthScoreThreshold;
-  
-  // 生成反饋訊息
-  let message = '';
-  let suspiciousFeatures: string[] = [];
-  
-  if (isSuspicious) {
-    // 選擇隨機的幽默回應和可疑特徵
-    const randomResponse = CONFIG.responses.suspicious[Math.floor(Math.random() * CONFIG.responses.suspicious.length)];
-    const funnyResponse = CONFIG.responses.funnyResponses[Math.floor(Math.random() * CONFIG.responses.funnyResponses.length)];
-    message = `${randomResponse} ${funnyResponse}`;
-    
-    // 隨機選擇2-4個可疑特徵
-    const featureCount = Math.floor(Math.random() * 3) + 2; // 2到4個
-    const selectedFeatures = [...CONFIG.responses.suspiciousFeatures];
-    suspiciousFeatures = [];
-    
-    for (let i = 0; i < featureCount; i++) {
-      if (selectedFeatures.length === 0) break;
-      const randomIndex = Math.floor(Math.random() * selectedFeatures.length);
-      suspiciousFeatures.push(selectedFeatures[randomIndex]);
-      selectedFeatures.splice(randomIndex, 1);
+  // 根據是否為男性特徵選擇特定回應
+  let funnyMessage = "";
+  if (isMaleFeature) {
+    if (isSuspicious) {
+      // 根據違反統計學分布的程度選擇不同的回應
+      if (length > TAIWAN_MALE_STATS.REASONABLE_MAX) {
+        funnyMessage = "統計學表示：這種尺寸是千萬分之一的機率，比中樂透還難！";
+      } else if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
+        funnyMessage = `這尺寸聲稱超過了99%的台灣男性，統計學上的可能性極低...`;
+      } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
+        funnyMessage = `聲稱的數據位於前5%，非常罕見，可能有測量誤差。`;
+      } else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) {
+        funnyMessage = "測量值似乎偏小，可能測量方式有誤。正確測量應從恥骨開始到頂端。";
+      } else {
+        // 一般可疑回應
+        const responses = SUSPICIOUS_RESPONSES;
+        funnyMessage = responses[Math.floor(Math.random() * responses.length)];
+      }
+    } else {
+      // 真實度高的男性特徵回應
+      if (length > TAIWAN_MALE_STATS.PERCENTILE_75 && length <= TAIWAN_MALE_STATS.PERCENTILE_90) {
+        funnyMessage = `數據顯示這個尺寸高於大多數台灣男性，但仍在統計學可信範圍內。`;
+      } else if (length >= TAIWAN_MALE_STATS.PERCENTILE_25 && length <= TAIWAN_MALE_STATS.PERCENTILE_75) {
+        funnyMessage = `這個尺寸非常接近台灣男性平均值${TAIWAN_MALE_STATS.AVG_LENGTH}cm，數據看起來很誠實。`;
+      } else {
+        funnyMessage = "尺寸在台灣男性常見範圍內，數據可信度高。";
+      }
     }
   } else {
-    message = CONFIG.responses.reasonable[Math.floor(Math.random() * CONFIG.responses.reasonable.length)];
+    // 非男性特徵的一般回應
+    const funnyResponses = isSuspicious ? SUSPICIOUS_RESPONSES : REASONABLE_RESPONSES;
+    const randomIndex = Math.floor(Math.random() * funnyResponses.length);
+    funnyMessage = funnyResponses[randomIndex];
   }
   
+  // 計算建議訊息
+  const suggestionMessage = getSuggestionMessage(truthScore, objectType, rodSubtype, length);
+  
   return {
-    truthScore: Math.round(truthScoreValue * 100),
+    truthScore,
+    isSuspicious,
     suspiciousFeatures,
+    funnyMessage,
+    suggestionMessage,
     adjustedLength,
-    adjustmentFactor,
-    funnyMessage: message,
-    isSuspicious
+    adjustmentFactor
   };
 }
 
@@ -564,69 +692,129 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
- * 基於真實度分析結果生成建議訊息
- * @param result 真實度分析結果
- * @param objectType 對象類型
- * @param isMaleFeature 是否為男性特徵
- * @returns 建議訊息
+ * 獲取根據真實度分數提供的建議信息
+ * @param truthScore 真實度分數 (0-100)
+ * @param objectType 物體類型
+ * @param rodSubtype 棒狀物子類型 (可選)
+ * @param lengthValue 長度值 (可選)
+ * @returns 建議信息
  */
 export function getSuggestionMessage(
-  result: TruthAnalysisResult,
-  objectType: ObjectType,
-  isMaleFeature?: boolean
+  truthScore: number, 
+  objectType: ObjectType, 
+  rodSubtype?: 'male_feature' | 'regular_rod',
+  lengthValue?: number
 ): string {
-  // 如果檢測到可疑（低真實度）情況
-  if (result.isSuspicious) {
-    if (objectType === 'other_rod' && isMaleFeature) {
-      // 男性特徵的專門提示
-      const suggestions = [
-        `我們注意到您上傳的照片似乎不太符合自然比例。拍攝男性特徵時，請保持適當距離並使用正確角度，以獲得更準確的測量結果。`,
-        `此照片可能因為拍攝角度或距離問題導致測量結果不夠客觀。建議下次拍攝時使用中性背景、自然光線，並保持直角視角以提高準確度。`,
-        `您上傳的圖片可能存在透視失真，影響了測量的準確性。拍攝時建議將相機與物體保持垂直，並避免使用廣角鏡頭，這樣測量結果會更可靠。`,
-        `我們的測謊系統檢測到此圖片的尺寸可能不太符合現實。請確保下次拍攝時避免任何可能導致視覺誇大的技巧，這樣我們才能提供更準確的評估。`
-      ];
-      return suggestions[Math.floor(Math.random() * suggestions.length)];
+  // 獲取台灣男性平均長度及其統計數據
+  const taiwanMaleStats = TAIWAN_MALE_STATS;
+  const isMaleFeature = rodSubtype === 'male_feature';
+  
+  // 基於長度獲取百分位描述（如果提供了長度值）
+  let percentileDescription = '';
+  if (lengthValue && isMaleFeature) {
+    percentileDescription = getMalePercentileDescription(lengthValue);
+  }
+  
+  if (truthScore >= 80) {
+    if (objectType === 'other_rod' && isMaleFeature && lengthValue) {
+      return `測量結果非常可信。您的長度為 ${lengthValue} 公分，${percentileDescription}。台灣男性平均長度為 ${taiwanMaleStats.AVG_LENGTH} 公分（中位數 ${taiwanMaleStats.MEDIAN_LENGTH} 公分）。`;
     }
-    
-    // 真實度低於閾值，給出改進建議
-    if (result.truthScore < 50) {
-      // 真實度非常低的情況
-      return "這張照片的測量精度有顯著問題，可能是因為拍攝角度、距離或圖像處理導致。建議重新拍攝，確保物體平放、相機與物體保持垂直，並使用自然光線。";
-    } else {
-      // 真實度較低但尚可接受的情況
-      const suggestions = [
-        "照片有些可疑特徵可能影響測量準確性。建議拍攝時使用均勻光源，並保持相機與物體垂直以減少透視變形。",
-        "這張照片的測量結果可能不太準確。試著在自然光下，將物體放在平面上，並從正上方拍攝以獲得更準確的比例。",
-        "我們的系統檢測到一些異常比例。拍攝時請避免使用廣角鏡頭，並保持適當距離，以減少視覺扭曲。",
-        "測量結果可能受到拍攝技巧的影響。下次可以嘗試放置參考物（如尺子）一同拍攝，這樣可以提高精度。"
-      ];
-      return suggestions[Math.floor(Math.random() * suggestions.length)];
+    return "測量結果非常可信，尺寸數據符合自然規律。";
+  } else if (truthScore >= 60) {
+    if (objectType === 'other_rod' && isMaleFeature && lengthValue) {
+      return `測量結果基本可信，但可能有輕微偏差。您的長度為 ${lengthValue} 公分，${percentileDescription}。台灣男性平均長度為 ${taiwanMaleStats.AVG_LENGTH} 公分，標準差為 ${taiwanMaleStats.STD_DEVIATION} 公分。`;
     }
+    return "測量結果基本可信，但可能有輕微偏差。建議嘗試從不同角度測量以獲得更準確結果。";
+  } else if (truthScore >= 40) {
+    if (objectType === 'other_rod' && isMaleFeature && lengthValue) {
+      const difference = Math.abs(lengthValue - taiwanMaleStats.AVG_LENGTH);
+      return `測量結果可疑，與平均值相差 ${difference.toFixed(1)} 公分。台灣男性平均長度為 ${taiwanMaleStats.AVG_LENGTH} 公分，您的數據位於 ${percentileDescription}。建議重新測量，保持直角拍攝並避免使用廣角鏡頭。`;
+    }
+    return "測量結果有些可疑。建議重新測量，確保拍攝角度直觀且沒有透視變形。";
   } else {
-    // 真實度高的情況
-    if (objectType === 'other_rod' && isMaleFeature) {
-      // 男性特徵的專門提示
-      const positiveSuggestions = [
-        "您的照片拍攝角度和距離恰到好處，測量結果非常精確。請繼續保持這種專業的拍攝方式。",
-        "這是一張拍攝得非常好的照片，光線均勻、角度適中，使我們能夠提供準確的分析結果。",
-        "從照片來看，您已掌握了理想的拍攝技巧，使得測量結果非常可靠。保持這種水準！",
-        "您的拍攝技巧值得表揚，照片清晰且比例準確，這對於獲得精確的測量結果至關重要。"
-      ];
-      return positiveSuggestions[Math.floor(Math.random() * positiveSuggestions.length)];
+    if (objectType === 'other_rod' && isMaleFeature && lengthValue) {
+      if (lengthValue > taiwanMaleStats.AVG_LENGTH * 1.5) {
+        return `測量結果極不可信。您聲稱的長度 ${lengthValue} 公分遠超過台灣男性平均長度 ${taiwanMaleStats.AVG_LENGTH} 公分，甚至超過了 ${taiwanMaleStats.PERCENTILE_99} 公分的99百分位值。請避免使用誇張拍攝手法。`;
+      } else if (lengthValue < taiwanMaleStats.REASONABLE_MIN) {
+        return `測量結果可能不準確。您聲稱的長度 ${lengthValue} 公分明顯低於台灣男性平均範圍。請確保完整測量物體，且未被裁剪。`;
+      } else {
+        return `測量結果不可信。台灣男性平均長度為 ${taiwanMaleStats.AVG_LENGTH} 公分，95%的台灣男性在 ${taiwanMaleStats.PERCENTILE_5} 至 ${taiwanMaleStats.PERCENTILE_95} 公分之間。建議使用更科學的測量方法。`;
+      }
     }
-    
-    if (result.truthScore > 90) {
-      // 真實度非常高的情況
-      return "這張照片拍攝得非常好！光線充足、角度恰當，使我們能夠提供最準確的分析結果。請繼續保持這種拍攝品質。";
-    } else {
-      // 真實度較高的情況
-      const positiveSuggestions = [
-        "照片品質不錯，測量結果可信度高。如需更精確的結果，可以考慮在更均勻的光線下重新拍攝。",
-        "這是一張拍得不錯的照片，光線和角度都還可以，使我們能夠提供相當準確的分析。",
-        "照片拍攝角度和距離都很合適，測量結果值得參考。若要更上一層樓，可嘗試使用自然日光。",
-        "您的拍攝技巧很好，照片清晰且比例協調。如果添加一個比例尺參考物，結果會更加精準。"
-      ];
-      return positiveSuggestions[Math.floor(Math.random() * positiveSuggestions.length)];
-    }
+    return "測量結果極不可信。請確保拍攝角度正確，避免透視變形以及過度裁剪。";
+  }
+}
+
+/**
+ * 使用高斯分佈計算男性特徵可信度分數
+ * @param length 長度值（公分）
+ * @returns 可信度分數 (0-100)
+ */
+function calculateMaleCredibilityScore(length: number): number {
+  const mean = TAIWAN_MALE_STATS.AVG_LENGTH;
+  const stdDev = TAIWAN_MALE_STATS.STD_DEVIATION;
+  
+  // 計算與平均值的標準差距離
+  const zScore = Math.abs(length - mean) / stdDev;
+  
+  // 基於標準差距離計算可信度分數
+  // 距離平均值越遠，分數越低
+  let score = 100;
+  
+  if (zScore <= 1) {
+    // 在1個標準差內 - 保持高分數 (80-100)
+    score = 100 - (zScore * 20);
+  } else if (zScore <= 2) {
+    // 在1-2個標準差之間 (60-80)
+    score = 80 - ((zScore - 1) * 20);
+  } else if (zScore <= 3) {
+    // 在2-3個標準差之間 (30-60)
+    score = 60 - ((zScore - 2) * 30);
+  } else if (zScore <= 4) {
+    // 在3-4個標準差之間 (10-30)
+    score = 30 - ((zScore - 3) * 20);
+  } else {
+    // 超過4個標準差 - 極低分數
+    score = 10;
+  }
+  
+  // 額外條件調整
+  // 如果長度明顯大於平均，分數降低更多
+  if (length > mean * 1.5) {
+    score -= 20;
+  }
+  // 如果長度超過99百分位，大幅降低分數
+  if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
+    score -= 30;
+  }
+  // 如果長度小於5百分位，適度降低分數
+  if (length < TAIWAN_MALE_STATS.PERCENTILE_5) {
+    score -= 10;
+  }
+  
+  // 確保分數在0-100之間
+  return Math.max(0, Math.min(100, score));
+}
+
+/**
+ * 獲取基於男性長度的百分位描述
+ * @param length 長度值（公分）
+ * @returns 百分位描述字串
+ */
+function getMalePercentileDescription(length: number): string {
+  if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
+    return `處於台灣男性99%以上的罕見範圍`;
+  } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
+    return `處於台灣男性前5%的範圍`;
+  } else if (length > TAIWAN_MALE_STATS.PERCENTILE_90) {
+    return `處於台灣男性前10%的範圍`;
+  } else if (length > TAIWAN_MALE_STATS.PERCENTILE_75) {
+    return `高於台灣男性平均水平`;
+  } else if (length >= TAIWAN_MALE_STATS.PERCENTILE_25) {
+    return `處於台灣男性平均水平範圍內`;
+  } else if (length >= TAIWAN_MALE_STATS.PERCENTILE_5) {
+    return `低於台灣男性平均水平`;
+  } else {
+    return `顯著低於台灣男性平均水平`;
   }
 } 
