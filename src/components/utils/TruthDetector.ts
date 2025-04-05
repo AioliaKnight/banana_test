@@ -55,8 +55,8 @@ export const TAIWAN_MALE_STATS = {
   PERCENTILE_99: 16.5,    // 99th Percentile length (cm)
   GLOBAL_AVG: 13.1,        // Global average length (cm)
   ASIAN_AVG: 12.6,         // Asian average length (cm)
-  REASONABLE_MIN: 10.0,    // Reasonable lower limit (cm)
-  REASONABLE_MAX: 18.75,   // Reasonable upper limit (cm)
+  REASONABLE_MIN: 3.0,     // Reasonable lower limit (cm) - 降低最小閾值
+  REASONABLE_MAX: 30.0,    // Reasonable upper limit (cm) - 降低最大閾值
 };
 
 // =================================
@@ -117,8 +117,8 @@ export interface TruthDetectorConfig {
 // Export the config so it can be used elsewhere (e.g., for random data generation)
 export const CONFIG: TruthDetectorConfig = {
   averageLengths: {
-    cucumber: 17.5, // Average cucumber length
-    banana: 18,     // Average banana length
+    cucumber: 15.0, // Average cucumber length (降低)
+    banana: 15.0,   // Average banana length (降低)
     other_rod: TAIWAN_MALE_STATS.AVG_LENGTH // Use Taiwan male average constant
   },
   reasonableRatios: {
@@ -127,17 +127,17 @@ export const CONFIG: TruthDetectorConfig = {
     other_rod: 4.5 // Average other_rod ratio
   },
   suspiciousThresholds: {
-    truthScoreThreshold: 75,
-    lengthExceedRatio: 1.5,
+    truthScoreThreshold: 70, // 降低門檻值，使系統更容易懷疑高估值
+    lengthExceedRatio: 1.3,  // 降低超出比例，使系統更容易偵測到過長情況
     otherRodMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX
   },
   suspicionWeights: {
-    lengthWeight: 0.6,
+    lengthWeight: 0.7, // 增加長度權重
     ratioWeight: 0.4
   },
   adjustmentSettings: {
-    maxAdjustment: 0.3,
-    minAdjustmentFactor: 0.7
+    maxAdjustment: 0.35, // 增加調整範圍
+    minAdjustmentFactor: 0.65 // 降低最小調整因子，允許更大幅度的調整
   },
   responses: {
     funnyResponses: [
@@ -176,24 +176,25 @@ export const CONFIG: TruthDetectorConfig = {
   },
   dimensionLimits: {
     cucumber: { 
-      minLength: 0, maxLength: 30, minThickness: 0, maxThickness: 6,
-      reasonableMinLength: 15, reasonableMaxLength: 22, reasonableMinThickness: 2.5, reasonableMaxThickness: 4
+      minLength: 0, maxLength: 50, minThickness: 0, maxThickness: 8,
+      reasonableMinLength: 8, reasonableMaxLength: 30, reasonableMinThickness: 1.5, reasonableMaxThickness: 5
     },
     banana: { 
-      minLength: 0, maxLength: 25, minThickness: 0, maxThickness: 5,
-      reasonableMinLength: 15, reasonableMaxLength: 20, reasonableMinThickness: 3, reasonableMaxThickness: 4
+      minLength: 0, maxLength: 45, minThickness: 0, maxThickness: 7,
+      reasonableMinLength: 8, reasonableMaxLength: 25, reasonableMinThickness: 2, reasonableMaxThickness: 5
     },
     other_rod: { 
-      minLength: 0, maxLength: 30, minThickness: 2.5, maxThickness: 5,
-      reasonableMinLength: TAIWAN_MALE_STATS.REASONABLE_MIN, reasonableMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX,
-      reasonableMinThickness: 2.5, reasonableMaxThickness: 5,
-      maleFeatureMinLength: TAIWAN_MALE_STATS.REASONABLE_MIN, maleFeatureMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX,
+      minLength: 0, maxLength: 200, minThickness: 0, maxThickness: 100,
+      reasonableMinLength: 5, reasonableMaxLength: 100, reasonableMinThickness: 1, reasonableMaxThickness: 20,
+      maleFeatureMinLength: TAIWAN_MALE_STATS.REASONABLE_MIN, 
+      maleFeatureMaxLength: TAIWAN_MALE_STATS.REASONABLE_MAX,
       maleFeatureMinThickness: 2.5,
-      nonMaleFeatureMaxLength: 40, nonMaleFeatureMaxThickness: 8
+      nonMaleFeatureMaxLength: 100, 
+      nonMaleFeatureMaxThickness: 20
     },
     default: { 
-      minLength: 0, maxLength: 40, minThickness: 0, maxThickness: 8,
-      reasonableMinLength: 0, reasonableMaxLength: 40, reasonableMinThickness: 0, reasonableMaxThickness: 8
+      minLength: 0, maxLength: 100, minThickness: 0, maxThickness: 20,
+      reasonableMinLength: 0, reasonableMaxLength: 100, reasonableMinThickness: 0, reasonableMaxThickness: 20
     }
   }
 };
@@ -225,19 +226,20 @@ export function isReasonableDimension(length: number, thickness: number, type: O
                          thickness >= otherRodLimits.maleFeatureMinThickness;
     
     if (isMaleFeature) {
-      // Use reasonable male feature range for judgment
-      const isReasonableLength = length >= otherRodLimits.reasonableMinLength && length <= otherRodLimits.reasonableMaxLength;
-      const isReasonableThickness = thickness >= otherRodLimits.reasonableMinThickness && thickness <= otherRodLimits.reasonableMaxThickness;
+      // 對男性特徵使用嚴格標準
+      const isReasonableLength = length >= otherRodLimits.maleFeatureMinLength && length <= otherRodLimits.maleFeatureMaxLength;
+      const isReasonableThickness = thickness >= otherRodLimits.maleFeatureMinThickness && thickness <= otherRodLimits.reasonableMaxThickness;
       return isReasonableLength && isReasonableThickness;
     }
     
-    // If not male feature, use more lenient standard (just > 0)
-    return length > 0 && thickness > 0;
+    // 對非男性特徵使用更寬鬆的標準
+    return length > 0 && length <= otherRodLimits.nonMaleFeatureMaxLength && 
+           thickness > 0 && thickness <= otherRodLimits.nonMaleFeatureMaxThickness;
   }
   
-  // Standard check for cucumber/banana
-  return (length >= limits.reasonableMinLength && length <= limits.reasonableMaxLength) && 
-         (thickness >= limits.reasonableMinThickness && thickness <= limits.reasonableMaxThickness);
+  // 對小黃瓜/香蕉使用更寬鬆的標準
+  return (length > 0 && length <= limits.maxLength) && 
+         (thickness > 0 && thickness <= limits.maxThickness);
 }
 
 /**
@@ -326,14 +328,15 @@ export function analyzeTruth(
   let truthScore = 100; // Final score reflecting credibility
 
   if (isMaleFeature) {
+    // 保持男性特徵的嚴格標準
     truthScore = calculateMaleCredibilityScore(length);
 
-    if (length > TAIWAN_MALE_STATS.PERCENTILE_99) {
-      suspiciousFeatures.push("尺寸超過99%台灣男性，極其罕見"); suspicionScore += 50;
-    } else if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
-      suspiciousFeatures.push("尺寸超過95%台灣男性，相當罕見"); suspicionScore += 30;
+    if (length > TAIWAN_MALE_STATS.PERCENTILE_95) {
+      suspiciousFeatures.push("尺寸超過95%台灣男性，極其罕見"); suspicionScore += 60;
     } else if (length > TAIWAN_MALE_STATS.PERCENTILE_90) {
-      suspiciousFeatures.push("尺寸超過90%台灣男性，少見"); suspicionScore += 15;
+      suspiciousFeatures.push("尺寸超過90%台灣男性，相當罕見"); suspicionScore += 40;
+    } else if (length > TAIWAN_MALE_STATS.PERCENTILE_75) {
+      suspiciousFeatures.push("尺寸超過75%台灣男性，少見"); suspicionScore += 20;
     } else if (length < TAIWAN_MALE_STATS.REASONABLE_MIN) {
       suspiciousFeatures.push("尺寸低於一般統計下限，可能測量不準確"); suspicionScore += 20;
     }
@@ -352,30 +355,37 @@ export function analyzeTruth(
     }
 
   } else {
-    // Logic for non-male features (cucumber, banana, regular rod)
+    // 對非男性特徵使用更寬鬆的標準
     const avgLength = CONFIG.averageLengths[validObjectType] || CONFIG.averageLengths.cucumber;
-    const avgThickness = (validObjectType === 'cucumber' ? 3.5 : validObjectType === 'banana' ? 3.8 : 4.0); // Simplified avg thickness
+    const avgThickness = (validObjectType === 'cucumber' ? 3.0 : validObjectType === 'banana' ? 3.2 : 3.5);
     const idealRatio = CONFIG.reasonableRatios[validObjectType] || CONFIG.reasonableRatios.cucumber;
 
+    // 放寬非男性特徵的長度檢查標準
     const lengthRatio = length / avgLength;
-    if (lengthRatio > 1.6) { suspicionScore += 25; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_LONG); truthScore -= 20; }
-    else if (lengthRatio < 0.5) { suspicionScore += 10; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_SHORT); truthScore -= 8; }
+    if (lengthRatio > 2.0) { suspicionScore += 15; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_LONG); truthScore -= 15; } // 提高閾值，減少懷疑分數
+    else if (lengthRatio < 0.4) { suspicionScore += 10; suspiciousFeatures.push(SUSPICIOUS_FEATURES.LENGTH_TOO_SHORT); truthScore -= 5; } // 降低閾值，減少懷疑分數
 
+    // 放寬非男性特徵的厚度檢查標準
     const thicknessRatio = thickness / avgThickness;
-    if (thicknessRatio > 1.7) { suspicionScore += 30; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); truthScore -= 25; }
-    else if (thicknessRatio < 0.5) { suspicionScore += 15; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); truthScore -= 12; }
+    if (thicknessRatio > 2.5) { suspicionScore += 15; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THICK); truthScore -= 15; } // 提高閾值，減少懷疑分數
+    else if (thicknessRatio < 0.3) { suspicionScore += 10; suspiciousFeatures.push(SUSPICIOUS_FEATURES.TOO_THIN); truthScore -= 5; } // 降低閾值，減少懷疑分數
 
+    // 放寬比例檢查
     const lengthToThicknessRatio = length / thickness;
     const ratioDeviation = Math.abs(lengthToThicknessRatio - idealRatio) / idealRatio;
-    if (ratioDeviation > 0.6) { suspicionScore += 20; suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); truthScore -= 15; }
+    if (ratioDeviation > 0.8) { suspicionScore += 15; suspiciousFeatures.push(SUSPICIOUS_FEATURES.ABNORMAL_RATIO); truthScore -= 10; } // 提高閾值，減少懷疑分數
   }
 
   truthScore = Math.max(0, Math.min(100, truthScore));
-  const isSuspicious = isMaleFeature ? (truthScore < 60) : (suspicionScore >= 40); // Adjusted suspicion threshold for non-male
+  // 對非男性特徵使用更寬鬆的懷疑標準
+  const isSuspicious = isMaleFeature ? (truthScore < 60) : (suspicionScore >= 50); // 提高非男性特徵的懷疑門檻
 
-  // Calculate adjustment factor based on suspicion score (more suspicion = smaller factor)
-  const adjustmentFactor = Math.max(CONFIG.adjustmentSettings.minAdjustmentFactor, 1 - (suspicionScore / 150)); // Adjusted divisor for less aggressive adjustment
-  const adjustedLength = Math.round((length * adjustmentFactor) * 10) / 10; // Apply adjustment and round
+  // 對非男性特徵使用更溫和的調整因子
+  const adjustmentFactor = isMaleFeature 
+    ? Math.max(CONFIG.adjustmentSettings.minAdjustmentFactor, 1 - (suspicionScore / 120)) 
+    : Math.max(0.75, 1 - (suspicionScore / 200)); // 非男性特徵使用更溫和的調整
+  
+  const adjustedLength = Math.round((length * adjustmentFactor) * 10) / 10;
 
   let funnyMessage = "";
   if (isMaleFeature) {
@@ -423,7 +433,7 @@ export function analyzeTruth(
     suspiciousFeatures,
     funnyMessage,
     suggestionMessage,
-    adjustedLength: isSuspicious ? adjustedLength : length, // Only return adjusted length if suspicious
+    adjustedLength: isSuspicious ? adjustedLength : length,
     adjustmentFactor: isSuspicious ? adjustmentFactor : 1
   };
 }
@@ -444,29 +454,29 @@ export function calculateFinalScore(
   thickness: number,
   objectType: ObjectType
 ): number {
-  let finalScore = Math.max(0, Math.min(9.5, baseScore)); // Clamp base score initially
+  let finalScore = Math.max(0, Math.min(9.0, baseScore * 0.9)); // 降低基本分數 10%
 
   // Factor in dimension reasonableness
   const reasonable = isReasonableDimension(length, thickness, objectType);
-  finalScore += reasonable ? 0.3 : -0.4; // Bonus for reasonable, penalty if not
+  finalScore += reasonable ? 0.2 : -0.5; // 降低合理長度獎勵，增加不合理長度懲罰
 
   // Factor in freshness
-  const freshnessImpact = (freshness - 6) * 0.08; // Impact scaled down slightly
+  const freshnessImpact = (freshness - 6) * 0.06; // 降低新鮮度影響
   finalScore += freshnessImpact;
 
   // Specific adjustments for 'other_rod' (male feature focus)
   if (objectType === 'other_rod') {
     const stats = TAIWAN_MALE_STATS;
     if (length > 0) {
-      if (length >= stats.PERCENTILE_25 && length <= stats.PERCENTILE_75) finalScore += 0.2; // Bonus for average
-      else if (length > stats.PERCENTILE_75 && length <= stats.PERCENTILE_95) finalScore += 0.1; // Smaller bonus for above average
-      else if (length < stats.PERCENTILE_25 && length >= stats.PERCENTILE_5) finalScore -= 0.1; // Small penalty for below average
-      else if (length < stats.PERCENTILE_5 || length > stats.PERCENTILE_95) finalScore -= 0.3; // Larger penalty for extremes
+      if (length >= stats.PERCENTILE_25 && length <= stats.PERCENTILE_75) finalScore += 0.1; // 降低均值範圍獎勵
+      else if (length > stats.PERCENTILE_75 && length <= stats.PERCENTILE_90) finalScore += 0.05; // 降低較高範圍獎勵
+      else if (length < stats.PERCENTILE_25 && length >= stats.PERCENTILE_5) finalScore -= 0.15; // 增加低於均值懲罰
+      else if (length < stats.PERCENTILE_5 || length > stats.PERCENTILE_90) finalScore -= 0.5; // 增加極端值懲罰
     }
   }
 
-  // Ensure score stays within 0.0-9.5 range and return with one decimal place
-  return parseFloat((Math.max(0.0, Math.min(9.5, finalScore))).toFixed(1));
+  // Ensure score stays within 0.0-9.0 range (降低最高分為9.0)
+  return parseFloat((Math.max(0.0, Math.min(9.0, finalScore))).toFixed(1));
 }
 
 /**
@@ -482,21 +492,36 @@ export function adjustDimensions(
   objectType: ObjectType | null
 ): { adjustedLength: number; adjustedThickness: number } {
   const limits = objectType ? CONFIG.dimensionLimits[objectType] : CONFIG.dimensionLimits.default;
-  let adjLength = lengthEstimate;
-  let adjThickness = thicknessEstimate;
+  
+  // 區分男性特徵與非男性特徵的調整邏輯
+  const isMaleFeature = objectType === 'other_rod' && 
+                       lengthEstimate >= CONFIG.dimensionLimits.other_rod.maleFeatureMinLength && 
+                       lengthEstimate <= CONFIG.dimensionLimits.other_rod.maleFeatureMaxLength &&
+                       thicknessEstimate >= CONFIG.dimensionLimits.other_rod.maleFeatureMinThickness;
+  
+  // 對男性特徵保持原有的下調邏輯
+  let adjLength = isMaleFeature ? Math.max(lengthEstimate * 0.9, 5) : lengthEstimate;
+  let adjThickness = isMaleFeature ? thicknessEstimate * 0.95 : thicknessEstimate;
 
   if (objectType === 'other_rod') {
-    const rodLimits = CONFIG.dimensionLimits.other_rod;
-    // Use male feature limits for clamping, as non-male limits are very wide
-    adjLength = Math.max(rodLimits.minLength, Math.min(rodLimits.maleFeatureMaxLength, adjLength)); 
-    adjThickness = Math.max(rodLimits.minThickness, Math.min(rodLimits.reasonableMaxThickness, adjThickness)); // Use reasonable max thickness
+    if (isMaleFeature) {
+      // 對男性特徵使用嚴格限制
+      const rodLimits = CONFIG.dimensionLimits.other_rod;
+      adjLength = Math.max(rodLimits.maleFeatureMinLength, Math.min(rodLimits.maleFeatureMaxLength, adjLength)); 
+      adjThickness = Math.max(rodLimits.maleFeatureMinThickness, Math.min(rodLimits.reasonableMaxThickness, adjThickness));
+    } else {
+      // 對非男性特徵使用寬鬆限制
+      const rodLimits = CONFIG.dimensionLimits.other_rod;
+      adjLength = Math.max(rodLimits.minLength, Math.min(rodLimits.nonMaleFeatureMaxLength, adjLength));
+      adjThickness = Math.max(rodLimits.minThickness, Math.min(rodLimits.nonMaleFeatureMaxThickness, adjThickness));
+    }
   } else {
-    // Standard clamping for cucumber/banana
+    // 對小黃瓜/香蕉使用寬鬆限制
     adjLength = Math.max(limits.minLength, Math.min(limits.maxLength, adjLength));
     adjThickness = Math.max(limits.minThickness, Math.min(limits.maxThickness, adjThickness));
   }
 
-  // Round to one decimal place
+  // 小數點位數調整
   const adjustedLength = Math.round(adjLength * 10) / 10;
   const adjustedThickness = Math.round(adjThickness * 10) / 10;
 
