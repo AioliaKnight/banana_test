@@ -735,7 +735,7 @@ function extractFallbackInfo(responseText: string): AnalysisResult {
  * @param {AnalysisResult} analysisResults The basic analysis results from Gemini (or fallback).
  * @returns {Promise<AnalysisResult & SharedTruthAnalysisResult>} The fully processed analysis result.
  */
-export async function processAnalysisResults(analysisResults: AnalysisResult): Promise<AnalysisResult & SharedTruthAnalysisResult> {
+async function processAnalysisResults(analysisResults: AnalysisResult): Promise<AnalysisResult & SharedTruthAnalysisResult> {
   try {
     // Define default truth analysis structure and share image path for error cases
     const defaultTruthAnalysis: SharedTruthAnalysisResult = {
