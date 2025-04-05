@@ -629,25 +629,61 @@ export function isReasonableDimension(length: number, thickness: number, type: O
 }
 
 /**
- * 獲取建議訊息
- * @param result 真實度分析結果
- * @param objectType 對象類型
- * @returns 對用戶的建議訊息
+ * 根據真實性分析結果獲取建議訊息
+ * @param truthAnalysis 真實性分析結果
+ * @param objectType 物體類型
+ * @returns 建議訊息
  */
 export function getSuggestionMessage(
-  result: TruthAnalysisResult, 
-  objectType: ObjectType
+  truthAnalysis: TruthAnalysisResult,
+  objectType: ObjectType | null
 ): string {
-  if (!result.isSuspicious) {
-    return "恭喜！您的照片通過了真實性測試，測量結果非常可信。";
+  const { isSuspicious, truthScore, suspiciousFeatures } = truthAnalysis;
+  
+  if (!objectType) {
+    return "請確保圖像中有清晰可見的目標物體，並嘗試從不同角度拍攝。";
   }
   
-  const objectName = objectType === 'cucumber' ? '黃瓜' : 
-                      objectType === 'banana' ? '香蕉' : '物體';
+  // 根據真實度和物體類型選擇適當建議
+  if (truthScore < 0.4) {
+    return "這張圖片可能不適合精確測量。建議在良好光線下，從側面直接拍攝物體，確保整個物體都在畫面中，並放置一些參考物（如硬幣或尺）提高準確度。";
+  } 
   
-  if (result.truthScore < 50) {
-    return `您的${objectName}照片存在明顯的「戰略性拍攝」痕跡。下次試著從正常距離直接拍攝，將獲得更準確的測量結果。`;
-  } else {
-    return `您的${objectName}照片可能因拍攝角度和距離而顯得比實際更大。建議使用自然光線，保持適當距離拍攝以獲得更準確的測量。`;
+  if (isSuspicious) {
+    // 檢查特定的可疑特徵，提供針對性建議
+    if (suspiciousFeatures.some(f => f.includes('角度') || f.includes('拍攝'))) {
+      return "拍攝角度可能影響測量結果。建議從物體的側面直接拍攝，保持相機與物體平行，避免使用廣角或變焦功能。";
+    }
+    
+    if (suspiciousFeatures.some(f => f.includes('比例') || f.includes('粗細'))) {
+      return "物體的比例看起來不太自然。建議使用自然光線，拍攝整個物體，並避免使用可能扭曲比例的濾鏡或特效。";
+    }
+    
+    if (suspiciousFeatures.some(f => f.includes('長度'))) {
+      if (objectType === 'cucumber') {
+        return "小黃瓜的長度測量結果不在典型範圍內。為了獲得更準確的測量，請確保拍攝整個小黃瓜，並使用常見物體（如尺、硬幣）作為比例參考。";
+      } else if (objectType === 'banana') {
+        return "香蕉的長度測量結果不在典型範圍內。請嘗試拍攝完整的香蕉，避免彎曲或截斷導致的測量誤差。";
+      } else {
+        return "測量結果似乎不在典型範圍內。請確保拍攝完整物體，並避免使用可能扭曲比例的相機設置。";
+      }
+    }
+    
+    // 默認可疑情況建議
+    return "為獲得更準確的測量結果，建議在明亮自然光線下拍攝，避免使用特效或濾鏡，並保持物體完整可見。";
   }
+  
+  // 對於準確度尚可的測量
+  if (truthScore >= 0.6 && truthScore < 0.8) {
+    if (objectType === 'cucumber') {
+      return "這次測量結果看起來合理。小黃瓜的測量通常在15-22公分之間較為準確，您可以使用直尺作為參考進一步提高準確度。";
+    } else if (objectType === 'banana') {
+      return "測量結果在合理範圍內。香蕉的型態因品種不同而異，放置一個參考物體（如錢幣）有助於校準系統的測量準確度。";
+    } else {
+      return "測量結果在合理範圍內。若需更精確的數據，可使用固定距離拍攝，並添加已知大小的參考物體在畫面中。";
+    }
+  }
+  
+  // 高準確度測量的鼓勵訊息
+  return "您的測量看起來非常準確！清晰的圖像和良好的拍攝角度有助於獲得這樣精確的結果。";
 } 
