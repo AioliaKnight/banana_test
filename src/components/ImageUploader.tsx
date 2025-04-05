@@ -90,7 +90,7 @@ export default function ImageUploader({
         } ${loading ? 'opacity-75 cursor-not-allowed' : 'cursor-pointer'}`}
       >
         <input {...getInputProps()} />
-        <div className="p-4 sm:p-8 text-center">
+        <div className="p-3 sm:p-6 text-center">
           {preview ? (
             <div className="relative">
               <motion.img 
@@ -110,20 +110,27 @@ export default function ImageUploader({
               )}
             </div>
           ) : (
-            <div className="flex flex-col items-center justify-center py-8 sm:py-10">
-              <div className="bg-blue-50 rounded-full p-4 sm:p-5 mb-4">
-                <FiUpload className="w-6 h-6 sm:w-8 sm:h-8 text-blue-500" />
+            <div className="flex flex-col items-center justify-center py-6 sm:py-10">
+              <div className="bg-blue-50 rounded-full p-3 sm:p-5 mb-3 sm:mb-4">
+                <FiUpload className="w-5 h-5 sm:w-8 sm:h-8 text-blue-500" />
               </div>
-              <h3 className="mb-2 text-base sm:text-lg font-medium text-slate-700">
+              <h3 className="mb-1 sm:mb-2 text-sm sm:text-lg font-medium text-slate-700">
                 {isDragActive ? '放下你的小黃瓜或香蕉照片' : '上傳你的小黃瓜或香蕉照片'}
               </h3>
-              <p className="text-sm text-slate-500 mb-4">
-                <span className="hidden sm:inline">拖放照片至此處，或</span>點擊選擇檔案
+              <p className="text-xs sm:text-sm text-slate-500 mb-2 sm:mb-4">
+                <span className="hidden sm:inline">拖放照片至此處，或</span>
+                <span className="inline sm:hidden">點擊此區域</span>
+                <span className="hidden sm:inline">點擊選擇檔案</span>
               </p>
               
-              <p className="text-xs text-slate-400">
-                支援 JPG, PNG, WEBP (最大 10MB)
-              </p>
+              <div className="flex flex-wrap justify-center gap-2 mt-1">
+                <p className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-full">
+                  支援 JPG, PNG, WEBP
+                </p>
+                <p className="text-xs text-slate-400 bg-slate-50 px-2 py-1 rounded-full">
+                  最大 10MB
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -175,10 +182,10 @@ export default function ImageUploader({
         >
           <button
             onClick={onAnalyze}
-            className="btn btn-primary flex items-center justify-center gap-2 py-3 px-6 w-full sm:w-auto min-h-12 text-base"
+            className="btn btn-primary flex items-center justify-center gap-2 py-2 sm:py-3 px-6 w-full sm:w-auto min-h-10 sm:min-h-12 text-sm sm:text-base"
             disabled={loading}
           >
-            <FiCheck className="h-5 w-5" />
+            <FiCheck className="h-4 w-4 sm:h-5 sm:w-5" />
             開始分析
           </button>
         </motion.div>

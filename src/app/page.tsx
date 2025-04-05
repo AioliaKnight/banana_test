@@ -306,24 +306,31 @@ export default function Home() {
             transition={{ delay: 0.2 }}
             className="max-w-4xl mx-auto text-center mb-8 sm:mb-12"
           >
-            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold leading-tight mb-6">
-              <div className="flex flex-col items-center justify-center gap-2">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">TopBana AI蔬果量測系統</span>
-                <div className="flex items-center justify-center mt-2">
-                  <span className="bg-green-600 text-white px-3 py-1 rounded-l-md font-bold">黃瓜</span>
-                  <span className="bg-yellow-500 text-white px-3 py-1 rounded-r-md font-bold">香蕉</span>
-                  <span className="ml-2 text-slate-700 font-bold">專業蔬果認證</span>
-                </div>
+            <h2 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight mb-4">
+              <div className="flex flex-col items-center justify-center">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">
+                  TopBana AI蔬果量測系統
+                </span>
               </div>
             </h2>
-            <p className="text-base sm:text-lg text-slate-700 max-w-2xl mx-auto">
+            
+            {/* 重新設計的標籤區域 - 更適合移動端顯示 */}
+            <div className="flex flex-wrap items-center justify-center gap-2 mb-6">
+              <div className="flex shadow-sm">
+                <span className="bg-green-600 text-white text-sm sm:text-base px-2 sm:px-3 py-1 rounded-l-md font-medium">黃瓜</span>
+                <span className="bg-yellow-500 text-white text-sm sm:text-base px-2 sm:px-3 py-1 rounded-r-md font-medium">香蕉</span>
+              </div>
+              <span className="bg-slate-100 text-slate-700 text-sm sm:text-base px-2 sm:px-3 py-1 rounded-md font-medium shadow-sm">專業蔬果認證</span>
+            </div>
+            
+            <p className="text-sm sm:text-base text-slate-700 max-w-2xl mx-auto">
               只需上傳照片，<span className="font-semibold">3秒內</span>獲取專業香蕉AI量測結果。先進演算法精準分析長度、粗細、曲率與新鮮度，
               提供客觀評分和建議。無需註冊，<span className="font-semibold">隱私安全有保障</span>。
             </p>
             
             {/* 顯示剩餘分析次數 */}
-            <div className="mt-3 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-4 py-1 inline-flex items-center">
-              <span className="text-sm text-indigo-700">
+            <div className="mt-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-3 sm:px-4 py-1 inline-flex items-center">
+              <span className="text-xs sm:text-sm text-indigo-700">
                 今日剩餘分析次數: <strong>{remainingUploads}</strong>/10
               </span>
             </div>
@@ -648,18 +655,19 @@ export default function Home() {
                   </p>
                 </div>
                 
-                <div className="mt-6 flex items-center justify-between">
-                  <div className="flex items-center space-x-2">
-                    <span className="text-indigo-600 font-bold">官方認證機構</span>
-                    <div className="flex">
+                {/* 重新設計的認證機構區域，優化移動端顯示 */}
+                <div className="mt-6 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+                  <div className="flex flex-col">
+                    <span className="text-indigo-600 font-bold mb-2">官方認證機構</span>
+                    <div className="flex flex-wrap gap-1 max-w-[250px]">
                       {["ISO", "IFMSB", "SGS", "FDA", "IECL", "WVLC"].map((org, i) => (
-                        <div key={i} className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 -ml-1 first:ml-0 border border-white">
+                        <div key={i} className="h-8 w-8 rounded-full bg-slate-200 flex items-center justify-center text-xs font-bold text-slate-600 border border-white">
                           {org}
                         </div>
                       ))}
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="bg-indigo-50 p-3 rounded-lg">
                     <div className="text-xs text-slate-500">認證編號</div>
                     <div className="text-sm font-mono font-medium text-slate-700">TW-69-420-8008</div>
                   </div>
