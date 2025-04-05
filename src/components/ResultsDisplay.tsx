@@ -474,7 +474,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       <div className="mb-6">
         <div className="relative mb-6">
           <div className="flex justify-center">
-            <div className="relative object-contain rounded-lg max-h-64 sm:max-h-72 w-full">
+            <div className="relative rounded-lg w-full h-64 sm:h-72 md:h-80 overflow-hidden border border-slate-200 shadow-sm">
               <Image 
                 src={preview} 
                 alt="上傳圖片" 
@@ -482,6 +482,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                 fill
                 style={{ objectFit: 'contain' }}
                 sizes="(max-width: 768px) 100vw, 50vw"
+                priority
               />
             </div>
           </div>
@@ -494,6 +495,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             icon={<FaRuler className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-blue-50"
             iconColor="text-blue-600"
+            className="hover:bg-blue-100 transition-colors duration-200"
           />
           <StatCard
             title="粗細"
@@ -501,6 +503,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             icon={<FaCircle className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-purple-50"
             iconColor="text-purple-600"
+            className="hover:bg-purple-100 transition-colors duration-200"
           />
           <StatCard
             title="新鮮度"
@@ -508,6 +511,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             icon={<FaRegLightbulb className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-green-50"
             iconColor="text-green-600"
+            className="hover:bg-green-100 transition-colors duration-200"
           />
           <StatCard
             title="總評分"
@@ -515,6 +519,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             icon={<FaStar className="h-4 w-4 sm:h-5 sm:w-5" />}
             bgColor="bg-amber-50"
             iconColor="text-amber-600"
+            className="hover:bg-amber-100 transition-colors duration-200"
           />
         </div>
         
@@ -527,8 +532,8 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           />
         )}
 
-        <div className="bg-slate-50 p-4 rounded-lg mb-8">
-          <div className="text-slate-700 text-sm sm:text-base leading-relaxed">
+        <div className="bg-slate-50 p-4 sm:p-5 rounded-lg mb-8 shadow-sm border border-slate-100">
+          <div className="text-slate-700 text-sm sm:text-base leading-relaxed font-medium">
             <p>{result.comment}</p>
           </div>
         </div>
@@ -536,12 +541,12 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         {/* 相機圖標和水印 */}
         <canvas ref={canvasRef} style={{ display: 'none' }} />
         
-        <div className="flex flex-wrap justify-center gap-3">
+        <div className="flex flex-wrap justify-center gap-3 mt-8">
           {isClient && (
             <>
               <button 
                 onClick={handleDownload}
-                className="btn btn-outline flex items-center gap-2 py-2 px-4 text-sm"
+                className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
                 disabled={isGeneratingImage}
               >
                 <FaDownload className="h-4 w-4" />
@@ -551,7 +556,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
               <div className="relative">
                 <button 
                   onClick={() => setShowShareOptions(!showShareOptions)}
-                  className="btn btn-outline flex items-center gap-2 py-2 px-4 text-sm"
+                  className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
                 >
                   <FaShareAlt className="h-4 w-4" />
                   分享結果

@@ -57,7 +57,7 @@ export default function TruthfulnessIndicator({
     const percentChange = Math.round((difference / originalLength) * 100);
     
     return (
-      <div className="mt-2 text-sm">
+      <div className="mt-3 text-sm p-2 rounded bg-white/80 border border-current/10">
         <span className="font-medium">測謊調整:</span> {originalLength}cm → 
         <span className="font-medium"> {truthAnalysis.adjustedLength}cm </span>
         <span className="text-xs text-slate-500">
@@ -74,11 +74,11 @@ export default function TruthfulnessIndicator({
     return (
       <div className="mt-3 space-y-1">
         <p className="text-xs font-medium">偵測到的可疑特徵:</p>
-        <div className="flex flex-wrap gap-1">
+        <div className="flex flex-wrap gap-1.5">
           {truthAnalysis.suspiciousFeatures.map((feature, index) => (
             <span 
               key={index} 
-              className="px-2 py-0.5 text-xs rounded-full bg-white/50 border border-current"
+              className="px-2 py-0.5 text-xs rounded-full bg-white/80 border border-current/10 shadow-sm"
             >
               {feature}
             </span>
@@ -93,21 +93,21 @@ export default function TruthfulnessIndicator({
       initial={{ opacity: 0, y: 10 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className={`mt-6 p-3 rounded-lg border ${getBorderColor()} ${getTruthBgColor()}`}
+      className={`mt-6 mb-6 p-4 rounded-lg shadow-sm border ${getBorderColor()} ${getTruthBgColor()}`}
     >
       <div className="flex items-start">
-        <div className={`flex-shrink-0 p-2 rounded-full ${getTruthBgColor()} ${getTruthColor()} mr-3`}>
+        <div className={`flex-shrink-0 p-2 rounded-full ${getTruthBgColor()} bg-white/50 ${getTruthColor()} mr-3 shadow-sm`}>
           {getIcon()}
         </div>
         
         <div className="flex-1">
-          <div className="flex items-center justify-between">
+          <div className="flex items-center justify-between mb-1">
             <h4 className={`font-medium ${getTruthColor()}`}>{getTitle()}</h4>
             <div className="flex items-center">
               <div className={`text-sm font-semibold ${getTruthColor()}`}>
                 {truthAnalysis.truthScore}/100
               </div>
-              <div className="ml-2 h-2 w-16 bg-white/50 rounded-full overflow-hidden">
+              <div className="ml-2 h-2 w-16 bg-white/50 rounded-full overflow-hidden shadow-inner">
                 <div 
                   className="h-full bg-current"
                   style={{ width: `${truthAnalysis.truthScore}%` }}
@@ -116,13 +116,13 @@ export default function TruthfulnessIndicator({
             </div>
           </div>
           
-          <p className="text-sm mt-1">{truthAnalysis.funnyMessage}</p>
+          <p className="text-sm mt-1 font-medium">{truthAnalysis.funnyMessage}</p>
           
           {getLengthAdjustment()}
           {getSuspiciousFeatures()}
           
           {truthAnalysis.isSuspicious && (
-            <div className="mt-3 text-xs p-2 rounded bg-white/50">
+            <div className="mt-3 text-xs p-2.5 rounded bg-white/80 border border-current/10 shadow-sm">
               <p className="font-medium">AI測謊儀小提示:</p>
               <p className="mt-1">
                 若要拍出更「真實」的{objectType === 'cucumber' ? '小黃瓜' : objectType === 'banana' ? '香蕉' : '物體'}照片，
