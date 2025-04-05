@@ -7,6 +7,7 @@ import ResultsDisplay from "@/components/ResultsDisplay";
 import { HiOutlineChevronDown } from "react-icons/hi";
 import Link from "next/link";
 import Script from "next/script";
+import TruthScanAnimation from "@/components/utils/TruthScanAnimation";
 
 // 上傳限制常數
 const DAILY_UPLOAD_LIMIT = 10;
@@ -24,6 +25,15 @@ interface AnalysisResult {
   freshness: number;
   score: number;
   comment: string;
+  // 添加真實度分析結構
+  truthAnalysis?: {
+    truthScore: number;
+    suspiciousFeatures: string[];
+    adjustedLength: number;
+    adjustmentFactor: number;
+    funnyMessage: string;
+    isSuspicious: boolean;
+  };
 }
 
 export default function Home() {
@@ -34,6 +44,10 @@ export default function Home() {
   const [error, setError] = useState<string | null>(null);
   // 剩餘上傳次數
   const [remainingUploads, setRemainingUploads] = useState<number>(DAILY_UPLOAD_LIMIT);
+  // 測謊儀功能控制
+  const [enableTruthDetection, setEnableTruthDetection] = useState<boolean>(true);
+  // 測謊掃描動畫顯示控制
+  const [showTruthScanning, setShowTruthScanning] = useState<boolean>(false);
 
   // 初始化和檢查上傳次數限制
   useEffect(() => {
@@ -117,6 +131,8 @@ export default function Home() {
     try {
       const formData = new FormData();
       formData.append("image", image);
+      // 添加測謊儀功能開關狀態
+      formData.append("enableTruthDetection", enableTruthDetection.toString());
 
       const response = await fetch("/api/analyze", {
         method: "POST",
@@ -138,16 +154,33 @@ export default function Home() {
       }
 
       const data = await response.json();
-      setAnalysisResult(data);
       
-      // 分析成功後增加計數
-      incrementUploadCount();
+      // 如果啟用了測謊功能，顯示掃描動畫
+      if (enableTruthDetection && data.truthAnalysis) {
+        setShowTruthScanning(true);
+        
+        // 等待掃描動畫完成後顯示結果
+        // 注意：實際結果已經獲取，只是延遲顯示
+        setTimeout(() => {
+          setAnalysisResult(data);
+          setShowTruthScanning(false);
+          // 分析成功後增加計數
+          incrementUploadCount();
+          setLoading(false);
+        }, 3500); // 稍長於動畫時間，確保過渡順暢
+      } else {
+        // 未啟用測謊功能，直接顯示結果
+        setAnalysisResult(data);
+        // 分析成功後增加計數
+        incrementUploadCount();
+        setLoading(false);
+      }
     } catch (err: unknown) {
       console.error("Analysis error:", err);
       setError(err instanceof Error ? err.message : "分析時發生未知錯誤");
       setAnalysisResult(null);
-    } finally {
       setLoading(false);
+      setShowTruthScanning(false);
     }
   };
 
@@ -329,10 +362,29 @@ export default function Home() {
             </p>
             
             {/* 顯示剩餘分析次數 */}
-            <div className="mt-4 bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-3 sm:px-4 py-1 inline-flex items-center">
-              <span className="text-xs sm:text-sm text-indigo-700">
-                今日剩餘分析次數: <strong>{remainingUploads}</strong>/10
-              </span>
+            <div className="mt-4 flex flex-wrap items-center justify-center gap-2">
+              <div className="bg-gradient-to-r from-indigo-50 to-blue-50 rounded-full px-3 sm:px-4 py-1 inline-flex items-center">
+                <span className="text-xs sm:text-sm text-indigo-700">
+                  今日剩餘分析次數: <strong>{remainingUploads}</strong>/10
+                </span>
+              </div>
+              
+              {/* 測謊儀開關 */}
+              <div className="bg-gradient-to-r from-amber-50 to-yellow-50 rounded-full px-3 sm:px-4 py-1 inline-flex items-center">
+                <label className="inline-flex items-center cursor-pointer">
+                  <input 
+                    type="checkbox" 
+                    checked={enableTruthDetection} 
+                    onChange={() => setEnableTruthDetection(!enableTruthDetection)}
+                    className="sr-only peer"
+                  />
+                  <div className="relative w-9 h-5 bg-slate-200 peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-amber-300 rounded-full peer peer-checked:after:translate-x-full rtl:peer-checked:after:-translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:border-slate-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-amber-500"></div>
+                  <span className="ms-2 text-xs text-amber-700 font-medium">
+                    蔬果測謊儀
+                    <span className="bg-amber-100 text-amber-800 text-xs font-medium px-1.5 py-0.5 rounded ms-1">Beta</span>
+                  </span>
+                </label>
+              </div>
             </div>
           </motion.div>
 
@@ -347,7 +399,7 @@ export default function Home() {
               <div className="flex flex-col gap-6">
                 <div className="mb-2 mt-1 text-center">
                   <span className="inline-block bg-blue-50 text-blue-700 text-xs font-medium px-2.5 py-1 rounded">
-                    快速 · 準確 · 保密
+                    快速 · 準確 · {enableTruthDetection ? '測謊' : '保密'}
                   </span>
                 </div>
                 <ImageUploader
@@ -409,6 +461,14 @@ export default function Home() {
           </div>
         </div>
       </div>
+
+      {/* 測謊掃描動畫 */}
+      {showTruthScanning && (
+        <TruthScanAnimation 
+          onComplete={() => setShowTruthScanning(false)} 
+          duration={3000}
+        />
+      )}
 
       {/* 贊助商募集 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-gradient-to-b from-blue-50 to-purple-50 relative overflow-hidden">
