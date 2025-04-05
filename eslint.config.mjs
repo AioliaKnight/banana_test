@@ -10,6 +10,15 @@ const compat = new FlatCompat({
 });
 
 const eslintConfig = [
+  {
+    // 排除不需要檢查的目錄和文件
+    ignores: [
+      ".next/**", 
+      "node_modules/**",
+      "**/*.min.js",
+      "**/dist/**"
+    ]
+  },
   ...compat.extends("next/core-web-vitals", "next/typescript"),
   {
     rules: {

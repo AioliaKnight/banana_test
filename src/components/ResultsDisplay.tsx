@@ -186,8 +186,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           try {
             new URL(url, window.location.origin);
             return true;
-          // eslint-disable-next-line @typescript-eslint/no-unused-vars
-          } catch (error) {
+          } catch {
             return false;
           }
         };
