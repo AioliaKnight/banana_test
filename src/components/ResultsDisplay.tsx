@@ -625,8 +625,6 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
     
     try {
       // 如果是 blob URL，需要先獲取 base64 數據
-      const base64Image = imageUrl;
-      
       if (imageUrl.startsWith('blob:')) {
         const response = await fetch(imageUrl);
         const blob = await response.blob();
@@ -644,22 +642,35 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
                 setImgurUrl(url); // 緩存 URL
                 resolve(url);
               })
-              .catch(reject);
+              .catch(error => {
+                console.error('Blob 轉 Imgur 失敗:', error);
+                // 失敗時仍返回原始URL，以保證功能持續運作
+                resolve(imageUrl);
+              });
           };
-          reader.onerror = reject;
+          reader.onerror = () => {
+            console.error('讀取 Blob 失敗');
+            resolve(imageUrl); // 失敗時返回原始URL
+          };
           reader.readAsDataURL(blob);
         });
       } 
       
       // 如果是 data URL，直接提取 base64 部分
-      if (base64Image.startsWith('data:image')) {
-        const base64Data = base64Image.split(',')[1];
-        const url = await uploadBase64ToImgur(base64Data);
-        setImgurUrl(url); // 緩存 URL
-        return url;
+      if (imageUrl.startsWith('data:image')) {
+        try {
+          const base64Data = imageUrl.split(',')[1];
+          const url = await uploadBase64ToImgur(base64Data);
+          setImgurUrl(url); // 緩存 URL
+          return url;
+        } catch (error) {
+          console.error('DataURL 轉 Imgur 失敗:', error);
+          return imageUrl; // 失敗時返回原始URL
+        }
       }
       
-      throw new Error('不支持的圖片格式');
+      // 如果是普通URL或其他格式，直接返回原始URL
+      return imageUrl;
     } catch (error) {
       console.error('上傳到 Imgur 失敗:', error);
       return imageUrl; // 如果上傳失敗，返回原始 URL
@@ -676,29 +687,133 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
   const uploadBase64ToImgur = async (base64Data: string): Promise<string> => {
     // 使用環境變數或預設值 (使用提供的 Client ID)
     const IMGUR_CLIENT_ID = process.env.NEXT_PUBLIC_IMGUR_CLIENT_ID || '734af4a79d24392';
+    const MAX_RETRIES = 2; // 最大重試次數
     
-    try {
-      const formData = new FormData();
-      formData.append('image', base64Data);
-      
-      const response = await fetch('https://api.imgur.com/3/image', {
-        method: 'POST',
-        headers: {
-          'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
-        },
-        body: formData
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Imgur API 回應錯誤: ${response.statusText}`);
+    // 縮小圖片尺寸以加快上傳
+    const optimizedBase64 = await optimizeBase64Image(base64Data);
+    
+    let lastError: Error | null = null;
+    
+    // 嘗試上傳，最多重試MAX_RETRIES次
+    for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+      try {
+        const formData = new FormData();
+        formData.append('image', optimizedBase64);
+        
+        // 如果不是第一次嘗試，添加短暫延遲避免API限制
+        if (attempt > 0) {
+          await new Promise<void>((resolve) => setTimeout(resolve, 1000 * attempt));
+        }
+        
+        const response = await fetch('https://api.imgur.com/3/image', {
+          method: 'POST',
+          headers: {
+            'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
+          },
+          body: formData
+        });
+        
+        if (!response.ok) {
+          const errorText = await response.text();
+          throw new Error(`Imgur API 回應錯誤 (${response.status}): ${errorText}`);
+        }
+        
+        const data = await response.json();
+        
+        // 確認回傳的數據有效
+        if (!data.data || !data.data.link) {
+          throw new Error('Imgur 返回的數據格式無效');
+        }
+        
+        return data.data.link;
+      } catch (error) {
+        console.error(`Imgur 上傳失敗 (嘗試 ${attempt + 1}/${MAX_RETRIES + 1}):`, error);
+        lastError = error instanceof Error ? error : new Error(String(error));
+        
+        // 如果已經達到最大重試次數，拋出最後的錯誤
+        if (attempt === MAX_RETRIES) {
+          throw lastError;
+        }
       }
-      
-      const data = await response.json();
-      return data.data.link;
-    } catch (error) {
-      console.error('Imgur 上傳錯誤:', error);
-      throw error;
     }
+    
+    // 這行程式碼理論上不會被執行到，但為了滿足TypeScript類型檢查
+    throw lastError || new Error('上傳失敗');
+  };
+  
+  /**
+   * 優化base64圖像尺寸，用於加快上傳
+   * @param base64Data 原始base64數據
+   * @returns 優化後的base64數據
+   */
+  const optimizeBase64Image = async (base64Data: string): Promise<string> => {
+    // 如果不在客戶端環境，直接返回原始數據
+    if (typeof window === 'undefined') return base64Data;
+    
+    return new Promise<string>((resolve, reject) => {
+      try {
+        // 創建一個臨時圖像以獲取原始尺寸
+        const img = new window.Image();
+        img.onload = () => {
+          // 目標最大尺寸
+          const MAX_WIDTH = 1200;
+          const MAX_HEIGHT = 800;
+          
+          let width = img.width;
+          let height = img.height;
+          
+          // 只有在圖像過大時才調整尺寸
+          if (width > MAX_WIDTH || height > MAX_HEIGHT) {
+            if (width > height) {
+              height = Math.round(height * (MAX_WIDTH / width));
+              width = MAX_WIDTH;
+            } else {
+              width = Math.round(width * (MAX_HEIGHT / height));
+              height = MAX_HEIGHT;
+            }
+          }
+          
+          // 如果圖像已經夠小，直接返回原始數據
+          if (width === img.width && height === img.height) {
+            resolve(base64Data);
+            return;
+          }
+          
+          // 創建Canvas縮放圖像
+          const canvas = document.createElement('canvas');
+          canvas.width = width;
+          canvas.height = height;
+          
+          const ctx = canvas.getContext('2d');
+          if (!ctx) {
+            resolve(base64Data); // 如果無法獲取Context，返回原始數據
+            return;
+          }
+          
+          // 提高圖像質量
+          ctx.imageSmoothingEnabled = true;
+          ctx.imageSmoothingQuality = 'high';
+          
+          // 繪製縮放後的圖像
+          ctx.drawImage(img, 0, 0, width, height);
+          
+          // 獲取優化後的base64
+          const optimizedBase64 = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
+          resolve(optimizedBase64);
+        };
+        
+        img.onerror = () => {
+          // 如果圖像加載失敗，返回原始數據
+          resolve(base64Data);
+        };
+        
+        // 設置圖像源
+        img.src = `data:image/jpeg;base64,${base64Data}`;
+      } catch (error) {
+        console.error('優化圖像失敗:', error);
+        resolve(base64Data); // 發生錯誤時返回原始數據
+      }
+    });
   };
   
   const openShareWindow = useCallback(async (platform: 'facebook' | 'twitter' | 'line') => {
@@ -721,15 +836,36 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
       let shareUrl = '';
       const _currentUrl = window.location.href;
       
+      // 檢測是否為移動設備
+      const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
+      
       switch (platform) {
         case 'facebook':
           // Facebook: 分享圖片連結，並附上標題
+          if (isMobile && navigator.share) {
+            // 使用原生分享API (如果可用)
+            try {
+              await navigator.share({
+                title: shareInfo.title,
+                text: shareInfo.title,
+                url: imageUrlForSharing
+              });
+              return;
+            } catch (error) {
+              console.log('原生分享失敗，使用傳統方式');
+              // 繼續使用傳統方式
+            }
+          }
+          
+          // 桌面版或原生分享失敗時使用傳統方式
           shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrlForSharing)}&quote=${encodeURIComponent(shareInfo.title)}`;
           break;
+          
         case 'twitter':
           // Twitter: 分享標題和圖片連結
           shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title)}&url=${encodeURIComponent(imageUrlForSharing)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
           break;
+          
         case 'line':
           // Line: 分享標題和圖片連結
           shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(imageUrlForSharing)}&text=${encodeURIComponent(shareInfo.title)}`;
@@ -737,7 +873,12 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
       }
       
       // 開啟分享視窗
-      window.open(shareUrl, '_blank', 'width=600,height=600');
+      const shareWindow = window.open(shareUrl, '_blank', 'width=600,height=600');
+      
+      // 檢查分享窗口是否被阻擋
+      if (!shareWindow || shareWindow.closed || typeof shareWindow.closed === 'undefined') {
+        alert('您的瀏覽器阻擋了彈出視窗。請允許彈出視窗或嘗試長按/右鍵圖片直接分享。');
+      }
     } catch (error) {
       console.error('準備分享時出錯:', error);
       setIsUploadingToImgur(false);
@@ -745,6 +886,20 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
       // 如果上傳失敗，使用原始分享方法
       let shareUrl = '';
       const _currentUrl = window.location.href;
+      
+      // 檢測是否為移動設備，嘗試使用原生分享
+      if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) && navigator.share) {
+        try {
+          await navigator.share({
+            title: shareInfo.title,
+            text: shareInfo.description,
+            url: _currentUrl
+          });
+          return;
+        } catch (shareError) {
+          console.log('原生分享失敗，使用傳統方式');
+        }
+      }
       
       switch (platform) {
         case 'facebook':
@@ -936,9 +1091,20 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
                     }}
                     className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
                     disabled={isGeneratingImage || isUploadingToImgur}
+                    title="分享分析結果到社群媒體"
                   >
-                    <FaShareAlt className="h-4 w-4" />
-                    {isUploadingToImgur ? '上傳到 Imgur 中...' : '分享結果'}
+                    <FaShareAlt className={`h-4 w-4 ${isUploadingToImgur ? 'animate-pulse' : ''}`} />
+                    {isUploadingToImgur 
+                      ? <span className="flex items-center">
+                          上傳中
+                          <span className="ml-1 flex space-x-1">
+                            <span className="animate-bounce delay-75 h-1 w-1 rounded-full bg-current"></span>
+                            <span className="animate-bounce delay-100 h-1 w-1 rounded-full bg-current"></span>
+                            <span className="animate-bounce delay-150 h-1 w-1 rounded-full bg-current"></span>
+                          </span>
+                        </span>
+                      : '分享結果'
+                    }
                   </button>
                   
                   <AnimatePresence>
@@ -950,26 +1116,45 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
                         className="absolute right-0 top-full mt-2 bg-white rounded-lg shadow-xl border border-slate-200 p-3 z-10"
                         onClick={(e) => e.stopPropagation()}
                       >
+                        <div className="text-xs text-slate-500 mb-2 text-center">選擇分享平台</div>
                         <div className="flex gap-2">
                           <button 
                             onClick={() => handleShare('facebook')} 
                             className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-500 text-white hover:bg-blue-600"
+                            title="分享到 Facebook"
+                            disabled={isUploadingToImgur}
                           >
                             <FaFacebook className="h-5 w-5" />
                           </button>
                           <button 
                             onClick={() => handleShare('twitter')} 
                             className="w-9 h-9 flex items-center justify-center rounded-full bg-sky-500 text-white hover:bg-sky-600"
+                            title="分享到 Twitter"
+                            disabled={isUploadingToImgur}
                           >
                             <FaTwitter className="h-5 w-5" />
                           </button>
                           <button 
                             onClick={() => handleShare('line')} 
                             className="w-9 h-9 flex items-center justify-center rounded-full bg-green-500 text-white hover:bg-green-600"
+                            title="分享到 LINE"
+                            disabled={isUploadingToImgur}
                           >
                             <FaLine className="h-5 w-5" />
                           </button>
                         </div>
+                        {imgurUrl && (
+                          <div className="mt-2 text-xs text-slate-500 text-center">
+                            <a 
+                              href={imgurUrl} 
+                              target="_blank" 
+                              rel="noopener noreferrer"
+                              className="hover:text-blue-500 underline"
+                            >
+                              查看 Imgur 圖片
+                            </a>
+                          </div>
+                        )}
                       </motion.div>
                     )}
                   </AnimatePresence>
