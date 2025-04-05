@@ -33,6 +33,8 @@ export interface AnalysisResult {
     funnyMessage: string;
     isSuspicious: boolean;
   };
+  // 新增分享图片路径
+  shareImagePath?: string;
 }
 
 export interface ResultsDisplayProps {
@@ -138,8 +140,13 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
 
       // 左側圖片區域 - 使用用戶上傳的圖片或預設圖片
       try {
-        // 判斷內容是否可能敏感
+        // 判斷內容是否可能敏感或是否使用服務器指定的分享圖片
         const isSensitiveContent = (): boolean => {
+          // 如果API已經明確提供了分享圖片路徑（男性特徵），則直接返回true使用該路徑
+          if (result.shareImagePath === '/result.jpg') {
+            return true;
+          }
+          
           // 如果不是other_rod類型，則不是敏感內容
           if (result.type !== 'other_rod') {
             return false;
@@ -161,12 +168,18 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         };
         
         // 決定使用哪個圖片來源
-        // 1. 如果是一般水果(小黃瓜或香蕉)，則使用用戶原始圖片
-        // 2. 如果是other_rod但非敏感內容，也使用用戶原始圖片
-        // 3. 如果是敏感內容，則使用替代圖片
-        const imageSrc = !isSensitiveContent()
-          ? preview  // 使用用戶上傳的圖片
-          : '/result.jpg';  // 敏感內容使用替代圖片
+        // 1. 如果API提供了shareImagePath且有效，优先使用
+        // 2. 如果是敏感內容，則使用替代圖片
+        // 3. 否則使用用戶原始圖片
+        let imageSrc = preview; // 默认用户上传的图片
+        
+        if (result.shareImagePath && result.shareImagePath !== '') {
+          // 如果API提供了有效的分享图片路径，优先使用
+          imageSrc = result.shareImagePath;
+        } else if (isSensitiveContent()) {
+          // 否则根据内容敏感性判断
+          imageSrc = '/result.jpg';
+        }
         
         const userImage = await new Promise<HTMLImageElement>((resolve, reject) => {
           const img = new window.Image();
@@ -372,10 +385,9 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       const dataUrl = canvas.toDataURL('image/png');
       return dataUrl;
     } catch (error) {
-      console.error('Error generating share image:', error);
-      return '/result_error.jpg'; // 假設有一個錯誤提示圖片
-    } finally {
+      console.error('生成分享圖片錯誤:', error);
       setIsGeneratingImage(false);
+      return null;
     }
   }, [isClient, preview, result, wrapTextChinese, getDisplayLength]);
 

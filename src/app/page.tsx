@@ -34,6 +34,9 @@ interface AnalysisResult {
     funnyMessage: string;
     isSuspicious: boolean;
   };
+  // 添加分享图片路径
+  shareImagePath?: string;
+  originalImagePath?: string;
 }
 
 export default function Home() {
@@ -133,6 +136,10 @@ export default function Home() {
       formData.append("image", image);
       // 添加測謊儀功能開關狀態
       formData.append("enableTruthDetection", enableTruthDetection.toString());
+      // 添加临时图片路径，用于分享功能
+      if (preview) {
+        formData.append("tempImagePath", preview);
+      }
 
       const response = await fetch("/api/analyze", {
         method: "POST",
