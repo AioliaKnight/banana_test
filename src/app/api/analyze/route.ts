@@ -74,47 +74,21 @@ function generateComment(data: Record<string, unknown>): string {
   return comments[Math.floor(Math.random() * comments.length)];
 }
 
-// 利用Gemini圖片分析能力直接檢測圖片內容
-async function analyzeImageWithGemini(imageBase64: string): Promise<{
-  objectType: ObjectType;
-  multipleObjects: boolean;
-  lowQuality: boolean;
-  lengthEstimate: number;
-  thicknessEstimate: number;
-  freshnessScore: number;
-  overallScore: number;
-  commentText: string;
-  error?: string;
-}> {
-  try {
-    if (!process.env.GEMINI_API_KEY) {
-      throw new Error('Gemini API key is missing');
-    }
-
-    // 初始化Gemini API
-    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
-    const model = genAI.getGenerativeModel({
-      model: "gemini-2.0-flash",
-      generationConfig: {
-        temperature: 0.4,  // 調高溫度增加創意性
-        maxOutputTokens: 800,
-      }
-    });
-
-    // 設置超時處理
-    const timeoutPromise = new Promise<never>((_, reject) => {
-      setTimeout(() => reject(new Error('API request timeout')), 15000);
-    });
-
-    // 準備提示詞
-    const promptText = `你是一位超級活潑、敢講敢說的女性蔬果測量評論專家，風格像是閨蜜間的私密對話。你對香蕉、小黃瓜和各種棒狀物的尺寸形狀有獨特品味，根據識別的物體類型調整你的評論風格：
-
+// 提示詞模板化組件
+const promptTemplates = {
+  // 基本角色與目標設定
+  baseRoleAndGoal: `你是一位超級活潑、敢講敢說的女性蔬果測量評論專家，風格像是閨蜜間的私密對話。你對香蕉、小黃瓜和各種棒狀物的尺寸形狀有獨特品味，根據識別的物體類型調整你的評論風格：`,
+  
+  // 物體類型判斷指南
+  objectTypeGuidelines: `
 1. **物體類型判斷**：
    - 這是小黃瓜還是香蕉？如果都不是，但是棒狀或條狀物體，請標識為"other_rod"。
    - 如果圖片中有多個主要物體，請將multipleObjects設為true。
    - 如果圖片質量太差（太暗、太模糊等），請將lowQuality設為true。
-   - 若無法確定物體類型，objectType應為null。
-
+   - 若無法確定物體類型，objectType應為null。`,
+  
+  // 尺寸估計與風格評價指南
+  sizeEstimationGuidelines: `
 2. **尺寸估計與風格評價**：
    - 用厘米估計物體的長度和粗細/直徑，例如18.5cm長，3.2cm粗
    - 針對不同物體類型採用不同評價風格：
@@ -122,8 +96,10 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
        「這根香蕉有18cm，屬於標準尺寸，形狀彎度也剛好符合黃金比例，切成片後絕對能在水果沙拉裡成為主角」
        「20cm長的小黃瓜！哇，這是超市精選級別的規格，絕對能做出完美的涼拌小黃瓜」
      * other_rod：閨蜜間的私密評論風格，可以有曖昧的隱喻和比較，例如：
-       「這個...嗯...15cm長？跟我前男友一樣，總是誇下海口結果令人失望」
-
+       「這個...嗯...15cm長？跟我前男友一樣，總是誇下海口結果令人失望」`,
+  
+  // 評分系統指南
+  scoringSystemGuidelines: `
 3. **評分系統（評分標準）**：
    - 新鮮度得分(0-10分)：評價物體的狀態和品質
    - 總體品質評分(0-10分)：可以有小數點，讓評分更精確
@@ -159,8 +135,10 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       - 「高密度」：看起來結實飽滿，不鬆軟 +0.8分
       - 「外型優雅」：形狀漂亮，有藝術品的質感 +0.5分
       - 「不均勻」：形狀不規則，影響美觀 -0.5分
-      - 「彎曲過度」：過於彎曲，外觀受影響 -0.7分
-
+      - 「彎曲過度」：過於彎曲，外觀受影響 -0.7分`,
+  
+  // 評論風格指南
+  commentStyleGuidelines: `
 4. **評論風格指南**：
    - 小黃瓜和香蕉：專業、幽默但不過度暗示的評論
      * 專注於果實的品質、形狀、尺寸和適用料理方式
@@ -169,7 +147,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
    
    - other_rod：維持閨蜜間的私密評論風格
      * 像是在閨蜜團體聊天室分享約會對象的評價，毫無保留但不刻意惡意
-     * 使用女生之間才懂的梗和隱喻，例如「這根」「那話兒」「小兄弟」等含蓄表達
+     * 使用女生之間才懂的梗和隱喻
      * 評論要有真誠建議+惡作劇吐槽的完美平衡，犀利中帶著姐妹情誼
      * 例如：「天啊～這尺寸絕對是約會首選級別的！姐妹們，這種等級的，整個過程直接昇天～如果遇到這種，絕對要把握機會！不然被別人撿走後悔都來不及～」
 
@@ -180,9 +158,10 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
       - 如果是other_rod，維持現有的閨蜜私密對話風格：
       - 參考台灣男性平均長度12.5cm給予客觀但帶著主觀喜好的評價
       - 除了長度外，也評論形狀、曲度、粗細等維度，並提及這些對女性的重要性
-      - 用含蓄曖昧但明白人都懂的方式表達
-      - 加入一些「私房建議」
-
+      - 加入一些「私房建議」`,
+  
+  // 回應格式要求
+  responseFormatRequirements: `
 你必須精確按照以下JSON格式回答：
 {
   "objectType": "cucumber"或"banana"或"other_rod"或null,
@@ -195,7 +174,86 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
   "commentText": "專業評語文本"
 }
 
-請記住：如果是小黃瓜或香蕉，你是專業但幽默的水果評論專家；如果是other_rod，你是活潑敢說的閨蜜風格評論員。根據物體類型調整你的風格！每個字段都必須存在，數值字段必須是數字而非字符串。`;
+請記住：如果是小黃瓜或香蕉，你是專業但幽默的水果評論專家；如果是other_rod，你是活潑敢說的閨蜜風格評論員。根據物體類型調整你的風格！每個字段都必須存在，數值字段必須是數字而非字符串。`
+};
+
+// 根據物體類型獲取優化的提示詞
+function getPromptForObjectType(objectType: ObjectType | null): string {
+  // 組合基本提示詞模板
+  const basePrompt = [
+    promptTemplates.baseRoleAndGoal,
+    promptTemplates.objectTypeGuidelines,
+    promptTemplates.sizeEstimationGuidelines,
+    promptTemplates.scoringSystemGuidelines,
+    promptTemplates.commentStyleGuidelines,
+    promptTemplates.responseFormatRequirements
+  ].join('\n');
+  
+  // 未來可以根據物體類型進一步優化提示詞
+  return basePrompt;
+}
+
+// 帶指數退避的請求重試函數
+async function fetchWithRetry<T>(
+  fetchFn: () => Promise<T>, 
+  maxAttempts = 3, 
+  initialDelay = 1000
+): Promise<T> {
+  let attempt = 1;
+  
+  while (true) {
+    try {
+      return await fetchFn();
+    } catch (error) {
+      if (attempt >= maxAttempts) {
+        throw error;
+      }
+      
+      // 計算指數退避延遲時間
+      const delay = Math.min(initialDelay * Math.pow(2, attempt - 1), 10000);
+      console.log(`Retry attempt ${attempt} after ${delay}ms`);
+      
+      // 等待後重試
+      await new Promise(resolve => setTimeout(resolve, delay));
+      attempt++;
+    }
+  }
+}
+
+// 利用Gemini圖片分析能力直接檢測圖片內容
+async function analyzeImageWithGemini(imageBase64: string): Promise<{
+  objectType: ObjectType;
+  multipleObjects: boolean;
+  lowQuality: boolean;
+  lengthEstimate: number;
+  thicknessEstimate: number;
+  freshnessScore: number;
+  overallScore: number;
+  commentText: string;
+  error?: string;
+}> {
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error('Gemini API key is missing');
+    }
+
+    // 初始化Gemini API
+    const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
+    const model = genAI.getGenerativeModel({
+      model: "gemini-2.0-flash",
+      generationConfig: {
+        temperature: 0.4,  // 調高溫度增加創意性
+        maxOutputTokens: 800,
+      }
+    });
+
+    // 設置超時處理
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error('API request timeout')), 15000);
+    });
+
+    // 獲取優化後的提示詞
+    const promptText = getPromptForObjectType(null);
 
     // 設定內容部分，包含文本和圖片
     const imageParts = [
@@ -208,9 +266,15 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
     ];
 
     try {
+      // 使用指數退避重試機制發送請求
+      const geminiResponsePromise = fetchWithRetry(
+        () => model.generateContent([promptText, ...imageParts]),
+        3  // 最大重試次數
+      );
+      
       // 競速處理API請求
       const geminiResponse = await Promise.race([
-        model.generateContent([promptText, ...imageParts]),
+        geminiResponsePromise,
         timeoutPromise
       ]);
       
@@ -229,20 +293,39 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<{
           }
         }
         
-        // 解析JSON回應
-        const parsedResponse = JSON.parse(jsonStr);
-        
-        // 確保需要的所有屬性都存在，並轉換類型確保符合預期
-        return {
-          objectType: parsedResponse.objectType || null,
-          multipleObjects: Boolean(parsedResponse.multipleObjects),
-          lowQuality: Boolean(parsedResponse.lowQuality),
-          lengthEstimate: Number(parsedResponse.lengthEstimate) || 0,
-          thicknessEstimate: Number(parsedResponse.thicknessEstimate) || 0,
-          freshnessScore: Number(parsedResponse.freshnessScore) || 0,
-          overallScore: Number(parsedResponse.overallScore) || 0,
-          commentText: parsedResponse.commentText || "分析未能生成完整評語。"
-        };
+        // 增強的JSON解析 - 清理異常字符
+        try {
+          const cleaned = jsonStr.replace(/[\u0000-\u001F]+/g, ' ')
+                                .replace(/[\r\n]+/g, ' ');
+          const parsedResponse = JSON.parse(cleaned);
+          
+          // 確保需要的所有屬性都存在，並轉換類型確保符合預期
+          return {
+            objectType: parsedResponse.objectType || null,
+            multipleObjects: Boolean(parsedResponse.multipleObjects),
+            lowQuality: Boolean(parsedResponse.lowQuality),
+            lengthEstimate: Number(parsedResponse.lengthEstimate) || 0,
+            thicknessEstimate: Number(parsedResponse.thicknessEstimate) || 0,
+            freshnessScore: Number(parsedResponse.freshnessScore) || 0,
+            overallScore: Number(parsedResponse.overallScore) || 0,
+            commentText: parsedResponse.commentText || "分析未能生成完整評語。"
+          };
+        } catch (cleaningError) {
+          // 如果清理後仍無法解析，嘗試原始解析
+          const parsedResponse = JSON.parse(jsonStr);
+          
+          // 確保需要的所有屬性都存在，並轉換類型確保符合預期
+          return {
+            objectType: parsedResponse.objectType || null,
+            multipleObjects: Boolean(parsedResponse.multipleObjects),
+            lowQuality: Boolean(parsedResponse.lowQuality),
+            lengthEstimate: Number(parsedResponse.lengthEstimate) || 0,
+            thicknessEstimate: Number(parsedResponse.thicknessEstimate) || 0,
+            freshnessScore: Number(parsedResponse.freshnessScore) || 0,
+            overallScore: Number(parsedResponse.overallScore) || 0,
+            commentText: parsedResponse.commentText || "分析未能生成完整評語。"
+          };
+        }
       } catch (parseError) {
         console.error('Error parsing Gemini response:', parseError);
         console.log('Raw response:', responseText);
