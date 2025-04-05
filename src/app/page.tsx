@@ -10,23 +10,6 @@ import Script from "next/script";
 import TruthScanAnimation from "@/components/utils/TruthScanAnimation";
 import { AnalysisResult } from "@/types"; // Import shared type
 
-// 添加Web Vitals報告功能
-export function reportWebVitals(
-  metric: {
-    id: string;
-    name: string;
-    startTime: number;
-    value: number;
-    label: 'web-vital' | 'custom';
-  }
-) {
-  // 在控制台記錄性能指標
-  console.log(metric);
-  
-  // 如果需要，可以將數據發送到分析服務
-  // 例如: sendToAnalytics(metric)
-}
-
 // 上傳限制常數
 const DAILY_UPLOAD_LIMIT = 10;
 const UPLOAD_COUNTER_KEY = 'cucumber_banana_daily_uploads';
