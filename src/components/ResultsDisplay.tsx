@@ -1,23 +1,23 @@
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useRef, useState, useEffect, useCallback, useMemo } from 'react';
-import { 
-  FaRuler, 
-  FaCircle, 
-  FaStar, 
+import {
   FaRedo,
+  FaRuler,
+  FaCircle,
   FaRegLightbulb,
+  FaStar,
   FaDownload,
+  FaShareAlt,
   FaFacebook,
   FaTwitter,
   FaLine,
-  FaShareAlt,
   FaTimes
 } from 'react-icons/fa';
-import Image from 'next/image';
-import TruthfulnessIndicator from './utils/TruthfulnessIndicator';
-import StatCard from './utils/StatCard';
-import { AnalysisResult } from '@/types'; // Import shared type
 import CanvasImageGenerator from './utils/CanvasImageGenerator';
+import { AnalysisResult } from '@/types'; // Import shared type
+import StatCard from './utils/StatCard';
+import TruthfulnessIndicator from './utils/TruthfulnessIndicator';
 
 // Comment out the local definition
 /* export interface AnalysisResult {
@@ -40,11 +40,13 @@ import CanvasImageGenerator from './utils/CanvasImageGenerator';
   shareImagePath?: string;
 } */
 
-export interface ResultsDisplayProps {
-  // Use the imported type
+// 定義Props介面
+interface ResultsDisplayProps {
   result: AnalysisResult;
   preview: string;
   onReset: () => void;
+  // 新增分享图片路径
+  shareImagePath?: string;
 }
 
 /**
@@ -90,13 +92,17 @@ const wrapTextChinese = (
   return lineArray;
 };
 
-export default function ResultsDisplay({ result, preview, onReset }: ResultsDisplayProps) {
+export default function ResultsDisplay({ result, preview, onReset, shareImagePath }: ResultsDisplayProps) {
   const [shareImageUrl, setShareImageUrl] = useState<string | null>(null);
   const [isGeneratingImage, setIsGeneratingImage] = useState(false);
   const [showImagePreview, setShowImagePreview] = useState(false);
   const [isClient, setIsClient] = useState(false);
   const [showShareOptions, setShowShareOptions] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  
+  // 添加 Imgur URL 緩存狀態
+  const [imgurUrl, setImgurUrl] = useState<string | null>(null);
+  const [isUploadingToImgur, setIsUploadingToImgur] = useState(false);
   
   // 確保只在客戶端使用
   useEffect(() => {
@@ -111,14 +117,14 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     const lengthValue = result.length ?? 0;
     const thicknessValue = result.thickness ?? 0;
     const freshnessValue = result.freshness ?? 0;
-    const commentValue = result.comment || '暫無評語';
-
+    
+    // 移除評論，使預設文字更精簡
     const title = `這根${typeLabel}獲得了 ${scoreValue.toFixed(1)}/10 的評分！`;
-    const description = `長度: ${lengthValue}cm, 粗細: ${thicknessValue}cm, 新鮮度: ${freshnessValue}/10\n${commentValue}`;
+    const description = `長度: ${lengthValue}cm, 粗細: ${thicknessValue}cm, 新鮮度: ${freshnessValue}/10`;
     const hashtag = "#AI蔬果分析";
     
     return { title, description, hashtag };
-  }, [result.type, result.score, result.length, result.thickness, result.freshness, result.comment]);
+  }, [result.type, result.score, result.length, result.thickness, result.freshness]);
   
   // 決定顯示的長度（考慮測謊儀調整）
   const getDisplayLength = useCallback(() => {
@@ -206,16 +212,16 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
             imageSrc = preview;
           }
           // 2. 使用相對路徑的shareImagePath
-          else if (result.shareImagePath && isRelativePath(result.shareImagePath)) {
-            imageSrc = result.shareImagePath;
+          else if (shareImagePath && isRelativePath(shareImagePath)) {
+            imageSrc = shareImagePath;
           } 
           // 3. 使用非Blob的絕對URL
-          else if (result.shareImagePath && isValidUrl(result.shareImagePath) && !isBlobUrl(result.shareImagePath)) {
-            imageSrc = result.shareImagePath;
+          else if (shareImagePath && isValidUrl(shareImagePath) && !isBlobUrl(shareImagePath)) {
+            imageSrc = shareImagePath;
           }
           // 4. 使用Data URL
-          else if (result.shareImagePath && isDataUrl(result.shareImagePath)) {
-            imageSrc = result.shareImagePath;
+          else if (shareImagePath && isDataUrl(shareImagePath)) {
+            imageSrc = shareImagePath;
           }
           // 5. 最後備選：默認結果圖片
           else {
@@ -554,7 +560,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
       setIsGeneratingImage(false);
       return null;
     }
-  }, [isClient, preview, result, getDisplayLength]);
+  }, [isClient, preview, result, getDisplayLength, shareImagePath]);
 
   // 設定Open Graph元標籤（如果還未存在）
   useEffect(() => {
@@ -607,25 +613,154 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
     document.body.removeChild(link);
   }, [result?.type]); // Only depend on result.type since that's all we use
 
-  const openShareWindow = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
-    let shareUrl = '';
-    const currentUrl = window.location.href;
+  /**
+   * 上傳圖片到 Imgur
+   * @param imageUrl base64 或 blob URL 圖片
+   * @returns Promise 返回 Imgur URL
+   */
+  const uploadToImgur = useCallback(async (imageUrl: string): Promise<string> => {
+    if (imgurUrl) return imgurUrl; // 如果已經有 Imgur URL，直接返回
     
-    switch (platform) {
-      case 'facebook':
-        shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareInfo.title)}`;
-        break;
-      case 'twitter':
-        shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}&url=${encodeURIComponent(currentUrl)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
-        break;
-      case 'line':
-        shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareInfo.title + '\n' + shareInfo.description)}`;
-        break;
+    setIsUploadingToImgur(true);
+    
+    try {
+      // 如果是 blob URL，需要先獲取 base64 數據
+      let base64Image = imageUrl;
+      
+      if (imageUrl.startsWith('blob:')) {
+        const response = await fetch(imageUrl);
+        const blob = await response.blob();
+        
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onloadend = () => {
+            // 轉換結果是字符串，需要去除 "data:image/png;base64," 前綴
+            const base64 = reader.result as string;
+            const base64Data = base64.split(',')[1];
+            
+            // 上傳到 Imgur
+            uploadBase64ToImgur(base64Data)
+              .then(url => {
+                setImgurUrl(url); // 緩存 URL
+                resolve(url);
+              })
+              .catch(reject);
+          };
+          reader.onerror = reject;
+          reader.readAsDataURL(blob);
+        });
+      } 
+      
+      // 如果是 data URL，直接提取 base64 部分
+      if (base64Image.startsWith('data:image')) {
+        const base64Data = base64Image.split(',')[1];
+        const url = await uploadBase64ToImgur(base64Data);
+        setImgurUrl(url); // 緩存 URL
+        return url;
+      }
+      
+      throw new Error('不支持的圖片格式');
+    } catch (error) {
+      console.error('上傳到 Imgur 失敗:', error);
+      return imageUrl; // 如果上傳失敗，返回原始 URL
+    } finally {
+      setIsUploadingToImgur(false);
+    }
+  }, [imgurUrl]);
+  
+  /**
+   * 將 base64 數據上傳到 Imgur
+   * @param base64Data base64 圖片數據 (不含前綴)
+   * @returns Promise 返回 Imgur URL
+   */
+  const uploadBase64ToImgur = async (base64Data: string): Promise<string> => {
+    // 使用環境變數或預設值 (使用提供的 Client ID)
+    const IMGUR_CLIENT_ID = process.env.NEXT_PUBLIC_IMGUR_CLIENT_ID || '734af4a79d24392';
+    
+    try {
+      const formData = new FormData();
+      formData.append('image', base64Data);
+      
+      const response = await fetch('https://api.imgur.com/3/image', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Client-ID ${IMGUR_CLIENT_ID}`
+        },
+        body: formData
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Imgur API 回應錯誤: ${response.statusText}`);
+      }
+      
+      const data = await response.json();
+      return data.data.link;
+    } catch (error) {
+      console.error('Imgur 上傳錯誤:', error);
+      throw error;
+    }
+  };
+  
+  const openShareWindow = useCallback(async (platform: 'facebook' | 'twitter' | 'line') => {
+    // 確保有圖片 URL
+    if (!shareImageUrl) {
+      console.error('沒有可用的分享圖片 URL');
+      return;
     }
     
-    // 開啟分享視窗
-    window.open(shareUrl, '_blank', 'width=600,height=600');
-  }, [shareInfo]);
+    // 顯示上傳中提示
+    if (!imgurUrl) {
+      setIsUploadingToImgur(true);
+    }
+    
+    try {
+      // 嘗試上傳到 Imgur 獲取永久鏈接
+      const imageUrlForSharing = await uploadToImgur(shareImageUrl);
+      setIsUploadingToImgur(false);
+      
+      let shareUrl = '';
+      const currentUrl = window.location.href;
+      
+      switch (platform) {
+        case 'facebook':
+          // Facebook: 分享圖片連結，並附上標題
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(imageUrlForSharing)}&quote=${encodeURIComponent(shareInfo.title)}`;
+          break;
+        case 'twitter':
+          // Twitter: 分享標題和圖片連結
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title)}&url=${encodeURIComponent(imageUrlForSharing)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
+          break;
+        case 'line':
+          // Line: 分享標題和圖片連結
+          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(imageUrlForSharing)}&text=${encodeURIComponent(shareInfo.title)}`;
+          break;
+      }
+      
+      // 開啟分享視窗
+      window.open(shareUrl, '_blank', 'width=600,height=600');
+    } catch (error) {
+      console.error('準備分享時出錯:', error);
+      setIsUploadingToImgur(false);
+      
+      // 如果上傳失敗，使用原始分享方法
+      let shareUrl = '';
+      const currentUrl = window.location.href;
+      
+      switch (platform) {
+        case 'facebook':
+          shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(currentUrl)}&quote=${encodeURIComponent(shareInfo.title)}`;
+          break;
+        case 'twitter':
+          shareUrl = `https://twitter.com/intent/tweet?text=${encodeURIComponent(shareInfo.title)}&url=${encodeURIComponent(currentUrl)}&hashtags=${encodeURIComponent(shareInfo.hashtag.replace('#', ''))}`;
+          break;
+        case 'line':
+          shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(currentUrl)}&text=${encodeURIComponent(shareInfo.title)}`;
+          break;
+      }
+      
+      window.open(shareUrl, '_blank', 'width=600,height=600');
+    }
+  }, [shareInfo, shareImageUrl, uploadToImgur, imgurUrl]);
 
   const handleShare = useCallback((platform: 'facebook' | 'twitter' | 'line') => {
     if (!shareImageUrl) {
@@ -800,9 +935,10 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
                       setShowShareOptions(!showShareOptions);
                     }}
                     className="btn btn-outline flex items-center gap-2 py-2 px-5 text-sm hover:bg-blue-50 transition-colors duration-200"
+                    disabled={isGeneratingImage || isUploadingToImgur}
                   >
                     <FaShareAlt className="h-4 w-4" />
-                    分享結果
+                    {isUploadingToImgur ? '上傳到 Imgur 中...' : '分享結果'}
                   </button>
                   
                   <AnimatePresence>
