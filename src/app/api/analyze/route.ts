@@ -23,150 +23,59 @@ interface RandomDataResult {
 
 // Gemini Prompt Templates
 const promptTemplates = {
-  // Basic role and goal setting
-  baseRoleAndGoal: `你是一位超敢講敢說的女性測量評論專家，風格像是閨蜜間的私密對話。會根據識別的物體類型調整你的評論風格：
+  // 優化提示詞，增強創造性，統一資料格式
+  optimizedPrompt: `你是一位才華橫溢的測量評論專家，負責分析圖片中的物體，並提供既準確又富有創意的評論。請根據圖片提供以下資訊：
 
-不同物體類型的角色定位：
-- 小黃瓜和香蕉：專業蔬果評論家，混合專業知識與幽默風格
-- 男性特徵 (Male Feature)：閨蜜間尖酸刻薄的點評專家，標準極高
-- 一般棒狀物 (Regular Rod)：幽默風趣的觀察者，帶有適度暗示但不過度露骨`,
-  
-  // Object type determination guidelines
-  objectTypeGuidelines: `
 1. **物體類型判斷**：
-   - 這是小黃瓜還是香蕉？如果都不是，但是棒狀或條狀物體，請標識為"other_rod"。
-   - 如果圖片中有多個主要物體，請將multipleObjects設為true。
-   - 如果圖片質量太差（太暗、太模糊等），請將lowQuality設為true。
-   - 若無法確定物體類型，objectType應為null。
-   - 【關鍵步驟】other_rod子類型判斷：
-     * other_rod必須進一步細分為以下兩種子類型之一：
-       → 男性特徵 (Male Feature)：具有明確的生殖器特徵
-       → 一般棒狀物 (Regular Rod)：任何非男性特徵的棒狀物體
-     
-     * 判斷依據：
-       → 男性特徵通常具有：陰莖與龜頭
-     
-     * 標記方式：
-       → 如果確定是男性特徵，在commentText開頭添加"[male_feature]"
-       → 如果是一般棒狀物，在commentText開頭添加"[regular_rod]"
-       → 這些標記將用於選擇適當評論風格，但不出現在最終回應中
-     
-     * 重要原則：
-       → 當無法確定時，優先標記為[regular_rod]
-       → 確保標記放在評論文本的最前面，便於系統識別`,
-  
-  // Size estimation and style guidelines
-  sizeEstimationGuidelines: `
-2. **尺寸估計與風格評價**：
-   - 測量推估物體的長度和粗細/直徑，例如18.5cm長，3.2cm粗
-   - 根據物體類型及子類型，採用不同的評價風格：
-   
-     * 小黃瓜和香蕉 - 專業評價風格：
-       → 專注於果實的品質、形狀、尺寸和適用料理方式
-       → "這根香蕉有18cm，屬於標準尺寸，形狀彎度也剛好符合黃金比例，切成片後絕對能在水果沙拉裡成為主角"
-       → "20cm長的小黃瓜！哇，這是超市精選級別的規格，絕對能做出完美的涼拌小黃瓜"
-     
-     * other_rod (男性特徵) - 尖酸刻薄評價風格：
-       → 對尺寸表現極高期望，直接用挑剔的語氣評論
-       → 將測量結果與"前男友們"進行直接比較，態度略帶諷刺
-       → "這個尺寸太普通了吧！才12cm長？難怪會被嫌棄～我前男友比這大多了"
-     
-     * other_rod (一般棒狀物) - 幽默暗示評價風格：
-       → 以幽默方式評論`,
-  
-  // Scoring system guidelines
-  scoringSystemGuidelines: `
-3. **評分系統（評分標準）**：
-   - 新鮮度得分(0-10分)：評價物體的狀態和品質
-   - 總體品質評分(0-10分)：可以有小數點，讓評分更精確
-   
-   - 針對不同物體類型和子類型的評分標準：
-     * 小黃瓜和香蕉 - 專業評分基準：
-       → 新鮮度：根據色澤、紋理、光澤度等外觀特徵評分
-       → 總體品質：考慮形狀、比例、均勻度等多個因素
-       → "新鮮度9分：保存得宜，色澤飽滿，質地剛好"
-       → "總體品質7.8分：形狀略微彎曲，但整體屬於市場上品質優良的範圍"
-     
-     * other_rod (男性特徵) - 帶有評價性的評分：
-       → 根據尺寸相對於"期望值"的表現評分
-       → <5cm："尺寸過小，功能性令人懷疑，僅適合特定場合使用"
-       → 6-12cm："基本標準尺寸，但對經驗豐富者可能略顯不足"
-       → 12-15cm："尺寸令人滿意，但仍有提升空間，技巧可彌補"
-       → >15cm："規格優異，但實用性需考慮，配合度是關鍵"
-     
-     * other_rod (一般棒狀物) - 幽默客觀的評分：
-       → <10cm："這個尺寸...嗯...小巧玲瓏，適合初學者或特定場合使用"
-       → 10-15cm："標準尺寸，使用起來應該相當舒適，各種場合都能應付"
-       → 15-20cm："哇～這個尺寸絕對能讓使用者感到滿足，是許多人追求的理想規格"
-       → >20cm："天啊！這尺寸太驚人了，雖然看起來很壯觀，但實用性需要考慮使用者的接受度"
+   - 判斷是小黃瓜、香蕉還是其他棒狀物體(other_rod)
+   - 若為棒狀物(other_rod)，則判斷是否為男性特徵：
+     * isMaleFeature = 1 表示為男性特徵 (具有明確的陰莖特徵)
+     * isMaleFeature = 0 表示為普通棒狀物
+   - 如圖片包含多個物體，設 multipleObjects = true
+   - 如圖片質量太差，設 lowQuality = true
 
-   a) **總體品質評分等級** - 適用於所有物體類型：
-      - 0-2.9分："不合格級" - 這種等級建議不要購買或使用
-      - 3-4.9分："將就級" - 只有在沒有其他選擇時才考慮的選項
-      - 5-6.9分："一般般級" - 符合基本標準，但沒有特別出彩之處
-      - 7-8.4分："優選級" - 高品質範圍，值得選擇
-      - 8.5-9.3分："佳品級" - 值得專程尋找的品質
-      - 9.4-10分："頂級級" - 極其罕見的完美品質
-   
-   b) **新鮮度/品質評分描述** - 根據物體類型調整用詞：
-      - 蔬果類：使用新鮮度、成熟度等食品相關詞彙
-      - 男性特徵：使用顏色、毛髮、包皮狀態等相關詞彙
-      - 一般棒狀物：使用品質、做工、材質等物品相關詞彙
-   
-   c) **特殊評價項目** - 可為各類型加分或減分：
-      - "比例協調"：長度和粗細的比例恰到好處 +1.0分
-      - "形狀優美"：曲線流暢，外觀吸引人 +0.8分
-      - "質地優良"：看起來結實飽滿，手感應該很好 +0.5分
-      - "不均勻"：形狀不規則，影響整體美觀 -0.5分
-      - "過度彎曲"：彎曲角度過大，可能影響使用 -0.7分`,
-  
-  // Comment style guidelines
-  commentStyleGuidelines: `
-4. **評論風格指南** - 物體類型和子類型的詳細風格規範：
-   
-   a) **小黃瓜和香蕉** - 專業幽默評論風格：
-      - 專注於果實的品質、形狀、尺寸和適用料理方式
-      - 風格類似專業美食評論家，但帶有幽默元素
-      - 適度使用誇張和有趣比喻，但不過度暗示
-      - 提供專業的烹飪建議和使用方式
-      - 例如："這根20cm的黃瓜切片後絕對能成為沙拉的主角！彎度適中，粗細均勻，新鮮度給9分毫不誇張。這種品質的小黃瓜絕對是涼拌、醃漬的絕佳選擇，甚至可以考慮做成精緻的小黃瓜卷。皮色碧綠，質地緊實，是我見過最標準的小黃瓜典範之一。"
-   
-   b) **男性特徵 (Male Feature)** - 尖酸刻薄高標準評論風格：
-      - 以閨蜜間的尖酸刻薄標準直接評價尺寸，強調大小遠低於期望
-      - 用挑剔的語氣討論長度和粗細"不足"的問題
-      - 加入與"前男友"、"理想標準"的不利比較
-      - 提供避免失望的"建議"，如準備替代方案或額外道具
-      - 直截了當表達對尺寸的嘲諷和不滿
-      - 批評性詞彙："勉強及格"、"太普通了"、"不夠看"、"難以滿足"
-      - 例如："天啊～這尺寸也太普通了吧？長度才17cm？我前男友比這個至少大一圈好嗎！如果約會對象只有這個規格，建議準備些輔助道具，否則很難有滿足感～除非他技巧超群或特別持久，否則這種size實在難以令人印象深刻！"
-   
-   c) **一般棒狀物 (Regular Rod)** - 幽默風趣暗示評論風格：
-      - 以幽默的方式評論
-      - 讓評論帶有調侃和玩笑的口吻，符合台灣人喜好的幽默感
-      - 保持輕鬆愉快的語調，讓用戶會心一笑`,
-  
-  // Response format requirements
-  responseFormatRequirements: `
-5. **回應格式要求** - 必須嚴格遵循此JSON格式：
+2. **精確測量與評估**：
+   - 提供長度和粗細/直徑的準確估計(單位：cm)
+   - 如果是男性特徵，請使用台灣男性平均尺寸(12.2cm)作為參考標準，嚴格依照比例準確估計
+   - 避免過度誇大或低估尺寸，尤其是男性特徵的長度
+   - 新鮮度得分(0-10)：評估物體的外觀品質
+   - 總體評分(0-10)：評估物體的整體特性
+
+3. **創意評論指南**：
+   - 小黃瓜/香蕉：結合專業評價與創意比喻，例如「這根小黃瓜直挺的姿態讓人想起站崗的士兵，碧綠的外表隱藏著清脆的內心」或「這香蕉的彎度恰似新月，黃金色的外衣下是星空般細膩的口感」
+   - 男性特徵：使用巧妙的雙關語和機智的諷刺，例如「這尺寸讓我想起那些宣傳『麻雀雖小，五臟俱全』的微型公寓廣告...同樣充滿美好想像但現實有點...嗯...緊湊」(在評論前加標記[male_feature])
+   - 一般棒狀物：幽默中帶有暗示性的評論，例如「這根神秘棒狀物的存在感強烈得像是派對中間突然出現的魔術師，讓人既驚訝又好奇它接下來會表演什麼把戲」(在評論前加標記[regular_rod])
+
+4. **創意表達技巧**：
+   - 使用生動的比喻和隱喻，將物體與意想不到的事物相連
+   - 融入適當的文化梗，增加趣味性
+   - 加入情境描述，讓評論更加立體
+   - 使用對比手法，製造幽默效果
+   - 巧妙運用雙關語，創造多層次的理解
+   - 根據測量數據，編造有趣的小故事或場景
+
+5. **男性特徵尺寸引導標準**：
+   - 根據台灣男性統計數據：
+     * 平均長度：12.2cm
+     * 中位數：12.0cm
+     * 標準差：1.5cm
+     * 5-95百分位範圍：10.0-15.0cm
+   - 避免無根據的誇大，長度超過18cm的情況極為罕見
+   - 評論務必反映真實的測量值，但可用創意方式表達
+
+回應格式(JSON)：
 {
-  "objectType": "cucumber"或"banana"或"other_rod"或null,
-  "multipleObjects": true或false,
-  "lowQuality": true或false,
+  "objectType": "cucumber"|"banana"|"other_rod"|null,
+  "isMaleFeature": 1|0,  // 如果 objectType 為 other_rod，1=男性特徵，0=普通棒狀物
+  "multipleObjects": true|false,
+  "lowQuality": true|false,
   "lengthEstimate": 數字,
   "thicknessEstimate": 數字,
   "freshnessScore": 數字,
   "overallScore": 數字,
-  "commentText": "專業評語文本"
+  "commentText": "創意評論文本(若為男性特徵前綴[male_feature]，普通棒狀物前綴[regular_rod])"
 }
-
-重要提醒：
-- 所有數值字段必須是數字而非字符串
-- commentText中必須根據物體類型和子類型採用適當的評論風格
-- 如果是other_rod類型，必須在commentText開頭加上[male_feature]或[regular_rod]標記
-- 確保你的評語風格與物體類型/子類型一致：
-  * 小黃瓜/香蕉：專業幽默的水果評論專家
-  * male_feature：尖酸刻薄高標準的閨蜜評論
-  * regular_rod：幽默風趣帶有適當暗示的評論`
+`
 };
 
 // =================================
@@ -260,21 +169,9 @@ function generateComment(data: Record<string, unknown>): string {
 
 /**
  * Gets the optimized prompt text for the Gemini API.
- * Combines various prompt template components.
  */
-function getPromptForObjectType(/* objectType: ObjectType | null */): string {
-  // Combine base prompt templates
-  const basePrompt = [
-    promptTemplates.baseRoleAndGoal,
-    promptTemplates.objectTypeGuidelines,
-    promptTemplates.sizeEstimationGuidelines,
-    promptTemplates.scoringSystemGuidelines,
-    promptTemplates.commentStyleGuidelines,
-    promptTemplates.responseFormatRequirements
-  ].join('\n');
-  
-  // Future optimization: could tailor prompt further based on objectType
-  return basePrompt;
+function getPromptForObjectType(): string {
+  return promptTemplates.optimizedPrompt;
 }
 
 /**
@@ -391,7 +288,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<AnalysisResu
     const model = genAI.getGenerativeModel({
       model: "gemini-2.0-flash", // Using the faster Flash model
       generationConfig: {
-        temperature: 0.4,  // Balanced temperature for creativity and consistency
+        temperature: 0.2,  // 降低溫度，提高準確性
         maxOutputTokens: 800,
         topK: 40,
         topP: 0.95,
@@ -412,7 +309,7 @@ async function analyzeImageWithGemini(imageBase64: string): Promise<AnalysisResu
     });
 
     // Get the optimized prompt
-    const promptText = getPromptForObjectType(/* null */);
+    const promptText = getPromptForObjectType();
 
     // Prepare image data part
     const imageParts = [ { inlineData: { data: imageBase64, mimeType: "image/jpeg" } } ];
@@ -543,19 +440,34 @@ function parseGeminiResponse(responseText: string): AnalysisResult {
       
       const parsedResponse = JSON.parse(cleaned);
       
-      // Check for male feature marker and remove it
-      let isMaleFeature = false;
-      let rodSubtype: 'male_feature' | 'regular_rod' | undefined = undefined;
+      // 簡化並統一 male_feature 判斷邏輯
+      let isMaleFeature: boolean | undefined = undefined;
       let commentText = parsedResponse.commentText || "";
       
-      // Detect and remove markers
+      // 檢查 isMaleFeature 數值並轉換為布林值
+      if (parsedResponse.objectType === 'other_rod') {
+        if (parsedResponse.isMaleFeature === 1) {
+          isMaleFeature = true;
+        } else if (parsedResponse.isMaleFeature === 0) {
+          isMaleFeature = false;
+        }
+        
+        // 備用：標記檢查
+        if (isMaleFeature === undefined) {
+          if (commentText.startsWith('[male_feature]')) {
+            isMaleFeature = true;
+            commentText = commentText.substring('[male_feature]'.length).trim();
+          } else if (commentText.startsWith('[regular_rod]')) {
+            isMaleFeature = false;
+            commentText = commentText.substring('[regular_rod]'.length).trim();
+          }
+        }
+      }
+      
+      // 確保評論中的標記被移除
       if (commentText.startsWith('[male_feature]')) {
-        isMaleFeature = true;
-        rodSubtype = 'male_feature';
         commentText = commentText.substring('[male_feature]'.length).trim();
       } else if (commentText.startsWith('[regular_rod]')) {
-        isMaleFeature = false;
-        rodSubtype = 'regular_rod';
         commentText = commentText.substring('[regular_rod]'.length).trim();
       }
       
@@ -565,7 +477,7 @@ function parseGeminiResponse(responseText: string): AnalysisResult {
 
       return {
         objectType: objectTypeResult,
-        rodSubtype: objectTypeResult === 'other_rod' ? rodSubtype : undefined,
+        rodSubtype: objectTypeResult === 'other_rod' ? (isMaleFeature ? 'male_feature' : 'regular_rod') : undefined,
         multipleObjects: Boolean(parsedResponse.multipleObjects),
         lowQuality: Boolean(parsedResponse.lowQuality),
         lengthEstimate: parseFloat(parsedResponse.lengthEstimate) || 0,
@@ -588,20 +500,42 @@ function parseGeminiResponse(responseText: string): AnalysisResult {
       try {
         const parsedResponse = JSON.parse(jsonStr);
         
-        // Duplicate logic for marker detection (in case original parsing works)
-        let isMaleFeature = false;
-        let rodSubtype: 'male_feature' | 'regular_rod' | undefined = undefined;
+        // 簡化並統一 male_feature 判斷邏輯
+        let isMaleFeature: boolean | undefined = undefined;
         let commentText = parsedResponse.commentText || "";
-        if (commentText.startsWith('[male_feature]')) {
-          isMaleFeature = true; rodSubtype = 'male_feature'; commentText = commentText.substring('[male_feature]'.length).trim();
-        } else if (commentText.startsWith('[regular_rod]')) {
-          isMaleFeature = false; rodSubtype = 'regular_rod'; commentText = commentText.substring('[regular_rod]'.length).trim();
+        
+        // 檢查 isMaleFeature 數值並轉換為布林值
+        if (parsedResponse.objectType === 'other_rod') {
+          if (parsedResponse.isMaleFeature === 1) {
+            isMaleFeature = true;
+          } else if (parsedResponse.isMaleFeature === 0) {
+            isMaleFeature = false;
+          }
+          
+          // 備用：標記檢查
+          if (isMaleFeature === undefined) {
+            if (commentText.startsWith('[male_feature]')) {
+              isMaleFeature = true;
+              commentText = commentText.substring('[male_feature]'.length).trim();
+            } else if (commentText.startsWith('[regular_rod]')) {
+              isMaleFeature = false;
+              commentText = commentText.substring('[regular_rod]'.length).trim();
+            }
+          }
         }
+        
+        // 確保評論中的標記被移除
+        if (commentText.startsWith('[male_feature]')) {
+          commentText = commentText.substring('[male_feature]'.length).trim();
+        } else if (commentText.startsWith('[regular_rod]')) {
+          commentText = commentText.substring('[regular_rod]'.length).trim();
+        }
+        
         const objectTypeResult: ObjectType = ['cucumber', 'banana', 'other_rod'].includes(parsedResponse.objectType) ? parsedResponse.objectType : null;
         
         return {
           objectType: objectTypeResult,
-          rodSubtype: objectTypeResult === 'other_rod' ? rodSubtype : undefined,
+          rodSubtype: objectTypeResult === 'other_rod' ? (isMaleFeature ? 'male_feature' : 'regular_rod') : undefined,
           multipleObjects: Boolean(parsedResponse.multipleObjects),
           lowQuality: Boolean(parsedResponse.lowQuality),
           lengthEstimate: parseFloat(parsedResponse.lengthEstimate) || 0,
@@ -664,13 +598,19 @@ function extractFallbackInfo(responseText: string): AnalysisResult {
   } else if (responseText.toLowerCase().includes('other_rod') || responseText.toLowerCase().includes('棒狀') || responseText.toLowerCase().includes('條狀')) {
     extractedInfo.objectType = 'other_rod'; extractedInfo.type = 'other_rod';
     
-    // Detect if it's a male feature
-    const maleKeywords = ['陰莖', '生殖器', '男性特徵', 'penis', 'male organ', '[male_feature]'];
-    const isLikelyMale = maleKeywords.some(keyword => responseText.toLowerCase().includes(keyword.toLowerCase()));
-    if (isLikelyMale) {
-      extractedInfo.isMaleFeature = true; extractedInfo.rodSubtype = 'male_feature';
+    // 統一 isMaleFeature 判斷邏輯
+    // 先尋找明確的 isMaleFeature 數值
+    const isMaleFeatureMatch = responseText.match(/isMaleFeature['"]?\s*[:=]\s*(\d+)/i);
+    if (isMaleFeatureMatch && isMaleFeatureMatch[1]) {
+      // 轉換為布林值: 1 -> true, 0 -> false
+      extractedInfo.isMaleFeature = isMaleFeatureMatch[1] === '1';
+      extractedInfo.rodSubtype = extractedInfo.isMaleFeature ? 'male_feature' : 'regular_rod';
     } else {
-      extractedInfo.isMaleFeature = false; extractedInfo.rodSubtype = 'regular_rod';
+      // 備用：關鍵詞判斷
+      const maleKeywords = ['陰莖', '生殖器', '男性特徵', 'penis', 'male organ', '[male_feature]'];
+      const isLikelyMale = maleKeywords.some(keyword => responseText.toLowerCase().includes(keyword.toLowerCase()));
+      extractedInfo.isMaleFeature = isLikelyMale;
+      extractedInfo.rodSubtype = isLikelyMale ? 'male_feature' : 'regular_rod';
     }
   }
   

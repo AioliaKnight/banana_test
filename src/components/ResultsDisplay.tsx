@@ -191,7 +191,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           }
         };
         
-        // 檢查是否為男性特徵
+        // 檢查是否為男性特徵（僅用於下載/分享時替換圖片）
         const isMaleFeature = result.isMaleFeature === true || 
                              (result.type === 'other_rod' && result.truthAnalysis?.isSuspicious === true);
         
@@ -200,24 +200,24 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
           // 男性特徵使用預設圖片
           imageSrc = '/result.jpg';
         } else {
-          // 非男性特徵按照原邏輯選擇圖片源
-          // 1. 使用相對路徑的shareImagePath
-          if (result.shareImagePath && isRelativePath(result.shareImagePath)) {
+          // 非男性特徵使用上傳的圖片
+          // 1. 優先使用預覽圖片
+          if (preview) {
+            imageSrc = preview;
+          }
+          // 2. 使用相對路徑的shareImagePath
+          else if (result.shareImagePath && isRelativePath(result.shareImagePath)) {
             imageSrc = result.shareImagePath;
           } 
-          // 2. 使用非Blob的絕對URL
+          // 3. 使用非Blob的絕對URL
           else if (result.shareImagePath && isValidUrl(result.shareImagePath) && !isBlobUrl(result.shareImagePath)) {
             imageSrc = result.shareImagePath;
           }
-          // 3. 使用Data URL (因為已經是圖片數據，不需要再加載)
+          // 4. 使用Data URL
           else if (result.shareImagePath && isDataUrl(result.shareImagePath)) {
             imageSrc = result.shareImagePath;
           }
-          // 4. 使用preview (本地預覽)
-          else if (preview) {
-            imageSrc = preview;
-          }
-          // 5. 默認結果圖片
+          // 5. 最後備選：默認結果圖片
           else {
             imageSrc = '/result.jpg';
           }
@@ -695,7 +695,7 @@ export default function ResultsDisplay({ result, preview, onReset }: ResultsDisp
         {/* 結果圖片預覽 */}
         <div className="relative w-full md:w-1/2 lg:w-2/5 aspect-square flex-shrink-0 rounded-xl md:rounded-2xl overflow-hidden bg-white shadow-md">
           <Image
-            src={result.shareImagePath || preview}
+            src={preview}
             alt={`${result.type === 'cucumber' ? '小黃瓜' : result.type === 'banana' ? '香蕉' : '物體'}分析結果圖片`}
             width={500}
             height={500}
