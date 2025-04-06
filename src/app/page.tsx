@@ -458,6 +458,78 @@ export default function Home() {
         />
       )}
 
+      {/* TopBana AI 科技優勢展示 - Apple風格設計 */}
+      <div className="py-24 sm:py-32 bg-white">
+        <div className="mx-auto max-w-7xl px-6 lg:px-8">
+          <div className="mx-auto max-w-2xl text-center mb-16">
+            <h2 className="text-2xl sm:text-3xl font-bold mb-4">
+              <div className="flex flex-col items-center justify-center">
+                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 via-purple-600 to-blue-600 font-bold">
+                  隱私與安全是我們的核心價值
+                </span>
+              </div>
+            </h2>
+            <p className="text-sm sm:text-base text-slate-700 max-w-2xl mx-auto">
+              我們以最高標準保護您的數據，為您帶來安心無憂的體驗
+            </p>
+          </div>
+          
+          <div className="mx-auto mt-16 max-w-2xl sm:mt-20 lg:mt-24 lg:max-w-none">
+            <dl className="grid max-w-xl grid-cols-1 gap-x-12 gap-y-16 lg:max-w-none lg:grid-cols-3">
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 flex-none text-indigo-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+                  </svg>
+                  零資料儲存政策
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-sm leading-7 text-slate-600">
+                  <p className="flex-auto">
+                    您的照片只用於即時分析，完成後立即刪除。我們從不儲存您的影像或個人資料，讓您完全掌控自己的隱私。
+                  </p>
+                </dd>
+              </div>
+              
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 flex-none text-indigo-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 12.75L11.25 15 15 9.75m-3-7.036A11.959 11.959 0 013.598 6 11.99 11.99 0 003 9.749c0 5.592 3.824 10.29 9 11.623 5.176-1.332 9-6.03 9-11.622 0-1.31-.21-2.571-.598-3.751h-.152c-3.196 0-6.1-1.248-8.25-3.285z" />
+                  </svg>
+                  端對端加密
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-sm leading-7 text-slate-600">
+                  <p className="flex-auto">
+                    全程採用軍用級 256 位元加密技術，確保您的資料在傳輸過程中不會被攔截或存取，安全標準比肩銀行交易系統。
+                  </p>
+                </dd>
+              </div>
+              
+              <div className="flex flex-col">
+                <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-800">
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 flex-none text-indigo-600">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                  </svg>
+                  即用即走，無須註冊
+                </dt>
+                <dd className="mt-4 flex flex-auto flex-col text-sm leading-7 text-slate-600">
+                  <p className="flex-auto">
+                    我們不需要您的個人資料或電子郵件。無註冊、無追蹤、無廣告，讓您立即上傳照片獲得結果，體驗真正的匿名服務。
+                  </p>
+                </dd>
+              </div>
+            </dl>
+          </div>
+          
+          {/* 隱私宣言 - Apple風格 */}
+          <div className="mx-auto max-w-2xl text-center mt-24">
+            <p className="text-lg italic text-slate-700">
+              "我們相信隱私是基本人權。您的信任是我們最寶貴的資產。"
+            </p>
+            <p className="mt-4 text-xs text-slate-500">— TopBana AI 隱私與安全團隊</p>
+          </div>
+        </div>
+      </div>
+
       {/* 贊助商募集 */}
       <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-12 sm:py-16 bg-gradient-to-b from-blue-50 to-purple-50 relative overflow-hidden">
         <div className="absolute top-0 right-0 w-40 h-40 bg-yellow-300 rounded-full opacity-20 -translate-y-1/2 translate-x-1/2"></div>
