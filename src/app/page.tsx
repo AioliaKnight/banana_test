@@ -298,13 +298,25 @@ export default function Home() {
         {/* 頂部導航和品牌標題 */}
         <div className="container mx-auto px-4 sm:px-6 lg:px-8 pt-6 relative z-20">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl sm:text-3xl font-bold">
-              <div className="flex items-center space-x-2">
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-600 to-blue-600 font-bold text-3xl sm:text-4xl">TopBana</span>
-                <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 font-bold text-3xl sm:text-4xl">AI</span>
-              </div>
-              <span className="hidden sm:inline-block text-xs font-medium text-slate-600 mt-1">台灣第一香蕉AI量測站</span>
-        </h1>
+            <button 
+              onClick={() => {
+                setImage(null);
+                setPreview(null);
+                setAnalysisResult(null);
+                setError(null);
+                setLoading(false);
+                setShowTruthScanning(false);
+              }}
+              className="flex items-center space-x-2 hover:opacity-80 transition-opacity"
+            >
+              <h1 className="text-2xl sm:text-3xl font-bold">
+                <div className="flex items-center space-x-2">
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-500 via-purple-600 to-blue-600 font-bold text-3xl sm:text-4xl">TopBana</span>
+                  <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 font-bold text-3xl sm:text-4xl">AI</span>
+                </div>
+                <span className="hidden sm:inline-block text-xs font-medium text-slate-600 mt-1">台灣第一香蕉AI量測站</span>
+              </h1>
+            </button>
             {/* 添加標語 */}
             <p className="hidden md:block text-sm text-slate-600 font-medium">精準測量 · 專業分析 · 立即結果</p>
           </div>
