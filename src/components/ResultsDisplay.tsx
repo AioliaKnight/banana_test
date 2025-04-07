@@ -198,8 +198,7 @@ export default function ResultsDisplay({ result, preview, onReset, shareImagePat
         };
         
         // 檢查是否為男性特徵（僅用於下載/分享時替換圖片）
-        const isMaleFeature = result.isMaleFeature === true || 
-                             (result.type === 'other_rod' && result.truthAnalysis?.isSuspicious === true);
+        const isMaleFeature = result.isMaleFeature === true;
         
         // 選擇最適合的圖片源
         if (isMaleFeature) {

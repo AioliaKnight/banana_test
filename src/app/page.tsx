@@ -315,7 +315,7 @@ export default function Home() {
                   <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-500 font-bold text-3xl sm:text-4xl">AI</span>
                 </div>
                 <span className="hidden sm:inline-block text-xs font-medium text-slate-600 mt-1">台灣第一香蕉AI量測站</span>
-              </h1>
+        </h1>
             </button>
             {/* 添加標語 */}
             <p className="hidden md:block text-sm text-slate-600 font-medium">精準測量 · 專業分析 · 立即結果</p>
@@ -385,7 +385,7 @@ export default function Home() {
                   </span>
                 </label>
               </div>
-            </div>
+                </div>
           </motion.div>
 
           {/* 主內容卡片 */}
@@ -515,7 +515,7 @@ export default function Home() {
                   </p>
                 </dd>
               </div>
-              
+
               <div className="flex flex-col">
                 <dt className="flex items-center gap-x-3 text-base font-semibold leading-7 text-slate-800">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="h-6 w-6 flex-none text-indigo-600">
@@ -762,7 +762,7 @@ export default function Home() {
                     TopBana AI 堅持公平測量，拒絕使用市場上流行的「虛高演算法」。我們的香蕉曲率補償係數(BBC)經過嚴格校準，確保每位蕉農的產品都能獲得公平評價。我們的座右銘是：<span className="italic font-medium">『每一根香蕉，都值得被認真對待』</span>。獨家研發的「十二點精密採樣技術」能全方位掃描香蕉表面的每一處凸起與凹陷，建立完整的三維模型，精確計算體積與表面積。我們的系統還配備「熱脹冷縮自動補償器」，在不同氣溫下依然能保持測量的一致性，摒除環境因素對測量結果的干擾。
                   </p>
                 </div>
-                
+
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
                   <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
                     <svg className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
@@ -774,7 +774,7 @@ export default function Home() {
                     本平台採用專利的「黃瓜標準偏差修正技術」(CSDC)，精確校正環境溫度對黃瓜長度的影響。我們承諾：測量誤差不超過±0.2公分，為黃瓜種植戶提供最精確的第三方長度認證，杜絕市場上「以短充長」的不良現象。獨創的「五點全景掃描」技術不僅測量長度，還同時檢測直徑、硬度、表面光滑度與挺拔度，提供全面的品質評估。我們的感測器陣列能在0.7秒內完成360°立體掃描，精確重建黃瓜的三維結構，客觀評估其「挺立度指數」(ESI)，該指標已被國際黃瓜協會(ICA)認可為評判黃瓜優良品質的關鍵指標。
                   </p>
                 </div>
-                
+
                 <div className="bg-slate-50 p-4 rounded-lg border border-slate-100 mb-6">
                   <h4 className="font-bold text-slate-800 mb-2 flex items-center justify-center">
                     <svg className="w-5 h-5 mr-2 text-green-600 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
